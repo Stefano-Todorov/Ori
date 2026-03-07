@@ -91,7 +91,7 @@ export function AnalyticsCharts({ posts }: Props) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} />
-                <Tooltip formatter={(v: number) => formatNumber(v)} />
+                <Tooltip formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''} />
                 <Line
                   type="monotone"
                   dataKey="views"
@@ -118,7 +118,7 @@ export function AnalyticsCharts({ posts }: Props) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="platform" tick={{ fontSize: 11 }} />
                 <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} />
-                <Tooltip formatter={(v: number) => formatNumber(v)} />
+                <Tooltip formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''} />
                 <Bar
                   dataKey="avgViews"
                   fill="hsl(var(--primary))"

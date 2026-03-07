@@ -216,7 +216,7 @@ function IdeaCard({
   onEdit,
 }: {
   item: ContentIdea
-  onDelete: () => void
+  onDelete: () => Promise<void>
   onStatusCycle: () => void
   onEdit: () => void
 }) {

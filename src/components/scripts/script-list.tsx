@@ -51,7 +51,7 @@ function parseBody(body: string): { label: string; text: string }[] {
   return segments.filter((s) => s.label || s.text)
 }
 
-function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: string) => void }) {
+function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: string) => Promise<void> }) {
   const [status, setStatus] = useState<PostStatus>(script.status ?? 'draft')
   const [copied, setCopied] = useState(false)
 
