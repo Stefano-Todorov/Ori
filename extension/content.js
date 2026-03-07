@@ -486,7 +486,7 @@ function findGridAndItems() {
   if (host.includes('tiktok.com')) linkSel = 'a[href*="/video/"], a[href*="/photo/"]'
   else if (host.includes('instagram.com')) linkSel = 'a[href*="/reel/"], a[href*="/p/"]'
   else if (host.includes('youtube.com')) {
-    // YouTube uses custom elements
+    // YouTube uses custom elements — handle separately
     const container = document.querySelector(
       '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
     )
@@ -499,29 +499,33 @@ function findGridAndItems() {
   }
   else return null
 
-  const links = document.querySelectorAll(linkSel)
+  const links = [...document.querySelectorAll(linkSel)]
   if (links.length < 2) return null
 
-  // Walk up from first link to find the grid container (parent with multiple links)
-  let container = null
-  let el = links[0].parentElement
-  for (let depth = 0; depth < 10 && el; depth++) {
-    const linksInside = el.querySelectorAll(linkSel)
-    if (linksInside.length > 1) {
-      container = el
-      break
+  // Strategy: for each link, walk up N levels. Find the depth where all links'
+  // ancestors share the same parent — that's the grid container, and the ancestors
+  // are the grid items.
+  for (let depth = 1; depth <= 10; depth++) {
+    const ancestors = links.map(link => {
+      let el = link
+      for (let i = 0; i < depth; i++) el = el?.parentElement
+      return el
+    }).filter(Boolean)
+
+    // Check if these ancestors share one common parent
+    const parents = new Set(ancestors.map(a => a.parentElement).filter(Boolean))
+    if (parents.size === 1) {
+      const container = [...parents][0]
+      // Deduplicate (multiple links might resolve to the same ancestor)
+      const uniqueItems = [...new Set(ancestors)]
+      if (uniqueItems.length >= 2) {
+        const platform = host.includes('tiktok') ? 'tiktok' : 'instagram'
+        return { container, items: uniqueItems, platform }
+      }
     }
-    el = el.parentElement
   }
-  if (!container) return null
 
-  const items = [...container.children].filter(child =>
-    child.querySelector(linkSel)
-  )
-  if (items.length === 0) return null
-
-  const platform = host.includes('tiktok') ? 'tiktok' : host.includes('instagram') ? 'instagram' : 'youtube'
-  return { container, items, platform }
+  return null
 }
 
 function doSort(count) {
