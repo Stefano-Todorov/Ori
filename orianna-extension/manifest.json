@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Orianna",
+  "version": "1.0.0",
+  "description": "Capture competitor and trending content for Orianna",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://www.tiktok.com/*",
+    "https://www.instagram.com/*",
+    "https://www.youtube.com/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Orianna"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.tiktok.com/*"],
+      "js": ["content-scripts/tiktok.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.instagram.com/*"],
+      "js": ["content-scripts/instagram.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

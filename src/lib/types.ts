@@ -1,0 +1,142 @@
+export type Platform = 'tiktok' | 'instagram' | 'youtube'
+export type Difficulty = 'easy' | 'medium' | 'hard'
+export type PostStatus = 'draft' | 'used' | 'archived'
+
+export interface Profile {
+  id: string
+  email: string
+  name: string | null
+  niche: string | null
+  sub_niche: string | null
+  goals: string | null
+  platforms: Platform[]
+  posting_target: number
+  telegram_chat_id: string | null
+  onboarding_completed: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Post {
+  id: string
+  user_id: string
+  platform: Platform
+  url: string | null
+  title: string | null
+  caption: string | null
+  hashtags: string[]
+  views: number
+  likes: number
+  comments: number
+  shares: number
+  saves: number
+  engagement_rate: number | null
+  posted_at: string | null
+  duration_seconds: number | null
+  transcript: string | null
+  hook_text: string | null
+  hook_score: number | null
+  difficulty: Difficulty | null
+  edit_style: string | null
+  thumbnail_description: string | null
+  ai_notes: string | null
+  is_competitor: boolean
+  competitor_handle: string | null
+  is_trending: boolean
+  imported_at: string
+  created_at: string
+}
+
+export interface Script {
+  id: string
+  user_id: string
+  topic: string
+  niche: string | null
+  hook: string
+  body: string
+  cta: string | null
+  hashtags: string[]
+  difficulty: Difficulty | null
+  estimated_duration: string | null
+  status: PostStatus
+  variants: ScriptVariant[]
+  created_at: string
+}
+
+export interface ScriptVariant {
+  hook: string
+  angle: string
+}
+
+export interface Competitor {
+  id: string
+  user_id: string
+  platform: Platform
+  handle: string
+  display_name: string | null
+  follower_count: number | null
+  avg_views: number | null
+  notes: string | null
+  profile_url: string | null
+  last_scraped_at: string | null
+  created_at: string
+}
+
+export interface CoachMessage {
+  id: string
+  user_id: string
+  role: 'user' | 'assistant'
+  content: string
+  created_at: string
+}
+
+export interface ContentIdea {
+  id: string
+  user_id: string
+  idea: string
+  source: string | null
+  niche: string | null
+  hook_idea: string | null
+  inspiration_url: string | null
+  script_snippet: string | null
+  cta: string | null
+  caption: string | null
+  difficulty: Difficulty | null
+  video_type: string | null
+  status: 'new' | 'in_progress' | 'done' | 'archived'
+  created_at: string
+}
+
+export interface SocialAccount {
+  id: string
+  user_id: string
+  platform: Platform
+  username: string
+  access_token: string | null
+  refresh_token: string | null
+  token_expires_at: string | null
+  platform_user_id: string | null
+  display_name: string | null
+  avatar_url: string | null
+  scopes: string[] | null
+  connected_at: string
+  updated_at: string | null
+}
+
+export interface ScheduledPost {
+  id: string
+  user_id: string
+  platform: Platform
+  social_account_id: string | null
+  script_id: string | null
+  caption: string
+  hashtags: string[]
+  video_storage_path: string | null
+  video_public_url: string | null
+  scheduled_at: string
+  status: 'pending' | 'processing' | 'published' | 'failed' | 'cancelled'
+  platform_post_id: string | null
+  error_message: string | null
+  created_at: string
+  updated_at: string
+}
