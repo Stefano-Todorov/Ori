@@ -147,14 +147,15 @@ async function handleAddCompetitor() {
   }
 }
 
-async function handleSortGrid(order) {
+async function handleSortGrid() {
+  const count = parseInt(document.getElementById('sort-count')?.value ?? '25')
   setState({ saving: 'sorting', sortStatus: null })
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   try {
-    const result = await chrome.tabs.sendMessage(tab.id, { type: 'SORT_GRID', order })
+    const result = await chrome.tabs.sendMessage(tab.id, { type: 'SORT_GRID', count })
     setState({ saving: null })
     if (result.success) {
-      setState({ sortStatus: `Sorted ${result.sorted} videos by views` })
+      setState({ sortStatus: `Showing top ${result.sorted} of ${result.total} by views` })
     } else {
       setState({ sortStatus: result.message || 'Could not sort grid' })
     }
@@ -276,15 +277,19 @@ function render() {
       ` : ''}
 
       <div class="actions" style="padding-top:4px">
-        <div class="sort-label" style="padding:0 0 4px;font-size:11px;color:#a1a1aa">Sort videos on this page by views:</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-outline" id="sort-desc-btn" style="flex:1" ${state.saving === 'sorting' ? 'disabled' : ''}>
-            ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Most views first'}
-          </button>
-          <button class="btn btn-outline" id="sort-asc-btn" style="flex:1" ${state.saving === 'sorting' ? 'disabled' : ''}>
-            Least views first
+        <div style="display:flex;gap:6px;align-items:center">
+          <span style="font-size:11px;color:#a1a1aa;white-space:nowrap">Show top</span>
+          <select id="sort-count" style="width:70px;padding:6px 8px">
+            <option value="10">10</option>
+            <option value="25" selected>25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+          <button class="btn btn-primary" id="sort-btn" style="flex:1" ${state.saving === 'sorting' ? 'disabled' : ''}>
+            ${state.saving === 'sorting' ? '<span class="spinner"></span> Sorting...' : 'Sort by most views'}
           </button>
         </div>
+        <div style="font-size:10px;color:#52525b;margin-top:4px">Scroll down to load more videos before sorting</div>
         ${state.sortStatus ? `<div class="success-msg">${state.sortStatus}</div>` : ''}
       </div>
     `
@@ -292,8 +297,7 @@ function render() {
     // Wire events
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
     document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
-    document.getElementById('sort-desc-btn')?.addEventListener('click', () => handleSortGrid('views-desc'))
-    document.getElementById('sort-asc-btn')?.addEventListener('click', () => handleSortGrid('views-asc'))
+    document.getElementById('sort-btn')?.addEventListener('click', () => handleSortGrid())
 
     return
   }

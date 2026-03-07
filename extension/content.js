@@ -452,82 +452,127 @@ function extractCurrentPage() {
 
 // ─── Sort Grid (reorder actual DOM elements) ────────────────────────────
 
-function sortPageGrid(order) {
+function sortPageGrid(count) {
   const host = window.location.hostname
 
-  if (host.includes('tiktok.com')) return sortTikTokGrid(order)
-  if (host.includes('instagram.com')) return sortInstagramGrid(order)
-  if (host.includes('youtube.com')) return sortYouTubeGrid(order)
+  if (host.includes('tiktok.com')) return sortTikTokGrid(count)
+  if (host.includes('instagram.com')) return sortInstagramGrid(count)
+  if (host.includes('youtube.com')) return sortYouTubeGrid(count)
   return { success: false, message: 'Unsupported platform' }
 }
 
-function sortTikTokGrid(order) {
-  // Find the grid container
-  const container = document.querySelector(
-    '[data-e2e="user-post-item-list"], [class*="DivVideoList"], [class*="DivThreeColumnContainer"]'
-  )
-  if (!container) return { success: false, message: 'Could not find video grid' }
+// Helper: given an array of {el, views}, sort desc, keep top N, hide rest
+function applySortAndLimit(itemsWithViews, count) {
+  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
 
-  const items = [...container.children]
-  if (items.length === 0) return { success: false, message: 'No videos found' }
+  // Show sorted items, hide overflow
+  const container = itemsWithViews[0]?.el?.parentElement
+  if (!container) return { success: false, message: 'No container found' }
 
-  // Extract view count from each grid item
-  const itemsWithViews = items.map(item => {
-    let views = null
-    const viewEl = item.querySelector(
-      'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"]'
-    )
-    if (viewEl) {
-      views = parseNumber(viewEl.textContent)
-    } else {
-      const spans = item.querySelectorAll('strong, span')
-      for (const s of spans) {
-        const t = s.textContent.trim()
-        if (/^\d[\d.]*[KMB]?$/i.test(t)) {
-          views = parseNumber(t)
-          break
-        }
-      }
-    }
-    return { el: item, views }
+  const toShow = itemsWithViews.slice(0, count)
+  const toHide = itemsWithViews.slice(count)
+
+  toShow.forEach(({ el }) => {
+    el.style.display = ''
+    container.appendChild(el)
+  })
+  toHide.forEach(({ el }) => {
+    el.style.display = 'none'
+    container.appendChild(el)
   })
 
-  if (order === 'views-desc') {
-    itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-  } else if (order === 'views-asc') {
-    itemsWithViews.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
-  }
-
-  itemsWithViews.forEach(({ el }) => container.appendChild(el))
-
   const withViews = itemsWithViews.filter(i => i.views != null).length
-  return { success: true, sorted: items.length, withViews }
+  return { success: true, sorted: toShow.length, total: itemsWithViews.length, withViews }
 }
 
-function sortInstagramGrid(order) {
-  // Instagram grid — try to find the post grid container
-  const container = document.querySelector(
-    'article > div > div, main article div[style*="flex-direction: column"], div._ac7v'
+function getViewsFromItem(item) {
+  // Try data-e2e attributes first (TikTok)
+  const viewEl = item.querySelector(
+    'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"]'
   )
-  if (!container) return { success: false, message: 'Could not find post grid' }
+  if (viewEl) return parseNumber(viewEl.textContent)
 
-  // Flatten grid items
-  let items = []
-  const rows = container.querySelectorAll(':scope > div > div > div')
-  if (rows.length > 3) {
-    items = [...rows]
-  } else {
-    items = [...container.querySelectorAll(':scope > div')]
+  // Fallback: look for short text that looks like a view count (e.g. "1.2M", "45K")
+  const candidates = item.querySelectorAll('strong, span')
+  for (const s of candidates) {
+    const t = s.textContent.trim()
+    if (/^\d[\d.]*[KMB]?$/i.test(t)) {
+      return parseNumber(t)
+    }
+  }
+  return null
+}
+
+function sortTikTokGrid(count) {
+  // Strategy: find all video link elements, walk up to grid items, determine container
+  const videoLinks = document.querySelectorAll('a[href*="/@"][href*="/video/"], a[href*="/@"][href*="/photo/"]')
+  if (videoLinks.length === 0) return { success: false, message: 'No videos found on this page' }
+
+  // Each video link lives inside a grid item. Find the grid items.
+  // Walk up from each link to find a consistent parent level
+  const firstLink = videoLinks[0]
+  let gridItem = firstLink
+  let container = null
+
+  // Walk up until we find a parent that contains multiple video links (that's the grid container)
+  let el = firstLink.parentElement
+  for (let depth = 0; depth < 10 && el; depth++) {
+    const linksInside = el.querySelectorAll('a[href*="/video/"], a[href*="/photo/"]')
+    if (linksInside.length > 1) {
+      container = el
+      break
+    }
+    gridItem = el
+    el = el.parentElement
   }
 
-  if (items.length === 0) return { success: false, message: 'No posts found in grid' }
+  if (!container) return { success: false, message: 'Could not find video grid container' }
 
-  // Reels show play count overlays
+  // The grid items are the direct children of the container that contain video links
+  const items = [...container.children].filter(child =>
+    child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+  )
+
+  if (items.length === 0) return { success: false, message: 'No grid items found' }
+
+  const itemsWithViews = items.map(item => ({
+    el: item,
+    views: getViewsFromItem(item),
+  }))
+
+  return applySortAndLimit(itemsWithViews, count)
+}
+
+function sortInstagramGrid(count) {
+  // Find all reel/post links, walk up to grid items
+  const postLinks = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
+  if (postLinks.length === 0) return { success: false, message: 'No posts found on this page' }
+
+  // Walk up to find the grid container
+  let container = null
+  let el = postLinks[0].parentElement
+  for (let depth = 0; depth < 10 && el; depth++) {
+    const linksInside = el.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
+    if (linksInside.length > 1) {
+      container = el
+      break
+    }
+    el = el.parentElement
+  }
+
+  if (!container) return { success: false, message: 'Could not find post grid' }
+
+  const items = [...container.children].filter(child =>
+    child.querySelector('a[href*="/reel/"], a[href*="/p/"]')
+  )
+
+  if (items.length === 0) return { success: false, message: 'No grid items found' }
+
   const itemsWithViews = items.map(item => {
     let views = null
-    const viewEls = item.querySelectorAll('span, li')
-    for (const el of viewEls) {
-      const t = el.textContent.trim()
+    const spans = item.querySelectorAll('span')
+    for (const s of spans) {
+      const t = s.textContent.trim()
       if (/^[\d,.]+[KMB]?$/i.test(t) && !t.includes(':')) {
         views = parseNumber(t)
         break
@@ -536,20 +581,10 @@ function sortInstagramGrid(order) {
     return { el: item, views }
   })
 
-  if (order === 'views-desc') {
-    itemsWithViews.sort((a, b) => (b.views ?? -1) - (a.views ?? -1))
-  } else if (order === 'views-asc') {
-    itemsWithViews.sort((a, b) => (a.views ?? Infinity) - (b.views ?? Infinity))
-  }
-
-  const parent = items[0].parentElement
-  itemsWithViews.forEach(({ el }) => parent.appendChild(el))
-
-  const withViews = itemsWithViews.filter(i => i.views != null).length
-  return { success: true, sorted: items.length, withViews }
+  return applySortAndLimit(itemsWithViews, count)
 }
 
-function sortYouTubeGrid(order) {
+function sortYouTubeGrid(count) {
   const container = document.querySelector(
     '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
   )
@@ -563,22 +598,11 @@ function sortYouTubeGrid(order) {
   const itemsWithViews = items.map(item => {
     let views = null
     const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
-    if (metaLine) {
-      views = parseNumber(metaLine.textContent)
-    }
+    if (metaLine) views = parseNumber(metaLine.textContent)
     return { el: item, views }
   })
 
-  if (order === 'views-desc') {
-    itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-  } else if (order === 'views-asc') {
-    itemsWithViews.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
-  }
-
-  itemsWithViews.forEach(({ el }) => container.appendChild(el))
-
-  const withViews = itemsWithViews.filter(i => i.views != null).length
-  return { success: true, sorted: items.length, withViews }
+  return applySortAndLimit(itemsWithViews, count)
 }
 
 // Listen for messages from popup
@@ -588,7 +612,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ data })
   }
   if (msg.type === 'SORT_GRID') {
-    const result = sortPageGrid(msg.order)
+    const result = sortPageGrid(msg.count ?? 25)
     sendResponse(result)
   }
   return true
