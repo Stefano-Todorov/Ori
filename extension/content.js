@@ -450,24 +450,105 @@ function extractCurrentPage() {
   return null
 }
 
-// ─── Sort Grid (reorder actual DOM elements) ────────────────────────────
+// ─── Injected Toolbar (Sort Feed style) ──────────────────────────────────
 
-function sortPageGrid(count) {
-  const host = window.location.hostname
+let oriannaToolbarInjected = false
+let oriannaOriginalOrder = null // store original DOM order for reset
 
-  if (host.includes('tiktok.com')) return sortTikTokGrid(count)
-  if (host.includes('instagram.com')) return sortInstagramGrid(count)
-  if (host.includes('youtube.com')) return sortYouTubeGrid(count)
-  return { success: false, message: 'Unsupported platform' }
+function fmtNum(n) {
+  if (n == null) return '-'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
+  return n.toString()
 }
 
-// Helper: given an array of {el, views}, sort desc, keep top N, hide rest
-function applySortAndLimit(itemsWithViews, count) {
-  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+function getViewsFromItem(item) {
+  const viewEl = item.querySelector(
+    'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"]'
+  )
+  if (viewEl) return parseNumber(viewEl.textContent)
 
-  // Show sorted items, hide overflow
-  const container = itemsWithViews[0]?.el?.parentElement
-  if (!container) return { success: false, message: 'No container found' }
+  const candidates = item.querySelectorAll('strong, span')
+  for (const s of candidates) {
+    const t = s.textContent.trim()
+    if (/^\d[\d.]*[KMB]?$/i.test(t)) {
+      return parseNumber(t)
+    }
+  }
+  return null
+}
+
+function findGridAndItems() {
+  const host = window.location.hostname
+
+  // Platform-specific link selectors
+  let linkSel
+  if (host.includes('tiktok.com')) linkSel = 'a[href*="/video/"], a[href*="/photo/"]'
+  else if (host.includes('instagram.com')) linkSel = 'a[href*="/reel/"], a[href*="/p/"]'
+  else if (host.includes('youtube.com')) {
+    // YouTube uses custom elements
+    const container = document.querySelector(
+      '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
+    )
+    if (!container) return null
+    const items = [...container.querySelectorAll(
+      ':scope > ytd-rich-grid-media, :scope > ytd-rich-item-renderer, :scope > ytd-grid-video-renderer'
+    )]
+    if (items.length === 0) return null
+    return { container, items, platform: 'youtube' }
+  }
+  else return null
+
+  const links = document.querySelectorAll(linkSel)
+  if (links.length < 2) return null
+
+  // Walk up from first link to find the grid container (parent with multiple links)
+  let container = null
+  let el = links[0].parentElement
+  for (let depth = 0; depth < 10 && el; depth++) {
+    const linksInside = el.querySelectorAll(linkSel)
+    if (linksInside.length > 1) {
+      container = el
+      break
+    }
+    el = el.parentElement
+  }
+  if (!container) return null
+
+  const items = [...container.children].filter(child =>
+    child.querySelector(linkSel)
+  )
+  if (items.length === 0) return null
+
+  const platform = host.includes('tiktok') ? 'tiktok' : host.includes('instagram') ? 'instagram' : 'youtube'
+  return { container, items, platform }
+}
+
+function doSort(count) {
+  const grid = findGridAndItems()
+  if (!grid) return { success: false, message: 'No video grid found' }
+
+  const { container, items, platform } = grid
+
+  // Save original order for reset
+  if (!oriannaOriginalOrder) {
+    oriannaOriginalOrder = [...container.children]
+  }
+
+  // Extract views from each item
+  const itemsWithViews = items.map(item => {
+    let views = null
+    if (platform === 'youtube') {
+      const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
+      if (metaLine) views = parseNumber(metaLine.textContent)
+    } else {
+      views = getViewsFromItem(item)
+    }
+    return { el: item, views }
+  })
+
+  // Sort by views descending
+  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
 
   const toShow = itemsWithViews.slice(0, count)
   const toHide = itemsWithViews.slice(count)
@@ -481,129 +562,214 @@ function applySortAndLimit(itemsWithViews, count) {
     container.appendChild(el)
   })
 
-  const withViews = itemsWithViews.filter(i => i.views != null).length
-  return { success: true, sorted: toShow.length, total: itemsWithViews.length, withViews }
+  return { success: true, sorted: toShow.length, total: items.length }
 }
 
-function getViewsFromItem(item) {
-  // Try data-e2e attributes first (TikTok)
-  const viewEl = item.querySelector(
-    'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"]'
-  )
-  if (viewEl) return parseNumber(viewEl.textContent)
+function doReset() {
+  if (!oriannaOriginalOrder) return
+  const grid = findGridAndItems()
+  if (!grid) return
 
-  // Fallback: look for short text that looks like a view count (e.g. "1.2M", "45K")
-  const candidates = item.querySelectorAll('strong, span')
-  for (const s of candidates) {
-    const t = s.textContent.trim()
-    if (/^\d[\d.]*[KMB]?$/i.test(t)) {
-      return parseNumber(t)
-    }
-  }
-  return null
+  // Restore original order and show all
+  oriannaOriginalOrder.forEach(el => {
+    el.style.display = ''
+    grid.container.appendChild(el)
+  })
+  oriannaOriginalOrder = null
 }
 
-function sortTikTokGrid(count) {
-  // Strategy: find all video link elements, walk up to grid items, determine container
-  const videoLinks = document.querySelectorAll('a[href*="/@"][href*="/video/"], a[href*="/@"][href*="/photo/"]')
-  if (videoLinks.length === 0) return { success: false, message: 'No videos found on this page' }
+function doExportCSV() {
+  const grid = findGridAndItems()
+  if (!grid) return
 
-  // Each video link lives inside a grid item. Find the grid items.
-  // Walk up from each link to find a consistent parent level
-  const firstLink = videoLinks[0]
-  let gridItem = firstLink
-  let container = null
-
-  // Walk up until we find a parent that contains multiple video links (that's the grid container)
-  let el = firstLink.parentElement
-  for (let depth = 0; depth < 10 && el; depth++) {
-    const linksInside = el.querySelectorAll('a[href*="/video/"], a[href*="/photo/"]')
-    if (linksInside.length > 1) {
-      container = el
-      break
-    }
-    gridItem = el
-    el = el.parentElement
-  }
-
-  if (!container) return { success: false, message: 'Could not find video grid container' }
-
-  // The grid items are the direct children of the container that contain video links
-  const items = [...container.children].filter(child =>
-    child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
-  )
-
-  if (items.length === 0) return { success: false, message: 'No grid items found' }
-
-  const itemsWithViews = items.map(item => ({
-    el: item,
-    views: getViewsFromItem(item),
-  }))
-
-  return applySortAndLimit(itemsWithViews, count)
-}
-
-function sortInstagramGrid(count) {
-  // Find all reel/post links, walk up to grid items
-  const postLinks = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
-  if (postLinks.length === 0) return { success: false, message: 'No posts found on this page' }
-
-  // Walk up to find the grid container
-  let container = null
-  let el = postLinks[0].parentElement
-  for (let depth = 0; depth < 10 && el; depth++) {
-    const linksInside = el.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
-    if (linksInside.length > 1) {
-      container = el
-      break
-    }
-    el = el.parentElement
-  }
-
-  if (!container) return { success: false, message: 'Could not find post grid' }
-
-  const items = [...container.children].filter(child =>
-    child.querySelector('a[href*="/reel/"], a[href*="/p/"]')
-  )
-
-  if (items.length === 0) return { success: false, message: 'No grid items found' }
+  const { items, platform } = grid
+  const rows = [['#', 'Views', 'URL']]
 
   const itemsWithViews = items.map(item => {
     let views = null
-    const spans = item.querySelectorAll('span')
-    for (const s of spans) {
-      const t = s.textContent.trim()
-      if (/^[\d,.]+[KMB]?$/i.test(t) && !t.includes(':')) {
-        views = parseNumber(t)
-        break
+    if (platform === 'youtube') {
+      const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
+      if (metaLine) views = parseNumber(metaLine.textContent)
+    } else {
+      views = getViewsFromItem(item)
+    }
+    const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"], a[href*="/reel/"], a[href*="/p/"], a[href*="/watch"], a#thumbnail')
+    const url = link?.href ?? ''
+    return { views, url }
+  })
+
+  // Sort for export
+  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+
+  itemsWithViews.forEach((v, i) => {
+    rows.push([i + 1, v.views ?? 0, v.url])
+  })
+
+  const csv = rows.map(r => r.join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `orianna-${platform}-export.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function injectToolbar() {
+  if (oriannaToolbarInjected) return
+  if (document.getElementById('orianna-toolbar')) return
+
+  const grid = findGridAndItems()
+  if (!grid) return
+
+  oriannaToolbarInjected = true
+
+  const bar = document.createElement('div')
+  bar.id = 'orianna-toolbar'
+  bar.innerHTML = `
+    <style>
+      #orianna-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        margin: 12px 0;
+        background: #18181b;
+        border: 1px solid #27272a;
+        border-radius: 10px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13px;
+        color: #fafafa;
+        z-index: 9999;
+        flex-wrap: wrap;
       }
+      #orianna-toolbar .ori-logo {
+        font-weight: 700;
+        font-size: 14px;
+        color: #818cf8;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+      }
+      #orianna-toolbar .ori-sep {
+        width: 1px;
+        height: 20px;
+        background: #27272a;
+      }
+      #orianna-toolbar select {
+        background: #09090b;
+        border: 1px solid #3f3f46;
+        border-radius: 6px;
+        color: #fafafa;
+        padding: 5px 8px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      #orianna-toolbar button {
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+      #orianna-toolbar .ori-sort-btn {
+        background: #6366f1;
+        color: #fff;
+      }
+      #orianna-toolbar .ori-sort-btn:hover { background: #4f46e5; }
+      #orianna-toolbar .ori-reset-btn {
+        background: transparent;
+        color: #a1a1aa;
+        border: 1px solid #27272a;
+      }
+      #orianna-toolbar .ori-reset-btn:hover { background: #27272a; color: #fafafa; }
+      #orianna-toolbar .ori-export-btn {
+        background: transparent;
+        color: #4ade80;
+        border: 1px solid #27272a;
+      }
+      #orianna-toolbar .ori-export-btn:hover { background: #27272a; }
+      #orianna-toolbar .ori-status {
+        font-size: 11px;
+        color: #71717a;
+        margin-left: auto;
+      }
+    </style>
+    <span class="ori-logo">Orianna</span>
+    <span class="ori-sep"></span>
+    <span style="font-size:12px;color:#a1a1aa">Show top</span>
+    <select id="ori-count">
+      <option value="10">10</option>
+      <option value="25" selected>25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    <button class="ori-sort-btn" id="ori-sort">Sort by most views</button>
+    <button class="ori-reset-btn" id="ori-reset">Reset</button>
+    <button class="ori-export-btn" id="ori-export">Export CSV</button>
+    <span class="ori-status" id="ori-status">${grid.items.length} videos loaded</span>
+  `
+
+  // Insert toolbar above the grid container
+  grid.container.parentElement.insertBefore(bar, grid.container)
+
+  // Wire events
+  document.getElementById('ori-sort').addEventListener('click', () => {
+    const count = parseInt(document.getElementById('ori-count').value)
+    const result = doSort(count)
+    const statusEl = document.getElementById('ori-status')
+    if (result.success) {
+      statusEl.textContent = `Showing top ${result.sorted} of ${result.total} by views`
+      statusEl.style.color = '#4ade80'
+    } else {
+      statusEl.textContent = result.message
+      statusEl.style.color = '#ef4444'
     }
-    return { el: item, views }
   })
 
-  return applySortAndLimit(itemsWithViews, count)
-}
-
-function sortYouTubeGrid(count) {
-  const container = document.querySelector(
-    '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
-  )
-  if (!container) return { success: false, message: 'Could not find video grid' }
-
-  const items = [...container.querySelectorAll(
-    ':scope > ytd-rich-grid-media, :scope > ytd-rich-item-renderer, :scope > ytd-grid-video-renderer'
-  )]
-  if (items.length === 0) return { success: false, message: 'No videos found' }
-
-  const itemsWithViews = items.map(item => {
-    let views = null
-    const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
-    if (metaLine) views = parseNumber(metaLine.textContent)
-    return { el: item, views }
+  document.getElementById('ori-reset').addEventListener('click', () => {
+    doReset()
+    const statusEl = document.getElementById('ori-status')
+    const grid = findGridAndItems()
+    statusEl.textContent = grid ? `${grid.items.length} videos loaded — default order` : 'Reset'
+    statusEl.style.color = '#71717a'
   })
 
-  return applySortAndLimit(itemsWithViews, count)
+  document.getElementById('ori-export').addEventListener('click', () => {
+    doExportCSV()
+    const statusEl = document.getElementById('ori-status')
+    statusEl.textContent = 'CSV exported!'
+    statusEl.style.color = '#4ade80'
+  })
 }
+
+// Auto-inject toolbar when on a profile page
+function tryInjectToolbar() {
+  const page = extractCurrentPage()
+  if (page?.pageType === 'profile') {
+    // Small delay to let the grid render
+    setTimeout(() => injectToolbar(), 500)
+  }
+}
+
+// Run on load and on URL changes (SPA navigation)
+tryInjectToolbar()
+
+// Watch for SPA navigation (TikTok, Instagram, YouTube are all SPAs)
+let lastUrl = window.location.href
+const urlObserver = new MutationObserver(() => {
+  if (window.location.href !== lastUrl) {
+    lastUrl = window.location.href
+    oriannaToolbarInjected = false
+    oriannaOriginalOrder = null
+    // Remove old toolbar if it exists
+    document.getElementById('orianna-toolbar')?.remove()
+    setTimeout(() => tryInjectToolbar(), 1000)
+  }
+})
+urlObserver.observe(document.body, { childList: true, subtree: true })
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -612,7 +778,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ data })
   }
   if (msg.type === 'SORT_GRID') {
-    const result = sortPageGrid(msg.count ?? 25)
+    const result = doSort(msg.count ?? 25)
     sendResponse(result)
   }
   return true
