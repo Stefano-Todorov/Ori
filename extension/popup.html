@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      width: 320px;
+      width: 340px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 13px;
       background: #09090b;
@@ -25,8 +25,8 @@
       border-bottom: 1px solid #27272a;
     }
     .logo { font-weight: 700; font-size: 15px; letter-spacing: -0.3px; }
-    .user-email { font-size: 11px; color: #71717a; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .logout-btn { font-size: 11px; color: #71717a; cursor: pointer; background: none; border: none; color: #71717a; }
+    .user-email { font-size: 11px; color: #71717a; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-btn { font-size: 11px; cursor: pointer; background: none; border: none; color: #71717a; }
     .logout-btn:hover { color: #ef4444; }
 
     /* Login form */
@@ -42,35 +42,46 @@
       border: 1px solid #27272a;
       border-radius: 8px;
     }
-    .detected-label { font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-    .detected-platform { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .detected-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
     .platform-badge {
-      font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
-      background: #27272a; color: #a1a1aa;
+      font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+      background: #27272a; color: #a1a1aa; text-transform: uppercase;
     }
-    .detected-handle { font-size: 12px; color: #a1a1aa; }
-    .stats-row { display: flex; gap: 12px; margin-bottom: 6px; }
-    .stat { }
+    .detected-handle { font-size: 12px; color: #e4e4e7; font-weight: 500; }
+    .competitor-tag {
+      font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+      background: rgba(99, 102, 241, 0.15); color: #818cf8; text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .stats-row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
     .stat-num { font-size: 13px; font-weight: 600; }
+    .stat-num.eng { color: #fbbf24; }
     .stat-label { font-size: 10px; color: #71717a; }
-    .detected-caption { font-size: 11px; color: #a1a1aa; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .audio-row { font-size: 11px; color: #71717a; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .tracked-info { font-size: 11px; color: #818cf8; margin-bottom: 6px; }
+
+    .detected-caption { font-size: 11px; color: #a1a1aa; line-height: 1.4; margin-bottom: 4px; }
+
+    .hashtag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+    .hashtag { font-size: 10px; color: #6366f1; background: rgba(99, 102, 241, 0.1); padding: 1px 5px; border-radius: 3px; }
+
+    .audio-row { font-size: 11px; color: #71717a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* Not on a post */
     .no-post {
-      padding: 20px 14px;
+      padding: 24px 14px;
       text-align: center;
       color: #71717a;
       font-size: 12px;
       line-height: 1.5;
     }
 
-    /* Actions */
-    .actions { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+    /* Notes */
+    .notes-row { padding: 0 14px; margin-bottom: 4px; }
 
-    /* Competitor selector */
-    .competitor-row { display: flex; gap: 6px; align-items: center; }
-    .competitor-label { font-size: 11px; color: #71717a; white-space: nowrap; }
+    /* Actions */
+    .actions { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 6px; }
 
     /* Ideas result */
     .ideas-result { padding: 10px 14px 14px; }
@@ -102,29 +113,24 @@
       font-weight: 500;
       cursor: pointer;
       border: none;
-      transition: opacity 0.15s;
+      transition: all 0.15s;
     }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-primary { background: #6366f1; color: #fff; }
     .btn-primary:hover:not(:disabled) { background: #4f46e5; }
     .btn-outline { background: transparent; color: #fafafa; border: 1px solid #27272a; }
-    .btn-outline:hover:not(:disabled) { background: #18181b; }
-    .btn-ai { background: #18181b; color: #fafafa; border: 1px solid #27272a; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-ai:hover:not(:disabled) { border-color: #6366f1; color: #a5b4fc; }
-    .btn-link { background: none; border: none; color: #6366f1; font-size: 12px; cursor: pointer; padding: 4px 0; text-align: center; width: 100%; }
+    .btn-outline:hover:not(:disabled) { background: #18181b; border-color: #3f3f46; }
+    .btn-ai { background: linear-gradient(135deg, #312e81, #1e1b4b); color: #c7d2fe; border: 1px solid #4338ca; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-ai:hover:not(:disabled) { border-color: #6366f1; color: #e0e7ff; }
+    .btn-link { background: none; border: none; color: #6366f1; font-size: 12px; cursor: pointer; padding: 4px 0; text-align: center; width: 100%; text-decoration: none; display: block; }
 
     .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .error-msg { font-size: 11px; color: #ef4444; text-align: center; padding: 4px 0; }
-    .success-msg { font-size: 11px; color: #4ade80; text-align: center; padding: 4px 0; }
+    .error-msg { font-size: 11px; color: #ef4444; text-align: center; padding: 2px 0; }
+    .success-msg { font-size: 11px; color: #4ade80; text-align: center; padding: 2px 0; }
 
-    .divider { height: 1px; background: #27272a; margin: 4px 0; }
-
-    .section-label {
-      font-size: 10px; color: #52525b; text-transform: uppercase;
-      letter-spacing: 0.06em; padding: 0 14px; margin-top: 4px;
-    }
+    .divider { height: 1px; background: #27272a; margin: 2px 0; }
   </style>
 </head>
 <body>

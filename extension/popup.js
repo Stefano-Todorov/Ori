@@ -1,6 +1,6 @@
 // Orianna popup script
 
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwb3dldGtrbXBwYWZmcWJndnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDY2MTYsImV4cCI6MjA4ODMyMjYxNn0.fpFGFag1jQrP7ZWYlRgILOC7LuAg8nCDZTGGPciGkCM' // set this
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwb3dldGtrbXBwYWZmcWJndnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDY2MTYsImV4cCI6MjA4ODMyMjYxNn0.fpFGFag1jQrP7ZWYlRgILOC7LuAg8nCDZTGGPciGkCM'
 const ORIANNA_URL = 'https://ori-nine.vercel.app'
 
 const app = document.getElementById('app')
@@ -8,15 +8,16 @@ const app = document.getElementById('app')
 // ─── State ──────────────────────────────────────────────────────────────────
 
 let state = {
-  auth: null,         // { isLoggedIn, email }
-  postData: null,     // extracted from content script
-  competitors: [],    // from API
-  selectedCompetitor: '',
-  view: 'loading',   // 'loading' | 'login' | 'main' | 'ideas'
+  auth: null,
+  postData: null,
+  competitors: [],
+  matchedCompetitor: null,
+  view: 'loading',
   ideas: [],
-  saving: null,       // 'swipe' | 'competitor' | 'ideas' | null
-  messages: {},       // { swipe?: string, competitor?: string, ideas?: string }
+  saving: null,
+  messages: {},
   errors: {},
+  notes: '',
 }
 
 function setState(patch) {
@@ -27,7 +28,6 @@ function setState(patch) {
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 async function init() {
-  // 1. Check auth
   const auth = await chrome.runtime.sendMessage({ type: 'GET_AUTH' })
   if (!auth.isLoggedIn) {
     setState({ view: 'login', auth })
@@ -35,7 +35,6 @@ async function init() {
   }
   setState({ auth })
 
-  // 2. Get page data from content script
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   let postData = null
   try {
@@ -43,19 +42,20 @@ async function init() {
     postData = result?.data ?? null
   } catch {}
 
-  // 3. Load context (competitors list)
   let competitors = []
   try {
     const ctx = await chrome.runtime.sendMessage({ type: 'GET_CONTEXT' })
     competitors = ctx.competitors ?? []
   } catch {}
 
-  setState({
-    view: 'main',
-    postData,
-    competitors,
-    selectedCompetitor: competitors[0]?.handle ?? '',
-  })
+  // Auto-detect competitor match by handle (case-insensitive)
+  let matchedCompetitor = null
+  if (postData?.handle) {
+    const h = postData.handle.toLowerCase()
+    matchedCompetitor = competitors.find(c => c.handle.toLowerCase() === h) ?? null
+  }
+
+  setState({ view: 'main', postData, competitors, matchedCompetitor })
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -63,10 +63,7 @@ async function init() {
 async function handleLogin(email, password) {
   setState({ errors: { login: null }, saving: 'login' })
   const result = await chrome.runtime.sendMessage({
-    type: 'LOGIN',
-    email,
-    password,
-    anonKey: SUPABASE_ANON_KEY,
+    type: 'LOGIN', email, password, anonKey: SUPABASE_ANON_KEY,
   })
   setState({ saving: null })
   if (result.error) {
@@ -87,39 +84,49 @@ async function handleSaveSwipe() {
   setState({ saving: 'swipe', errors: {}, messages: {} })
   const result = await chrome.runtime.sendMessage({
     type: 'SAVE_POST',
-    payload: { type: 'swipe', ...state.postData },
+    payload: { type: 'swipe', notes: state.notes, ...state.postData },
   })
   setState({ saving: null })
-  if (result.error) setState({ errors: { swipe: result.error } })
-  else setState({ messages: { swipe: '✓ Saved to Swipe File' } })
+  if (result.error) {
+    if (result.duplicate) setState({ messages: { swipe: 'Already saved' } })
+    else setState({ errors: { swipe: result.error } })
+  } else {
+    setState({ messages: { swipe: 'Saved to Swipe File' } })
+  }
 }
 
 async function handleSaveCompetitor() {
   if (!state.postData) return
   setState({ saving: 'competitor', errors: {}, messages: {} })
-  const handle = state.selectedCompetitor || state.postData.handle
+  const handle = state.postData.handle
   const result = await chrome.runtime.sendMessage({
     type: 'SAVE_POST',
-    payload: { type: 'competitor', competitorHandle: handle, ...state.postData },
+    payload: { type: 'competitor', handle, notes: state.notes, ...state.postData },
   })
   setState({ saving: null })
-  if (result.error) setState({ errors: { competitor: result.error } })
-  else setState({ messages: { competitor: '✓ Saved to Competitors' } })
+  if (result.error) {
+    if (result.duplicate) setState({ messages: { competitor: 'Already tracked' } })
+    else setState({ errors: { competitor: result.error } })
+  } else {
+    const msg = state.matchedCompetitor
+      ? `Saved to @${handle}`
+      : `Added @${handle} as competitor + saved`
+    setState({ messages: { competitor: msg } })
+  }
 }
 
 async function handleGetIdeas() {
   if (!state.postData) return
   setState({ saving: 'ideas', errors: {}, messages: {} })
   const result = await chrome.runtime.sendMessage({
-    type: 'GET_IDEAS',
-    postData: state.postData,
+    type: 'GET_IDEAS', postData: state.postData,
   })
   setState({ saving: null })
   if (result.error) setState({ errors: { ideas: result.error } })
   else setState({ view: 'ideas', ideas: result.ideas ?? [] })
 }
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n) {
   if (n == null) return null
@@ -127,6 +134,17 @@ function fmt(n) {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return n.toString()
 }
+
+function engRate(views, likes) {
+  if (!views || views === 0) return null
+  return ((likes || 0) / views * 100).toFixed(1)
+}
+
+function escHtml(str) {
+  return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+// ─── Render ──────────────────────────────────────────────────────────────────
 
 function render() {
   if (state.view === 'loading') {
@@ -176,10 +194,10 @@ function render() {
         <span class="user-email">${state.auth?.email ?? ''}</span>
       </div>
       <div class="ideas-result">
-        <h3>✓ ${state.ideas.length} ideas saved to Orianna</h3>
+        <h3>${state.ideas.length} ideas saved to Orianna</h3>
         ${ideasHtml}
-        <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board →</a>
-        <button class="btn btn-outline" id="back-btn" style="margin-top:6px">← Back</button>
+        <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board</a>
+        <button class="btn btn-outline" id="back-btn" style="margin-top:6px">Back</button>
       </div>
     `
     document.getElementById('back-btn').addEventListener('click', () => setState({ view: 'main' }))
@@ -189,24 +207,34 @@ function render() {
   // Main view
   const p = state.postData
   const hasPost = !!p
+  const er = hasPost ? engRate(p.views, p.likes) : null
+  const mc = state.matchedCompetitor
 
   const detectedHtml = hasPost ? `
     <div class="detected">
-      <div class="detected-label">Detected post</div>
-      <div class="detected-platform">
+      <div class="detected-row">
         <span class="platform-badge">${p.platform}</span>
         ${p.handle ? `<span class="detected-handle">@${p.handle}</span>` : ''}
+        ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
       </div>
+
       ${(p.views || p.likes || p.comments) ? `
         <div class="stats-row">
           ${p.views != null ? `<div class="stat"><div class="stat-num">${fmt(p.views)}</div><div class="stat-label">views</div></div>` : ''}
           ${p.likes != null ? `<div class="stat"><div class="stat-num">${fmt(p.likes)}</div><div class="stat-label">likes</div></div>` : ''}
           ${p.comments != null ? `<div class="stat"><div class="stat-num">${fmt(p.comments)}</div><div class="stat-label">comments</div></div>` : ''}
           ${p.shares != null ? `<div class="stat"><div class="stat-num">${fmt(p.shares)}</div><div class="stat-label">shares</div></div>` : ''}
+          ${er ? `<div class="stat"><div class="stat-num eng">${er}%</div><div class="stat-label">eng rate</div></div>` : ''}
         </div>
       ` : ''}
-      ${p.caption ? `<div class="detected-caption">${escHtml(p.caption)}</div>` : ''}
-      ${p.audio ? `<div class="audio-row">♪ ${escHtml(p.audio)}</div>` : ''}
+
+      ${mc ? `<div class="tracked-info">${mc.postCount} post${mc.postCount !== 1 ? 's' : ''} tracked${mc.platforms.length > 1 ? ` across ${mc.platforms.join(', ')}` : ''}</div>` : ''}
+
+      ${p.caption ? `<div class="detected-caption">${escHtml(p.caption.length > 120 ? p.caption.slice(0, 120) + '...' : p.caption)}</div>` : ''}
+
+      ${p.hashtags?.length ? `<div class="hashtag-row">${p.hashtags.slice(0, 8).map(h => `<span class="hashtag">#${escHtml(h)}</span>`).join('')}</div>` : ''}
+
+      ${p.audio ? `<div class="audio-row">&#9834; ${escHtml(p.audio)}</div>` : ''}
     </div>
   ` : `
     <div class="no-post">
@@ -214,9 +242,9 @@ function render() {
     </div>
   `
 
-  const competitorOptions = state.competitors
-    .map(c => `<option value="${c.handle}" ${state.selectedCompetitor === c.handle ? 'selected' : ''}>@${c.handle} (${c.platform})</option>`)
-    .join('')
+  const competitorLabel = mc
+    ? `Save to @${p.handle}`
+    : p?.handle ? `Track @${p.handle} + Save` : 'Track as Competitor'
 
   app.innerHTML = `
     <div class="header">
@@ -230,6 +258,10 @@ function render() {
     ${detectedHtml}
 
     ${hasPost ? `
+      <div class="notes-row">
+        <input id="notes-input" type="text" placeholder="Add a note (optional)" value="${escHtml(state.notes)}" />
+      </div>
+
       <div class="actions">
         <button class="btn btn-outline" id="swipe-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'swipe' ? '<span class="spinner"></span> Saving...' : '+ Save to Swipe File'}
@@ -237,20 +269,8 @@ function render() {
         ${state.messages.swipe ? `<div class="success-msg">${state.messages.swipe}</div>` : ''}
         ${state.errors.swipe ? `<div class="error-msg">${state.errors.swipe}</div>` : ''}
 
-        <div class="divider"></div>
-
-        <div class="competitor-row">
-          <span class="competitor-label">Competitor:</span>
-          <select id="competitor-select" style="flex:1">
-            ${competitorOptions}
-            <option value="__custom__">Enter handle...</option>
-          </select>
-        </div>
-        <div id="custom-handle-wrap" style="display:none">
-          <input id="custom-handle" type="text" placeholder="@handle (without @)" />
-        </div>
         <button class="btn btn-outline" id="competitor-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'competitor' ? '<span class="spinner"></span> Saving...' : '+ Track as Competitor Post'}
+          ${state.saving === 'competitor' ? '<span class="spinner"></span> Saving...' : competitorLabel}
         </button>
         ${state.messages.competitor ? `<div class="success-msg">${state.messages.competitor}</div>` : ''}
         ${state.errors.competitor ? `<div class="error-msg">${state.errors.competitor}</div>` : ''}
@@ -258,7 +278,7 @@ function render() {
         <div class="divider"></div>
 
         <button class="btn btn-ai" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating ideas...' : '✦ Get Video Ideas'}
+          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating ideas...' : 'Get Video Ideas'}
         </button>
         ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
       </div>
@@ -271,27 +291,10 @@ function render() {
     document.getElementById('swipe-btn')?.addEventListener('click', handleSaveSwipe)
     document.getElementById('competitor-btn')?.addEventListener('click', handleSaveCompetitor)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
-
-    const select = document.getElementById('competitor-select')
-    const customWrap = document.getElementById('custom-handle-wrap')
-    select?.addEventListener('change', (e) => {
-      if (e.target.value === '__custom__') {
-        customWrap.style.display = 'block'
-        setState({ selectedCompetitor: '' })
-      } else {
-        customWrap.style.display = 'none'
-        setState({ selectedCompetitor: e.target.value })
-      }
-    })
-
-    document.getElementById('custom-handle')?.addEventListener('input', (e) => {
-      setState({ selectedCompetitor: e.target.value.replace('@', '') })
+    document.getElementById('notes-input')?.addEventListener('input', (e) => {
+      state.notes = e.target.value
     })
   }
-}
-
-function escHtml(str) {
-  return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 // Start
