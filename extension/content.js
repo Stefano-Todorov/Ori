@@ -480,7 +480,6 @@ function getViewsFromItem(item) {
 
 function findGridAndItems() {
   const host = window.location.hostname
-  const url = window.location.href
 
   if (host.includes('youtube.com')) {
     const container = document.querySelector(
@@ -494,29 +493,31 @@ function findGridAndItems() {
     return { container, items, platform: 'youtube' }
   }
 
-  let linkSel, platform
   if (host.includes('tiktok.com')) {
-    // Filter links to current profile handle only (exclude sidebar/recommendations)
-    const handleMatch = url.match(/tiktok\.com\/@([^/?]+)/)
-    if (handleMatch) {
-      const handle = handleMatch[1]
-      linkSel = `a[href*="/@${handle}/video/"], a[href*="/@${handle}/photo/"]`
-    } else {
-      linkSel = 'a[href*="/video/"], a[href*="/photo/"]'
+    // Primary: use TikTok's data-e2e attribute (most reliable)
+    const container = document.querySelector('[data-e2e="user-post-item-list"]')
+    if (container) {
+      const items = [...container.children].filter(child =>
+        child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+      )
+      if (items.length >= 2) return { container, items, platform: 'tiktok' }
     }
-    platform = 'tiktok'
-  } else if (host.includes('instagram.com')) {
-    linkSel = 'a[href*="/reel/"], a[href*="/p/"]'
-    platform = 'instagram'
-  } else {
-    return null
+    // Fallback: shared-parent algorithm with all video links
+    return findGridBySharedParent('a[href*="/video/"], a[href*="/photo/"]', 'tiktok')
   }
 
-  let links = [...document.querySelectorAll(linkSel)]
+  if (host.includes('instagram.com')) {
+    return findGridBySharedParent('a[href*="/reel/"], a[href*="/p/"]', 'instagram')
+  }
+
+  return null
+}
+
+// Shared-parent algorithm: walk up from links to find grid container
+function findGridBySharedParent(linkSel, platform) {
+  const links = [...document.querySelectorAll(linkSel)]
   if (links.length < 2) return null
 
-  // Strategy: walk up from each link at increasing depths.
-  // Find the depth where all ancestors share the same parent = grid level.
   for (let depth = 1; depth <= 10; depth++) {
     const ancestors = links.map(link => {
       let el = link
@@ -533,57 +534,53 @@ function findGridAndItems() {
       }
     }
   }
-
-  // TikTok fallback: use data-e2e attribute
-  if (platform === 'tiktok') {
-    const container = document.querySelector('[data-e2e="user-post-item-list"]')
-    if (container) {
-      const items = [...container.children].filter(child =>
-        child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
-      )
-      if (items.length >= 2) return { container, items, platform }
-    }
-  }
-
   return null
 }
 
-// Instagram oembed API — fetch view counts for reel URLs
-let igViewCache = new Map() // url → views (cached across sorts)
+// Instagram — fetch view counts via internal API
+let igViewCache = new Map() // shortcode → play_count (cached across sorts)
 
 async function fetchInstagramViews(items) {
-  // Extract reel URLs from grid items
-  const urlMap = new Map() // url → item element
+  // Extract shortcodes from reel/post URLs in grid items
+  const itemShortcodes = [] // [{item, shortcode, url}]
   for (const item of items) {
     const link = item.querySelector('a[href*="/reel/"], a[href*="/p/"]')
-    if (link?.href) urlMap.set(link.href, item)
+    if (!link?.href) continue
+    // Extract shortcode: /reel/ABC123/ or /p/ABC123/
+    const m = link.href.match(/\/(reel|p)\/([^/?]+)/)
+    if (m) itemShortcodes.push({ item, shortcode: m[2], url: link.href })
   }
 
-  // Only fetch URLs we haven't cached
-  const toFetch = [...urlMap.keys()].filter(u => !igViewCache.has(u))
-
-  // Fetch in batches of 5 with small delay
-  for (let i = 0; i < toFetch.length; i += 5) {
-    const batch = toFetch.slice(i, i + 5)
-    await Promise.all(batch.map(async (postUrl) => {
+  // If cache is empty, fetch profile data from Instagram's internal API
+  if (igViewCache.size === 0) {
+    const handle = window.location.pathname.match(/\/([a-zA-Z0-9._]+)/)?.[1]
+    if (handle) {
       try {
-        const res = await fetch(`https://www.instagram.com/api/v1/oembed/?url=${encodeURIComponent(postUrl)}`)
+        const res = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${handle}`, {
+          headers: { 'X-IG-App-ID': '936619743392459' },
+        })
         if (res.ok) {
           const data = await res.json()
-          // oembed returns thumbnail_width/height and author info
-          // view count may be in the title or we need to extract from HTML
-          // The HTML field contains an embedded post with view data
-          igViewCache.set(postUrl, data.view_count ?? data.video_view_count ?? null)
+          // Extract media from the profile response
+          const edges = data?.data?.user?.edge_owner_to_timeline_media?.edges
+            ?? data?.data?.user?.edge_felix_video_timeline?.edges
+            ?? []
+          for (const edge of edges) {
+            const node = edge.node
+            const sc = node?.shortcode
+            if (sc) {
+              igViewCache.set(sc, node.video_view_count ?? node.play_count ?? null)
+            }
+          }
         }
       } catch {}
-    }))
-    if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 200))
+    }
   }
 
   // Build views map: item element → views
   const viewsMap = new Map()
-  for (const [postUrl, item] of urlMap) {
-    viewsMap.set(item, igViewCache.get(postUrl) ?? null)
+  for (const { item, shortcode } of itemShortcodes) {
+    viewsMap.set(item, igViewCache.get(shortcode) ?? null)
   }
   return viewsMap
 }
