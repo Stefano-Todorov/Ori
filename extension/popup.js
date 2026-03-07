@@ -18,8 +18,7 @@ let state = {
   messages: {},
   errors: {},
   notes: '',
-  profileSort: 'views-desc',
-  savedVideos: new Set(), // track which profile videos have been saved
+  sortStatus: null, // result message after sorting
 }
 
 function setState(patch) {
@@ -148,21 +147,19 @@ async function handleAddCompetitor() {
   }
 }
 
-async function handleSaveVideo(video, index) {
-  const result = await chrome.runtime.sendMessage({
-    type: 'SAVE_POST',
-    payload: {
-      type: 'swipe',
-      platform: state.postData.platform,
-      url: video.url,
-      caption: video.title || null,
-      views: video.views ?? 0,
-      handle: state.postData.handle,
-    },
-  })
-  if (!result.error) {
-    state.savedVideos.add(index)
-    render()
+async function handleSortGrid(order) {
+  setState({ saving: 'sorting', sortStatus: null })
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, { type: 'SORT_GRID', order })
+    setState({ saving: null })
+    if (result.success) {
+      setState({ sortStatus: `Sorted ${result.sorted} videos by views` })
+    } else {
+      setState({ sortStatus: result.message || 'Could not sort grid' })
+    }
+  } catch {
+    setState({ saving: null, sortStatus: 'Could not sort — try refreshing the page' })
   }
 }
 
@@ -182,16 +179,6 @@ function engRate(views, likes) {
 
 function escHtml(str) {
   return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
-
-function getSortedVideos() {
-  const videos = [...(state.postData?.videos ?? [])]
-  if (state.profileSort === 'views-desc') {
-    videos.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-  } else if (state.profileSort === 'views-asc') {
-    videos.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
-  }
-  return videos
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────
@@ -259,21 +246,6 @@ function render() {
   if (state.view === 'profile') {
     const p = state.postData
     const mc = state.matchedCompetitor
-    const videos = getSortedVideos()
-    const hasViews = videos.some(v => v.views != null)
-
-    const videoRows = videos.map((v, i) => {
-      const isSaved = state.savedVideos.has(i)
-      return `
-        <div class="video-row">
-          <span class="vid-rank">${i + 1}</span>
-          <span class="vid-views">${hasViews ? fmt(v.views) : ''}</span>
-          <span class="vid-title">${escHtml(v.title || v.url?.split('/').pop() || '')}</span>
-          <button class="vid-open" data-url="${escHtml(v.url)}">Open</button>
-          <button class="vid-save ${isSaved ? 'saved' : ''}" data-idx="${i}">${isSaved ? 'Saved' : '+'}</button>
-        </div>
-      `
-    }).join('')
 
     app.innerHTML = `
       <div class="header">
@@ -303,57 +275,25 @@ function render() {
         </div>
       ` : ''}
 
-      ${videos.length > 0 ? `
-        <div class="video-count">${videos.length} videos found</div>
-
-        ${hasViews ? `
-          <div class="sort-bar">
-            <span class="sort-label">Sort:</span>
-            <div class="sort-pills">
-              <button class="pill ${state.profileSort === 'views-desc' ? 'active' : ''}" data-sort="views-desc">Most views</button>
-              <button class="pill ${state.profileSort === 'views-asc' ? 'active' : ''}" data-sort="views-asc">Least views</button>
-              <button class="pill ${state.profileSort === 'default' ? 'active' : ''}" data-sort="default">Default</button>
-            </div>
-          </div>
-        ` : `
-          <div class="profile-note">${p.platform === 'instagram' ? "Instagram doesn't show stats on profiles — visit individual reels" : 'No view counts available on this page'}</div>
-        `}
-
-        <div class="video-list">
-          ${videoRows}
+      <div class="actions" style="padding-top:4px">
+        <div class="sort-label" style="padding:0 0 4px;font-size:11px;color:#a1a1aa">Sort videos on this page by views:</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-outline" id="sort-desc-btn" style="flex:1" ${state.saving === 'sorting' ? 'disabled' : ''}>
+            ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Most views first'}
+          </button>
+          <button class="btn btn-outline" id="sort-asc-btn" style="flex:1" ${state.saving === 'sorting' ? 'disabled' : ''}>
+            Least views first
+          </button>
         </div>
-      ` : `
-        <div class="no-post">No videos found on this profile page.</div>
-      `}
+        ${state.sortStatus ? `<div class="success-msg">${state.sortStatus}</div>` : ''}
+      </div>
     `
 
     // Wire events
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
     document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
-
-    // Sort pills
-    document.querySelectorAll('.pill[data-sort]').forEach(pill => {
-      pill.addEventListener('click', () => {
-        state.profileSort = pill.dataset.sort
-        render()
-      })
-    })
-
-    // Open video buttons
-    document.querySelectorAll('.vid-open').forEach(btn => {
-      btn.addEventListener('click', () => {
-        chrome.tabs.create({ url: btn.dataset.url })
-      })
-    })
-
-    // Save video buttons
-    document.querySelectorAll('.vid-save:not(.saved)').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.idx)
-        const sorted = getSortedVideos()
-        handleSaveVideo(sorted[idx], idx)
-      })
-    })
+    document.getElementById('sort-desc-btn')?.addEventListener('click', () => handleSortGrid('views-desc'))
+    document.getElementById('sort-asc-btn')?.addEventListener('click', () => handleSortGrid('views-asc'))
 
     return
   }

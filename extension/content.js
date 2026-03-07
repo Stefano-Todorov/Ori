@@ -450,11 +450,146 @@ function extractCurrentPage() {
   return null
 }
 
+// ─── Sort Grid (reorder actual DOM elements) ────────────────────────────
+
+function sortPageGrid(order) {
+  const host = window.location.hostname
+
+  if (host.includes('tiktok.com')) return sortTikTokGrid(order)
+  if (host.includes('instagram.com')) return sortInstagramGrid(order)
+  if (host.includes('youtube.com')) return sortYouTubeGrid(order)
+  return { success: false, message: 'Unsupported platform' }
+}
+
+function sortTikTokGrid(order) {
+  // Find the grid container
+  const container = document.querySelector(
+    '[data-e2e="user-post-item-list"], [class*="DivVideoList"], [class*="DivThreeColumnContainer"]'
+  )
+  if (!container) return { success: false, message: 'Could not find video grid' }
+
+  const items = [...container.children]
+  if (items.length === 0) return { success: false, message: 'No videos found' }
+
+  // Extract view count from each grid item
+  const itemsWithViews = items.map(item => {
+    let views = null
+    const viewEl = item.querySelector(
+      'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"]'
+    )
+    if (viewEl) {
+      views = parseNumber(viewEl.textContent)
+    } else {
+      const spans = item.querySelectorAll('strong, span')
+      for (const s of spans) {
+        const t = s.textContent.trim()
+        if (/^\d[\d.]*[KMB]?$/i.test(t)) {
+          views = parseNumber(t)
+          break
+        }
+      }
+    }
+    return { el: item, views }
+  })
+
+  if (order === 'views-desc') {
+    itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+  } else if (order === 'views-asc') {
+    itemsWithViews.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
+  }
+
+  itemsWithViews.forEach(({ el }) => container.appendChild(el))
+
+  const withViews = itemsWithViews.filter(i => i.views != null).length
+  return { success: true, sorted: items.length, withViews }
+}
+
+function sortInstagramGrid(order) {
+  // Instagram grid — try to find the post grid container
+  const container = document.querySelector(
+    'article > div > div, main article div[style*="flex-direction: column"], div._ac7v'
+  )
+  if (!container) return { success: false, message: 'Could not find post grid' }
+
+  // Flatten grid items
+  let items = []
+  const rows = container.querySelectorAll(':scope > div > div > div')
+  if (rows.length > 3) {
+    items = [...rows]
+  } else {
+    items = [...container.querySelectorAll(':scope > div')]
+  }
+
+  if (items.length === 0) return { success: false, message: 'No posts found in grid' }
+
+  // Reels show play count overlays
+  const itemsWithViews = items.map(item => {
+    let views = null
+    const viewEls = item.querySelectorAll('span, li')
+    for (const el of viewEls) {
+      const t = el.textContent.trim()
+      if (/^[\d,.]+[KMB]?$/i.test(t) && !t.includes(':')) {
+        views = parseNumber(t)
+        break
+      }
+    }
+    return { el: item, views }
+  })
+
+  if (order === 'views-desc') {
+    itemsWithViews.sort((a, b) => (b.views ?? -1) - (a.views ?? -1))
+  } else if (order === 'views-asc') {
+    itemsWithViews.sort((a, b) => (a.views ?? Infinity) - (b.views ?? Infinity))
+  }
+
+  const parent = items[0].parentElement
+  itemsWithViews.forEach(({ el }) => parent.appendChild(el))
+
+  const withViews = itemsWithViews.filter(i => i.views != null).length
+  return { success: true, sorted: items.length, withViews }
+}
+
+function sortYouTubeGrid(order) {
+  const container = document.querySelector(
+    '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
+  )
+  if (!container) return { success: false, message: 'Could not find video grid' }
+
+  const items = [...container.querySelectorAll(
+    ':scope > ytd-rich-grid-media, :scope > ytd-rich-item-renderer, :scope > ytd-grid-video-renderer'
+  )]
+  if (items.length === 0) return { success: false, message: 'No videos found' }
+
+  const itemsWithViews = items.map(item => {
+    let views = null
+    const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
+    if (metaLine) {
+      views = parseNumber(metaLine.textContent)
+    }
+    return { el: item, views }
+  })
+
+  if (order === 'views-desc') {
+    itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+  } else if (order === 'views-asc') {
+    itemsWithViews.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
+  }
+
+  itemsWithViews.forEach(({ el }) => container.appendChild(el))
+
+  const withViews = itemsWithViews.filter(i => i.views != null).length
+  return { success: true, sorted: items.length, withViews }
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'EXTRACT') {
     const data = extractCurrentPage()
     sendResponse({ data })
+  }
+  if (msg.type === 'SORT_GRID') {
+    const result = sortPageGrid(msg.order)
+    sendResponse(result)
   }
   return true
 })
