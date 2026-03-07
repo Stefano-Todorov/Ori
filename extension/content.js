@@ -114,13 +114,18 @@ function extractTikTokProfile() {
 
   // Scrape video grid — each item has a view count overlay
   const videos = []
+  const seen = new Set()
+
+  // Method 1: Try structured grid items
   const gridItems = document.querySelectorAll(
-    '[data-e2e="user-post-item"], [data-e2e="user-post-item-list"] > div, [class*="DivItemContainer"]'
+    '[data-e2e="user-post-item"], [data-e2e="user-post-item-list"] > div, [class*="DivItemContainer"], [class*="DivVideoContainer"], [class*="ItemContainer"]'
   )
 
   gridItems.forEach(item => {
     const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
     const videoUrl = link?.href ?? null
+    if (!videoUrl || seen.has(videoUrl)) return
+    seen.add(videoUrl)
 
     // View count is typically in a strong or span overlay on the thumbnail
     const viewEl = item.querySelector(
@@ -141,10 +146,34 @@ function extractTikTokProfile() {
       }
     }
 
-    if (videoUrl) {
-      videos.push({ url: videoUrl, views, title: null })
-    }
+    videos.push({ url: videoUrl, views, title: null })
   })
+
+  // Method 2: Fallback — find all video/photo links on the page
+  if (videos.length === 0) {
+    const allLinks = document.querySelectorAll('a[href*="/video/"], a[href*="/photo/"]')
+    allLinks.forEach(link => {
+      const videoUrl = link.href
+      if (seen.has(videoUrl)) return
+      seen.add(videoUrl)
+
+      // Try to get view count from parent container
+      let views = null
+      const parent = link.closest('div')
+      if (parent) {
+        const spans = parent.querySelectorAll('strong, span')
+        for (const s of spans) {
+          const t = s.textContent.trim()
+          if (/^\d[\d.]*[KMB]?$/i.test(t)) {
+            views = parseNumber(t)
+            break
+          }
+        }
+      }
+
+      videos.push({ url: videoUrl, views, title: null })
+    })
+  }
 
   return {
     pageType: 'profile',
@@ -224,11 +253,11 @@ function extractInstagram() {
 function extractInstagramProfile() {
   const url = window.location.href
   // Skip reserved paths
-  const reserved = ['/explore', '/direct', '/accounts', '/stories', '/reels/']
+  const reserved = ['/explore', '/direct', '/accounts', '/stories']
   if (reserved.some(r => url.includes(r))) return null
 
-  // Extract handle from URL: instagram.com/username/
-  const pathMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/?/)
+  // Extract handle from URL: instagram.com/username/ or instagram.com/username/reels/
+  const pathMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)(?:\/reels)?\/?/)
   if (!pathMatch) return null
   const handle = pathMatch[1]
 
