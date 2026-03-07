@@ -128,6 +128,14 @@ async function handleMessage(msg) {
       return apiPost('/api/extension/save', msg.payload)
     }
 
+    case 'ADD_COMPETITOR': {
+      return apiPost('/api/extension/save', {
+        type: 'add-competitor',
+        handle: msg.handle,
+        platform: msg.platform,
+      })
+    }
+
     case 'GET_IDEAS': {
       // 1. Take screenshot of active tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })

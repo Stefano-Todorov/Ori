@@ -29,7 +29,7 @@ function extractHashtags(text) {
   return matches.map(h => h.slice(1))
 }
 
-// ─── TikTok ────────────────────────────────────────────────────────────────
+// ─── TikTok Video ─────────────────────────────────────────────────────────
 
 function extractTikTok() {
   const url = window.location.href
@@ -69,7 +69,6 @@ function extractTikTok() {
     '[data-e2e="collect-count"]',
   ])
 
-  // Handle from URL or DOM
   const handleMatch = url.match(/tiktok\.com\/@([^/?]+)/)
   const handle = handleMatch?.[1] ?? trySelectors([
     '[data-e2e="browse-username"]',
@@ -88,6 +87,7 @@ function extractTikTok() {
   const duration = videoEl ? Math.round(videoEl.duration) || null : null
 
   return {
+    pageType: 'video',
     platform: 'tiktok',
     url,
     handle,
@@ -103,7 +103,59 @@ function extractTikTok() {
   }
 }
 
-// ─── Instagram ─────────────────────────────────────────────────────────────
+// ─── TikTok Profile ───────────────────────────────────────────────────────
+
+function extractTikTokProfile() {
+  const url = window.location.href
+  const handleMatch = url.match(/tiktok\.com\/@([^/?]+)/)
+  if (!handleMatch) return null
+
+  const handle = handleMatch[1]
+
+  // Scrape video grid — each item has a view count overlay
+  const videos = []
+  const gridItems = document.querySelectorAll(
+    '[data-e2e="user-post-item"], [data-e2e="user-post-item-list"] > div, [class*="DivItemContainer"]'
+  )
+
+  gridItems.forEach(item => {
+    const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+    const videoUrl = link?.href ?? null
+
+    // View count is typically in a strong or span overlay on the thumbnail
+    const viewEl = item.querySelector(
+      'strong[data-e2e="video-views"], [class*="VideoCount"] strong, [class*="video-count"], span[class*="view"]'
+    )
+    let views = null
+    if (viewEl) {
+      views = parseNumber(viewEl.textContent)
+    } else {
+      // Fallback: look for any text that looks like a number with K/M suffix
+      const spans = item.querySelectorAll('strong, span')
+      for (const s of spans) {
+        const t = s.textContent.trim()
+        if (/^\d[\d.]*[KMB]?$/i.test(t)) {
+          views = parseNumber(t)
+          break
+        }
+      }
+    }
+
+    if (videoUrl) {
+      videos.push({ url: videoUrl, views, title: null })
+    }
+  })
+
+  return {
+    pageType: 'profile',
+    platform: 'tiktok',
+    url,
+    handle,
+    videos,
+  }
+}
+
+// ─── Instagram Video ──────────────────────────────────────────────────────
 
 function extractInstagram() {
   const url = window.location.href
@@ -136,7 +188,6 @@ function extractInstagram() {
     'span[class*="comment"]',
   ])
 
-  // Handle from URL or page
   const handleMatch = url.match(/instagram\.com\/(?:reel|p)\/[^/]+\/?/)
   const handleEl = document.querySelector('header a[href*="/"] span, a[role="link"] span._aacl')
   const handle = handleEl?.textContent?.trim() ??
@@ -152,6 +203,7 @@ function extractInstagram() {
   const duration = videoEl ? Math.round(videoEl.duration) || null : null
 
   return {
+    pageType: 'video',
     platform: 'instagram',
     url,
     handle,
@@ -167,7 +219,41 @@ function extractInstagram() {
   }
 }
 
-// ─── YouTube ───────────────────────────────────────────────────────────────
+// ─── Instagram Profile ────────────────────────────────────────────────────
+
+function extractInstagramProfile() {
+  const url = window.location.href
+  // Skip reserved paths
+  const reserved = ['/explore', '/direct', '/accounts', '/stories', '/reels/']
+  if (reserved.some(r => url.includes(r))) return null
+
+  // Extract handle from URL: instagram.com/username/
+  const pathMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/?/)
+  if (!pathMatch) return null
+  const handle = pathMatch[1]
+
+  // Scrape post/reel links from the grid
+  const videos = []
+  const links = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
+  const seen = new Set()
+
+  links.forEach(link => {
+    const href = link.href
+    if (seen.has(href)) return
+    seen.add(href)
+    videos.push({ url: href, views: null, title: null })
+  })
+
+  return {
+    pageType: 'profile',
+    platform: 'instagram',
+    url,
+    handle,
+    videos,
+  }
+}
+
+// ─── YouTube Video ────────────────────────────────────────────────────────
 
 function extractYouTube() {
   const url = window.location.href
@@ -187,7 +273,6 @@ function extractYouTube() {
     'ytd-video-view-count-renderer span.view-count',
   ])
 
-  // YouTube like count is tricky — it's in the aria-label
   let likes = null
   const likeBtn = document.querySelector(
     'ytd-toggle-button-renderer[is-icon-button] button[aria-label*="like"], ' +
@@ -206,7 +291,6 @@ function extractYouTube() {
     '#upload-info a',
   ])
 
-  // Duration from player
   const durationEl = document.querySelector('.ytp-time-duration')
   let duration = null
   if (durationEl) {
@@ -215,11 +299,11 @@ function extractYouTube() {
     if (parts.length === 3) duration = parts[0] * 3600 + parts[1] * 60 + parts[2]
   }
 
-  // Description (first few lines = hook context)
   const descEl = document.querySelector('#description-inline-expander, #description ytd-text-inline-expander, #snippet-text')
   const description = descEl?.innerText?.slice(0, 500) ?? null
 
   return {
+    pageType: 'video',
     platform: 'youtube',
     url,
     handle,
@@ -236,13 +320,104 @@ function extractYouTube() {
   }
 }
 
-// ─── Router ────────────────────────────────────────────────────────────────
+// ─── YouTube Profile ──────────────────────────────────────────────────────
+
+function extractYouTubeProfile() {
+  const url = window.location.href
+  // Match /@username or /c/username or /channel/ID
+  const handleMatch = url.match(/youtube\.com\/(@[^/?]+|c\/[^/?]+|channel\/[^/?]+)/)
+  if (!handleMatch) return null
+
+  const handle = handleMatch[1].replace(/^@/, '')
+
+  const videos = []
+
+  // Method 1: Try parsing ytInitialData JSON for richest data
+  try {
+    const scripts = document.querySelectorAll('script')
+    for (const script of scripts) {
+      const text = script.textContent
+      if (!text.includes('ytInitialData')) continue
+
+      const match = text.match(/var\s+ytInitialData\s*=\s*({.+?});/)
+        || text.match(/window\["ytInitialData"\]\s*=\s*({.+?});/)
+      if (!match) continue
+
+      const data = JSON.parse(match[1])
+
+      // Navigate the nested structure to find video renderers
+      function findVideos(obj) {
+        if (!obj || typeof obj !== 'object') return
+        if (obj.videoId && obj.title) {
+          const viewText = obj.viewCountText?.simpleText
+            || obj.viewCountText?.runs?.map(r => r.text).join('')
+            || obj.shortViewCountText?.simpleText
+            || null
+          videos.push({
+            url: `https://www.youtube.com/watch?v=${obj.videoId}`,
+            title: obj.title?.runs?.[0]?.text || obj.title?.simpleText || null,
+            views: parseNumber(viewText),
+          })
+          return
+        }
+        for (const key of Object.keys(obj)) {
+          if (Array.isArray(obj[key])) {
+            obj[key].forEach(item => findVideos(item))
+          } else if (typeof obj[key] === 'object') {
+            findVideos(obj[key])
+          }
+        }
+      }
+
+      findVideos(data)
+      break
+    }
+  } catch {}
+
+  // Method 2: Fallback to DOM scraping if JSON parsing didn't find enough
+  if (videos.length < 3) {
+    const renderers = document.querySelectorAll(
+      'ytd-rich-grid-media, ytd-grid-video-renderer, ytd-video-renderer'
+    )
+    renderers.forEach(el => {
+      const titleEl = el.querySelector('#video-title')
+      const link = el.querySelector('a#thumbnail, a[href*="/watch"]')
+      const metaLine = el.querySelector('#metadata-line span, .inline-metadata-item')
+
+      const videoUrl = link?.href ?? null
+      if (!videoUrl || videos.some(v => v.url === videoUrl)) return
+
+      videos.push({
+        url: videoUrl,
+        title: titleEl?.textContent?.trim() ?? null,
+        views: metaLine ? parseNumber(metaLine.textContent) : null,
+      })
+    })
+  }
+
+  return {
+    pageType: 'profile',
+    platform: 'youtube',
+    url,
+    handle,
+    videos,
+  }
+}
+
+// ─── Router ───────────────────────────────────────────────────────────────
 
 function extractCurrentPage() {
   const host = window.location.hostname
-  if (host.includes('tiktok.com')) return extractTikTok()
-  if (host.includes('instagram.com')) return extractInstagram()
-  if (host.includes('youtube.com')) return extractYouTube()
+
+  if (host.includes('tiktok.com')) {
+    return extractTikTok() || extractTikTokProfile()
+  }
+  if (host.includes('instagram.com')) {
+    return extractInstagram() || extractInstagramProfile()
+  }
+  if (host.includes('youtube.com')) {
+    return extractYouTube() || extractYouTubeProfile()
+  }
   return null
 }
 
@@ -252,5 +427,5 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     const data = extractCurrentPage()
     sendResponse({ data })
   }
-  return true // keep channel open for async
+  return true
 })

@@ -18,6 +18,8 @@ let state = {
   messages: {},
   errors: {},
   notes: '',
+  profileSort: 'views-desc',
+  savedVideos: new Set(), // track which profile videos have been saved
 }
 
 function setState(patch) {
@@ -55,7 +57,9 @@ async function init() {
     matchedCompetitor = competitors.find(c => c.handle.toLowerCase() === h) ?? null
   }
 
-  setState({ view: 'main', postData, competitors, matchedCompetitor })
+  // Route to correct view based on page type
+  const view = postData?.pageType === 'profile' ? 'profile' : 'main'
+  setState({ view, postData, competitors, matchedCompetitor })
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -126,10 +130,46 @@ async function handleGetIdeas() {
   else setState({ view: 'ideas', ideas: result.ideas ?? [] })
 }
 
+async function handleAddCompetitor() {
+  if (!state.postData?.handle) return
+  setState({ saving: 'add-competitor', errors: {}, messages: {} })
+  const result = await chrome.runtime.sendMessage({
+    type: 'ADD_COMPETITOR',
+    handle: state.postData.handle,
+    platform: state.postData.platform,
+  })
+  setState({ saving: null })
+  if (result.error) setState({ errors: { addCompetitor: result.error } })
+  else {
+    setState({
+      messages: { addCompetitor: `@${state.postData.handle} added as competitor` },
+      matchedCompetitor: { handle: state.postData.handle, platforms: [state.postData.platform], postCount: 0 },
+    })
+  }
+}
+
+async function handleSaveVideo(video, index) {
+  const result = await chrome.runtime.sendMessage({
+    type: 'SAVE_POST',
+    payload: {
+      type: 'swipe',
+      platform: state.postData.platform,
+      url: video.url,
+      caption: video.title || null,
+      views: video.views ?? 0,
+      handle: state.postData.handle,
+    },
+  })
+  if (!result.error) {
+    state.savedVideos.add(index)
+    render()
+  }
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n) {
-  if (n == null) return null
+  if (n == null) return '-'
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return n.toString()
@@ -142,6 +182,16 @@ function engRate(views, likes) {
 
 function escHtml(str) {
   return (str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function getSortedVideos() {
+  const videos = [...(state.postData?.videos ?? [])]
+  if (state.profileSort === 'views-desc') {
+    videos.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+  } else if (state.profileSort === 'views-asc') {
+    videos.sort((a, b) => (a.views ?? 0) - (b.views ?? 0))
+  }
+  return videos
 }
 
 // ─── Render ──────────────────────────────────────────────────────────────────
@@ -204,7 +254,112 @@ function render() {
     return
   }
 
-  // Main view
+  // ─── Profile View ─────────────────────────────────────────────────────
+
+  if (state.view === 'profile') {
+    const p = state.postData
+    const mc = state.matchedCompetitor
+    const videos = getSortedVideos()
+    const hasViews = videos.some(v => v.views != null)
+
+    const videoRows = videos.map((v, i) => {
+      const isSaved = state.savedVideos.has(i)
+      return `
+        <div class="video-row">
+          <span class="vid-rank">${i + 1}</span>
+          <span class="vid-views">${hasViews ? fmt(v.views) : ''}</span>
+          <span class="vid-title">${escHtml(v.title || v.url?.split('/').pop() || '')}</span>
+          <button class="vid-open" data-url="${escHtml(v.url)}">Open</button>
+          <button class="vid-save ${isSaved ? 'saved' : ''}" data-idx="${i}">${isSaved ? 'Saved' : '+'}</button>
+        </div>
+      `
+    }).join('')
+
+    app.innerHTML = `
+      <div class="header">
+        <span class="logo">Orianna</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="user-email">${state.auth?.email ?? ''}</span>
+          <button class="logout-btn" id="logout-btn">Sign out</button>
+        </div>
+      </div>
+
+      <div class="profile-header">
+        <div class="detected-row">
+          <span class="platform-badge">${p.platform}</span>
+          <span class="detected-handle">@${p.handle}</span>
+          ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
+        </div>
+        ${mc ? `<div class="tracked-info">${mc.postCount} post${mc.postCount !== 1 ? 's' : ''} tracked</div>` : ''}
+      </div>
+
+      ${!mc ? `
+        <div class="profile-actions">
+          <button class="btn btn-outline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''}>
+            ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : `Track @${p.handle} as Competitor`}
+          </button>
+          ${state.messages.addCompetitor ? `<div class="success-msg">${state.messages.addCompetitor}</div>` : ''}
+          ${state.errors.addCompetitor ? `<div class="error-msg">${state.errors.addCompetitor}</div>` : ''}
+        </div>
+      ` : ''}
+
+      ${videos.length > 0 ? `
+        <div class="video-count">${videos.length} videos found</div>
+
+        ${hasViews ? `
+          <div class="sort-bar">
+            <span class="sort-label">Sort:</span>
+            <div class="sort-pills">
+              <button class="pill ${state.profileSort === 'views-desc' ? 'active' : ''}" data-sort="views-desc">Most views</button>
+              <button class="pill ${state.profileSort === 'views-asc' ? 'active' : ''}" data-sort="views-asc">Least views</button>
+              <button class="pill ${state.profileSort === 'default' ? 'active' : ''}" data-sort="default">Default</button>
+            </div>
+          </div>
+        ` : `
+          <div class="profile-note">${p.platform === 'instagram' ? "Instagram doesn't show stats on profiles — visit individual reels" : 'No view counts available on this page'}</div>
+        `}
+
+        <div class="video-list">
+          ${videoRows}
+        </div>
+      ` : `
+        <div class="no-post">No videos found on this profile page.</div>
+      `}
+    `
+
+    // Wire events
+    document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+    document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
+
+    // Sort pills
+    document.querySelectorAll('.pill[data-sort]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        state.profileSort = pill.dataset.sort
+        render()
+      })
+    })
+
+    // Open video buttons
+    document.querySelectorAll('.vid-open').forEach(btn => {
+      btn.addEventListener('click', () => {
+        chrome.tabs.create({ url: btn.dataset.url })
+      })
+    })
+
+    // Save video buttons
+    document.querySelectorAll('.vid-save:not(.saved)').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx)
+        const sorted = getSortedVideos()
+        handleSaveVideo(sorted[idx], idx)
+      })
+    })
+
+    return
+  }
+
+  // ─── Video View (main) ────────────────────────────────────────────────
+
   const p = state.postData
   const hasPost = !!p
   const er = hasPost ? engRate(p.views, p.likes) : null

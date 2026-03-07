@@ -30,6 +30,27 @@ export async function POST(req: NextRequest) {
 
   if (!platform) return NextResponse.json({ error: 'platform is required' }, { status: 400, headers: corsHeaders })
 
+  // Add competitor only (no post) — from profile page
+  if (type === 'add-competitor' && handle) {
+    const { data: existing } = await supabase
+      .from('competitors')
+      .select('id')
+      .eq('user_id', user.id)
+      .ilike('handle', handle)
+      .limit(1)
+
+    if (!existing || existing.length === 0) {
+      await supabase.from('competitors').insert({
+        user_id: user.id,
+        handle,
+        platform,
+        display_name: handle,
+      })
+    }
+
+    return NextResponse.json({ ok: true }, { headers: corsHeaders })
+  }
+
   // Check for duplicate URL
   if (url) {
     const { data: existing } = await supabase
