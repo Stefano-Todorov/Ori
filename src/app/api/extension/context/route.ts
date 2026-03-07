@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { headers: corsHeaders })
+}
+
 // Called by Chrome extension — auth via Bearer token (Supabase JWT)
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -33,5 +42,5 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     competitors: competitors ?? [],
     profile: profile ?? {},
-  })
+  }, { headers: corsHeaders })
 }

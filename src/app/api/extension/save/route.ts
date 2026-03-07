@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { headers: corsHeaders })
+}
+
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -42,5 +51,5 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.from('posts').insert(postRow)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true }, { headers: corsHeaders })
 }

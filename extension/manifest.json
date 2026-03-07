@@ -7,7 +7,9 @@
   "host_permissions": [
     "*://*.tiktok.com/*",
     "*://*.instagram.com/*",
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "*://*.supabase.co/*",
+    "*://ori-nine.vercel.app/*"
   ],
   "action": {
     "default_popup": "popup.html",

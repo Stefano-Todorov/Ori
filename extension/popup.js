@@ -1,7 +1,7 @@
 // Orianna popup script
 
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY' // set this
-const ORIANNA_URL = 'https://YOUR_ORIANNA_DOMAIN.vercel.app' // set this
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwb3dldGtrbXBwYWZmcWJndnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDY2MTYsImV4cCI6MjA4ODMyMjYxNn0.fpFGFag1jQrP7ZWYlRgILOC7LuAg8nCDZTGGPciGkCM' // set this
+const ORIANNA_URL = 'https://ori-nine.vercel.app'
 
 const app = document.getElementById('app')
 

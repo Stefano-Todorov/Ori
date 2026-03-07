@@ -1,7 +1,8 @@
 // Orianna background service worker
 
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co' // replaced at build/install time
-const ORIANNA_API = 'https://YOUR_ORIANNA_DOMAIN.vercel.app' // replaced at build/install time
+const SUPABASE_URL = 'https://zpowetkkmppaffqbgvzq.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwb3dldGtrbXBwYWZmcWJndnpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDY2MTYsImV4cCI6MjA4ODMyMjYxNn0.fpFGFag1jQrP7ZWYlRgILOC7LuAg8nCDZTGGPciGkCM'
+const ORIANNA_API = 'https://ori-nine.vercel.app'
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
