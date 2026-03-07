@@ -480,13 +480,9 @@ function getViewsFromItem(item) {
 
 function findGridAndItems() {
   const host = window.location.hostname
+  const url = window.location.href
 
-  // Platform-specific link selectors
-  let linkSel
-  if (host.includes('tiktok.com')) linkSel = 'a[href*="/video/"], a[href*="/photo/"]'
-  else if (host.includes('instagram.com')) linkSel = 'a[href*="/reel/"], a[href*="/p/"]'
-  else if (host.includes('youtube.com')) {
-    // YouTube uses custom elements — handle separately
+  if (host.includes('youtube.com')) {
     const container = document.querySelector(
       '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
     )
@@ -497,14 +493,30 @@ function findGridAndItems() {
     if (items.length === 0) return null
     return { container, items, platform: 'youtube' }
   }
-  else return null
 
-  const links = [...document.querySelectorAll(linkSel)]
+  let linkSel, platform
+  if (host.includes('tiktok.com')) {
+    // Filter links to current profile handle only (exclude sidebar/recommendations)
+    const handleMatch = url.match(/tiktok\.com\/@([^/?]+)/)
+    if (handleMatch) {
+      const handle = handleMatch[1]
+      linkSel = `a[href*="/@${handle}/video/"], a[href*="/@${handle}/photo/"]`
+    } else {
+      linkSel = 'a[href*="/video/"], a[href*="/photo/"]'
+    }
+    platform = 'tiktok'
+  } else if (host.includes('instagram.com')) {
+    linkSel = 'a[href*="/reel/"], a[href*="/p/"]'
+    platform = 'instagram'
+  } else {
+    return null
+  }
+
+  let links = [...document.querySelectorAll(linkSel)]
   if (links.length < 2) return null
 
-  // Strategy: for each link, walk up N levels. Find the depth where all links'
-  // ancestors share the same parent — that's the grid container, and the ancestors
-  // are the grid items.
+  // Strategy: walk up from each link at increasing depths.
+  // Find the depth where all ancestors share the same parent = grid level.
   for (let depth = 1; depth <= 10; depth++) {
     const ancestors = links.map(link => {
       let el = link
@@ -512,23 +524,71 @@ function findGridAndItems() {
       return el
     }).filter(Boolean)
 
-    // Check if these ancestors share one common parent
     const parents = new Set(ancestors.map(a => a.parentElement).filter(Boolean))
     if (parents.size === 1) {
       const container = [...parents][0]
-      // Deduplicate (multiple links might resolve to the same ancestor)
       const uniqueItems = [...new Set(ancestors)]
       if (uniqueItems.length >= 2) {
-        const platform = host.includes('tiktok') ? 'tiktok' : 'instagram'
         return { container, items: uniqueItems, platform }
       }
+    }
+  }
+
+  // TikTok fallback: use data-e2e attribute
+  if (platform === 'tiktok') {
+    const container = document.querySelector('[data-e2e="user-post-item-list"]')
+    if (container) {
+      const items = [...container.children].filter(child =>
+        child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+      )
+      if (items.length >= 2) return { container, items, platform }
     }
   }
 
   return null
 }
 
-function doSort(count) {
+// Instagram oembed API — fetch view counts for reel URLs
+let igViewCache = new Map() // url → views (cached across sorts)
+
+async function fetchInstagramViews(items) {
+  // Extract reel URLs from grid items
+  const urlMap = new Map() // url → item element
+  for (const item of items) {
+    const link = item.querySelector('a[href*="/reel/"], a[href*="/p/"]')
+    if (link?.href) urlMap.set(link.href, item)
+  }
+
+  // Only fetch URLs we haven't cached
+  const toFetch = [...urlMap.keys()].filter(u => !igViewCache.has(u))
+
+  // Fetch in batches of 5 with small delay
+  for (let i = 0; i < toFetch.length; i += 5) {
+    const batch = toFetch.slice(i, i + 5)
+    await Promise.all(batch.map(async (postUrl) => {
+      try {
+        const res = await fetch(`https://www.instagram.com/api/v1/oembed/?url=${encodeURIComponent(postUrl)}`)
+        if (res.ok) {
+          const data = await res.json()
+          // oembed returns thumbnail_width/height and author info
+          // view count may be in the title or we need to extract from HTML
+          // The HTML field contains an embedded post with view data
+          igViewCache.set(postUrl, data.view_count ?? data.video_view_count ?? null)
+        }
+      } catch {}
+    }))
+    if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 200))
+  }
+
+  // Build views map: item element → views
+  const viewsMap = new Map()
+  for (const [postUrl, item] of urlMap) {
+    viewsMap.set(item, igViewCache.get(postUrl) ?? null)
+  }
+  return viewsMap
+}
+
+async function doSort(count) {
   const grid = findGridAndItems()
   if (!grid) return { success: false, message: 'No video grid found' }
 
@@ -540,11 +600,18 @@ function doSort(count) {
   }
 
   // Extract views from each item
+  let igViews = null
+  if (platform === 'instagram') {
+    igViews = await fetchInstagramViews(items)
+  }
+
   const itemsWithViews = items.map(item => {
     let views = null
     if (platform === 'youtube') {
       const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
       if (metaLine) views = parseNumber(metaLine.textContent)
+    } else if (platform === 'instagram' && igViews) {
+      views = igViews.get(item) ?? null
     } else {
       views = getViewsFromItem(item)
     }
@@ -566,7 +633,8 @@ function doSort(count) {
     container.appendChild(el)
   })
 
-  return { success: true, sorted: toShow.length, total: items.length }
+  const withViews = itemsWithViews.filter(i => i.views != null).length
+  return { success: true, sorted: toShow.length, total: items.length, withViews }
 }
 
 function doReset() {
@@ -582,18 +650,26 @@ function doReset() {
   oriannaOriginalOrder = null
 }
 
-function doExportCSV() {
+async function doExportCSV() {
   const grid = findGridAndItems()
   if (!grid) return
 
   const { items, platform } = grid
   const rows = [['#', 'Views', 'URL']]
 
+  // Fetch IG views if needed
+  let igViews = null
+  if (platform === 'instagram') {
+    igViews = await fetchInstagramViews(items)
+  }
+
   const itemsWithViews = items.map(item => {
     let views = null
     if (platform === 'youtube') {
       const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
       if (metaLine) views = parseNumber(metaLine.textContent)
+    } else if (platform === 'instagram' && igViews) {
+      views = igViews.get(item) ?? null
     } else {
       views = getViewsFromItem(item)
     }
@@ -602,7 +678,6 @@ function doExportCSV() {
     return { views, url }
   })
 
-  // Sort for export
   itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
 
   itemsWithViews.forEach((v, i) => {
@@ -720,12 +795,21 @@ function injectToolbar() {
   grid.container.parentElement.insertBefore(bar, grid.container)
 
   // Wire events
-  document.getElementById('ori-sort').addEventListener('click', () => {
+  document.getElementById('ori-sort').addEventListener('click', async () => {
     const count = parseInt(document.getElementById('ori-count').value)
-    const result = doSort(count)
     const statusEl = document.getElementById('ori-status')
+    const sortBtn = document.getElementById('ori-sort')
+
+    statusEl.textContent = grid.platform === 'instagram' ? 'Fetching view counts...' : 'Sorting...'
+    statusEl.style.color = '#818cf8'
+    sortBtn.disabled = true
+
+    const result = await doSort(count)
+
+    sortBtn.disabled = false
     if (result.success) {
-      statusEl.textContent = `Showing top ${result.sorted} of ${result.total} by views`
+      const viewInfo = result.withViews < result.total ? ` (${result.withViews} with views)` : ''
+      statusEl.textContent = `Top ${result.sorted} of ${result.total} by views${viewInfo}`
       statusEl.style.color = '#4ade80'
     } else {
       statusEl.textContent = result.message
@@ -741,9 +825,11 @@ function injectToolbar() {
     statusEl.style.color = '#71717a'
   })
 
-  document.getElementById('ori-export').addEventListener('click', () => {
-    doExportCSV()
+  document.getElementById('ori-export').addEventListener('click', async () => {
     const statusEl = document.getElementById('ori-status')
+    statusEl.textContent = 'Exporting...'
+    statusEl.style.color = '#818cf8'
+    await doExportCSV()
     statusEl.textContent = 'CSV exported!'
     statusEl.style.color = '#4ade80'
   })
@@ -768,6 +854,7 @@ const urlObserver = new MutationObserver(() => {
     lastUrl = window.location.href
     oriannaToolbarInjected = false
     oriannaOriginalOrder = null
+    igViewCache = new Map()
     // Remove old toolbar if it exists
     document.getElementById('orianna-toolbar')?.remove()
     setTimeout(() => tryInjectToolbar(), 1000)
@@ -782,8 +869,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ data })
   }
   if (msg.type === 'SORT_GRID') {
-    const result = doSort(msg.count ?? 25)
-    sendResponse(result)
+    doSort(msg.count ?? 25).then(sendResponse)
+    return true // keep channel open for async
   }
   return true
 })
