@@ -123,6 +123,43 @@ export async function updateIdeaStatus(id: string, status: 'new' | 'in_progress'
   await supabase.from('content_ideas').update({ status }).eq('id', id)
 }
 
+export async function bulkDeleteIdeas(ids: string[]) {
+  if (!ids.length) return
+  const supabase = await createClient()
+  await supabase.from('content_ideas').delete().in('id', ids)
+  revalidatePath('/dashboard/ideas')
+}
+
+export async function bulkUpdateIdeaStatus(ids: string[], status: 'new' | 'in_progress' | 'done' | 'archived') {
+  if (!ids.length) return
+  const supabase = await createClient()
+  await supabase.from('content_ideas').update({ status }).in('id', ids)
+  revalidatePath('/dashboard/ideas')
+}
+
+export async function restoreIdea(idea: {
+  idea: string
+  source?: string | null
+  hook_idea?: string | null
+  inspiration_url?: string | null
+  script_snippet?: string | null
+  cta?: string | null
+  caption?: string | null
+  difficulty?: 'easy' | 'medium' | 'hard' | null
+  video_type?: string | null
+  status?: 'new' | 'in_progress' | 'done' | 'archived'
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase.from('content_ideas').insert({
+    user_id: user.id,
+    ...idea,
+  }).select().single()
+  revalidatePath('/dashboard/ideas')
+  return data
+}
+
 export async function updateIdea(
   id: string,
   fields: {
