@@ -81,6 +81,24 @@ async function apiPost(path, body) {
   return res.json()
 }
 
+// ─── Thumbnail helper ────────────────────────────────────────────────────────
+
+async function fetchThumbnailBase64(url) {
+  if (!url) return null
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const blob = await res.blob()
+    const buf = await blob.arrayBuffer()
+    const bytes = new Uint8Array(buf)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    return btoa(binary)
+  } catch {
+    return null
+  }
+}
+
 // ─── Message handler ────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -137,30 +155,45 @@ async function handleMessage(msg) {
     }
 
     case 'GET_IDEAS': {
-      // 1. Take screenshot of active tab
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      const screenshotDataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 85 })
-      const base64 = screenshotDataUrl.split(',')[1]
-
-      // 2. Claude vision extracts stats from screenshot
-      const visionResult = await apiPost('/api/competitors/extract-vision', {
-        imageBase64: base64,
-        mediaType: 'image/jpeg',
-      })
-
-      // 3. Generate ideas from the extracted post data
-      const merged = { ...msg.postData, ...visionResult }
+      const p = msg.postData
+      const thumbB64 = await fetchThumbnailBase64(p.thumbnail)
       const ideasResult = await apiPost('/api/competitors/ideas', {
-        handle: merged.handle ?? msg.postData.handle,
-        platform: merged.platform ?? msg.postData.platform,
-        caption: merged.caption ?? msg.postData.caption,
-        hookText: merged.hook_text ?? null,
-        views: merged.views ?? msg.postData.views,
-        likes: merged.likes ?? msg.postData.likes,
-        url: msg.postData.url,
+        handle: p.handle,
+        platform: p.platform,
+        caption: p.caption,
+        hookText: p.hook_text ?? null,
+        views: p.views,
+        likes: p.likes,
+        url: p.url,
+        count: msg.count ?? 1,
+        imageBase64: thumbB64,
       })
-
       return { ideas: ideasResult.ideas ?? [] }
+    }
+
+    case 'ANALYZE_POST': {
+      const p2 = msg.postData
+      const thumbB64_2 = await fetchThumbnailBase64(p2.thumbnail)
+      const analyzeResult = await apiPost('/api/competitors/analyze', {
+        handle: p2.handle,
+        platform: p2.platform,
+        caption: p2.caption,
+        hookText: p2.hook_text ?? null,
+        views: p2.views,
+        likes: p2.likes,
+        comments: p2.comments,
+        url: p2.url,
+        imageBase64: thumbB64_2,
+      })
+      return { analysis: analyzeResult.analysis ?? '' }
+    }
+
+    case 'DOWNLOAD_VIDEO': {
+      const { videoSrc, handle, platform } = msg
+      if (!videoSrc) throw new Error('No video source available')
+      const filename = `${handle || 'video'}_${platform || 'clip'}_${Date.now()}.mp4`
+      await chrome.downloads.download({ url: videoSrc, filename })
+      return { ok: true }
     }
 
     default:
