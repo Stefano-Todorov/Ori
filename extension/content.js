@@ -1,4 +1,4 @@
-// Orianna content script — extracts post data from TikTok, Instagram, YouTube
+// Orianna content script — extracts post data from TikTok and Instagram
 
 function parseNumber(str) {
   if (!str) return null
@@ -20,6 +20,19 @@ function trySelectors(selectors) {
       if (el && el.textContent.trim()) return el.textContent.trim()
     } catch {}
   }
+  return null
+}
+
+function getThumbnail() {
+  // Try og:image first (most reliable)
+  const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content')
+  if (ogImage) return ogImage
+  // Try video poster attribute
+  const poster = document.querySelector('video')?.getAttribute('poster')
+  if (poster) return poster
+  // Try twitter:image
+  const twImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')
+  if (twImage) return twImage
   return null
 }
 
@@ -85,6 +98,7 @@ function extractTikTok() {
 
   const videoEl = document.querySelector('video')
   const duration = videoEl ? Math.round(videoEl.duration) || null : null
+  const videoSrc = videoEl?.src || videoEl?.querySelector('source')?.src || null
 
   return {
     pageType: 'video',
@@ -100,6 +114,8 @@ function extractTikTok() {
     saves: parseNumber(savesRaw),
     audio,
     duration,
+    videoSrc,
+    thumbnail: getThumbnail(),
   }
 }
 
@@ -230,6 +246,11 @@ function extractInstagram() {
 
   const videoEl = document.querySelector('video')
   const duration = videoEl ? Math.round(videoEl.duration) || null : null
+  const videoSrc = videoEl?.src || videoEl?.querySelector('source')?.src || null
+
+  // Extract shortcode for API-based video URL fetch
+  const shortcodeMatch = url.match(/\/(reel|p)\/([^/?]+)/)
+  const shortcode = shortcodeMatch?.[2] ?? null
 
   return {
     pageType: 'video',
@@ -245,7 +266,118 @@ function extractInstagram() {
     saves: null,
     audio,
     duration,
+    videoSrc,
+    shortcode,
+    thumbnail: getThumbnail(),
   }
+}
+
+// Extract best video URL from an IG media node
+function getVideoUrlFromNode(node) {
+  if (!node) return null
+  // v1 API style: video_versions array
+  const versions = node.video_versions ?? node.carousel_media?.[0]?.video_versions
+  if (versions?.length > 0) {
+    return versions.sort((a, b) => (b.width * b.height) - (a.width * a.height))[0].url
+  }
+  // GraphQL style: video_url field
+  if (node.video_url) return node.video_url
+  // Nested in media object
+  if (node.media?.video_versions?.length > 0) {
+    return node.media.video_versions.sort((a, b) => (b.width * b.height) - (a.width * a.height))[0].url
+  }
+  return null
+}
+
+// Recursively find ANY object with the matching shortcode/code that has video data
+function findVideoNode(obj, shortcode, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 8) return null
+  // Check if this node matches
+  const sc = obj.shortcode ?? obj.code
+  if (sc === shortcode) {
+    const url = getVideoUrlFromNode(obj)
+    if (url) return url
+  }
+  // Recurse into arrays and objects
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findVideoNode(item, shortcode, depth + 1)
+      if (found) return found
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      if (key.startsWith('_')) continue
+      const found = findVideoNode(obj[key], shortcode, depth + 1)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+// Convert Instagram shortcode to numeric media ID
+// Shortcodes use a custom base64 alphabet
+function shortcodeToMediaId(shortcode) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+  let id = BigInt(0)
+  for (const char of shortcode) {
+    id = id * BigInt(64) + BigInt(alphabet.indexOf(char))
+  }
+  return id.toString()
+}
+
+// Fetch direct video download URL from Instagram page data or API
+async function fetchInstagramVideoUrl(shortcode) {
+  if (!shortcode) return null
+  console.log('[Orianna] Fetching IG video URL for shortcode:', shortcode)
+
+  // Method 1: Parse embedded <script> tags on the current page
+  try {
+    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+    for (const script of scripts) {
+      try {
+        const text = script.textContent?.trim()
+        if (!text || text.length < 50 || (text[0] !== '{' && text[0] !== '[')) continue
+        const data = JSON.parse(text)
+        const url = findVideoNode(data, shortcode)
+        if (url) {
+          console.log('[Orianna] Found video URL from embedded data')
+          return url
+        }
+      } catch {}
+    }
+  } catch {}
+  console.log('[Orianna] No video URL in embedded data, trying API...')
+
+  // Method 2: Try IG API with numeric media ID (the endpoint needs numeric ID, not shortcode)
+  try {
+    const mediaId = shortcodeToMediaId(shortcode)
+    console.log('[Orianna] Converted shortcode to media ID:', mediaId)
+    const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+      headers: { 'X-IG-App-ID': '936619743392459' },
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const item = data?.items?.[0]
+      const directUrl = getVideoUrlFromNode(item)
+      if (directUrl) {
+        console.log('[Orianna] Found video URL from API')
+        return directUrl
+      }
+      // Also try deep search
+      const deepUrl = findVideoNode(data, shortcode)
+      if (deepUrl) {
+        console.log('[Orianna] Found video URL from API deep search')
+        return deepUrl
+      }
+    } else {
+      console.log('[Orianna] API returned', res.status)
+    }
+  } catch (err) {
+    console.log('[Orianna] API error:', err.message)
+  }
+
+  console.log('[Orianna] Could not find video URL for', shortcode)
+  return null
 }
 
 // ─── Instagram Profile ────────────────────────────────────────────────────
@@ -282,157 +414,6 @@ function extractInstagramProfile() {
   }
 }
 
-// ─── YouTube Video ────────────────────────────────────────────────────────
-
-function extractYouTube() {
-  const url = window.location.href
-  if (!url.includes('/watch') && !url.includes('/shorts/')) return null
-
-  const title = trySelectors([
-    'h1.ytd-watch-metadata yt-formatted-string',
-    'h1.title.ytd-video-primary-info-renderer',
-    '#title h1',
-    'h1[class*="title"]',
-  ])
-
-  const viewsRaw = trySelectors([
-    'ytd-watch-info-text span.bold.style-scope',
-    'span.view-count',
-    '#info-text span.bold',
-    'ytd-video-view-count-renderer span.view-count',
-  ])
-
-  let likes = null
-  const likeBtn = document.querySelector(
-    'ytd-toggle-button-renderer[is-icon-button] button[aria-label*="like"], ' +
-    '#segmented-like-button button[aria-label]'
-  )
-  if (likeBtn) {
-    const label = likeBtn.getAttribute('aria-label') ?? ''
-    const m = label.match(/[\d,.]+[KMB]?/)
-    if (m) likes = parseNumber(m[0])
-  }
-
-  const handle = trySelectors([
-    'ytd-channel-name #channel-name a',
-    '#owner #channel-name a',
-    'ytd-video-owner-renderer #channel-name a',
-    '#upload-info a',
-  ])
-
-  const durationEl = document.querySelector('.ytp-time-duration')
-  let duration = null
-  if (durationEl) {
-    const parts = durationEl.textContent.trim().split(':').map(Number)
-    if (parts.length === 2) duration = parts[0] * 60 + parts[1]
-    if (parts.length === 3) duration = parts[0] * 3600 + parts[1] * 60 + parts[2]
-  }
-
-  const descEl = document.querySelector('#description-inline-expander, #description ytd-text-inline-expander, #snippet-text')
-  const description = descEl?.innerText?.slice(0, 500) ?? null
-
-  return {
-    pageType: 'video',
-    platform: 'youtube',
-    url,
-    handle,
-    caption: title,
-    hashtags: extractHashtags(description),
-    views: parseNumber(viewsRaw),
-    likes,
-    comments: null,
-    shares: null,
-    saves: null,
-    audio: null,
-    duration,
-    description,
-  }
-}
-
-// ─── YouTube Profile ──────────────────────────────────────────────────────
-
-function extractYouTubeProfile() {
-  const url = window.location.href
-  // Match /@username or /c/username or /channel/ID
-  const handleMatch = url.match(/youtube\.com\/(@[^/?]+|c\/[^/?]+|channel\/[^/?]+)/)
-  if (!handleMatch) return null
-
-  const handle = handleMatch[1].replace(/^@/, '')
-
-  const videos = []
-
-  // Method 1: Try parsing ytInitialData JSON for richest data
-  try {
-    const scripts = document.querySelectorAll('script')
-    for (const script of scripts) {
-      const text = script.textContent
-      if (!text.includes('ytInitialData')) continue
-
-      const match = text.match(/var\s+ytInitialData\s*=\s*({.+?});/)
-        || text.match(/window\["ytInitialData"\]\s*=\s*({.+?});/)
-      if (!match) continue
-
-      const data = JSON.parse(match[1])
-
-      // Navigate the nested structure to find video renderers
-      function findVideos(obj) {
-        if (!obj || typeof obj !== 'object') return
-        if (obj.videoId && obj.title) {
-          const viewText = obj.viewCountText?.simpleText
-            || obj.viewCountText?.runs?.map(r => r.text).join('')
-            || obj.shortViewCountText?.simpleText
-            || null
-          videos.push({
-            url: `https://www.youtube.com/watch?v=${obj.videoId}`,
-            title: obj.title?.runs?.[0]?.text || obj.title?.simpleText || null,
-            views: parseNumber(viewText),
-          })
-          return
-        }
-        for (const key of Object.keys(obj)) {
-          if (Array.isArray(obj[key])) {
-            obj[key].forEach(item => findVideos(item))
-          } else if (typeof obj[key] === 'object') {
-            findVideos(obj[key])
-          }
-        }
-      }
-
-      findVideos(data)
-      break
-    }
-  } catch {}
-
-  // Method 2: Fallback to DOM scraping if JSON parsing didn't find enough
-  if (videos.length < 3) {
-    const renderers = document.querySelectorAll(
-      'ytd-rich-grid-media, ytd-grid-video-renderer, ytd-video-renderer'
-    )
-    renderers.forEach(el => {
-      const titleEl = el.querySelector('#video-title')
-      const link = el.querySelector('a#thumbnail, a[href*="/watch"]')
-      const metaLine = el.querySelector('#metadata-line span, .inline-metadata-item')
-
-      const videoUrl = link?.href ?? null
-      if (!videoUrl || videos.some(v => v.url === videoUrl)) return
-
-      videos.push({
-        url: videoUrl,
-        title: titleEl?.textContent?.trim() ?? null,
-        views: metaLine ? parseNumber(metaLine.textContent) : null,
-      })
-    })
-  }
-
-  return {
-    pageType: 'profile',
-    platform: 'youtube',
-    url,
-    handle,
-    videos,
-  }
-}
-
 // ─── Router ───────────────────────────────────────────────────────────────
 
 function extractCurrentPage() {
@@ -444,23 +425,10 @@ function extractCurrentPage() {
   if (host.includes('instagram.com')) {
     return extractInstagram() || extractInstagramProfile()
   }
-  if (host.includes('youtube.com')) {
-    return extractYouTube() || extractYouTubeProfile()
-  }
   return null
 }
 
-// ─── Injected Toolbar (Sort Feed style) ──────────────────────────────────
-
-let oriannaToolbarInjected = false
-let oriannaOriginalOrder = null // store original DOM order for reset
-
-function fmtNum(n) {
-  if (n == null) return '-'
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K'
-  return n.toString()
-}
+// ─── Helpers for grid metric extraction ──────────────────────────────────
 
 function getViewsFromItem(item) {
   const viewEl = item.querySelector(
@@ -481,33 +449,57 @@ function getViewsFromItem(item) {
 function findGridAndItems() {
   const host = window.location.hostname
 
-  if (host.includes('youtube.com')) {
-    const container = document.querySelector(
-      '#contents.ytd-rich-grid-renderer, #items.ytd-grid-renderer, ytd-rich-grid-renderer #contents'
-    )
-    if (!container) return null
-    const items = [...container.querySelectorAll(
-      ':scope > ytd-rich-grid-media, :scope > ytd-rich-item-renderer, :scope > ytd-grid-video-renderer'
-    )]
-    if (items.length === 0) return null
-    return { container, items, platform: 'youtube' }
-  }
-
   if (host.includes('tiktok.com')) {
     // Primary: use TikTok's data-e2e attribute (most reliable)
-    const container = document.querySelector('[data-e2e="user-post-item-list"]')
-    if (container) {
-      const items = [...container.children].filter(child =>
-        child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
-      )
-      if (items.length >= 2) return { container, items, platform: 'tiktok' }
+    const ttSelectors = [
+      '[data-e2e="user-post-item-list"]',
+      '[data-e2e="user-liked-item-list"]',
+      '[data-e2e="favorites-item-list"]',
+      'div[class*="DivVideoList"]',
+      'div[class*="three-column-container"]',
+      'div[class*="VideoList"]',
+    ]
+    for (const sel of ttSelectors) {
+      try {
+        const container = document.querySelector(sel)
+        if (!container) continue
+        const items = [...container.children].filter(child =>
+          child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+        )
+        if (items.length >= 2) return { container, items, platform: 'tiktok' }
+      } catch {}
     }
     // Fallback: shared-parent algorithm with all video links
     return findGridBySharedParent('a[href*="/video/"], a[href*="/photo/"]', 'tiktok')
   }
 
   if (host.includes('instagram.com')) {
-    return findGridBySharedParent('a[href*="/reel/"], a[href*="/p/"]', 'instagram')
+    // Instagram: don't try to detect grid structure (it's deeply nested rows).
+    // Just collect all unique post/reel links. We'll build our own sorted overlay.
+    const allLinks = [...document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')]
+    if (allLinks.length < 2) return null
+
+    const seen = new Set()
+    const links = allLinks.filter(a => {
+      const href = a.href.split('?')[0]
+      if (seen.has(href)) return false
+      seen.add(href)
+      return true
+    })
+    if (links.length < 2) return null
+
+    // Find the main grid area — walk up from links to find a container
+    // We just need a reference point to insert our overlay before
+    let gridArea = links[0]
+    for (let i = 0; i < 15; i++) {
+      if (!gridArea.parentElement) break
+      gridArea = gridArea.parentElement
+      // Stop at article or a container that holds most links
+      const linksInside = gridArea.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]').length
+      if (linksInside >= links.length * 0.8) break
+    }
+
+    return { container: gridArea, items: links, platform: 'instagram', useOverlay: true }
   }
 
   return null
@@ -537,337 +529,391 @@ function findGridBySharedParent(linkSel, platform) {
   return null
 }
 
-// Instagram — fetch view counts via internal API
-let igViewCache = new Map() // shortcode → play_count (cached across sorts)
+// Instagram — fetch metrics from embedded page data or GraphQL
+let igMetricsCache = new Map() // shortcode → { views, likes, comments }
 
-async function fetchInstagramViews(items) {
-  // Extract shortcodes from reel/post URLs in grid items
-  const itemShortcodes = [] // [{item, shortcode, url}]
+// Recursively search an object for media nodes with shortcodes
+function extractMediaNodes(obj, results = []) {
+  if (!obj || typeof obj !== 'object') return results
+  // Check if this looks like a media node
+  if (obj.shortcode && (obj.like_count != null || obj.edge_liked_by || obj.play_count || obj.video_view_count)) {
+    results.push(obj)
+    return results
+  }
+  // Check edges pattern
+  if (obj.edges && Array.isArray(obj.edges)) {
+    for (const edge of obj.edges) {
+      if (edge?.node) extractMediaNodes(edge.node, results)
+    }
+  }
+  // Check items pattern (v1 API style)
+  if (Array.isArray(obj.items)) {
+    for (const item of obj.items) {
+      if (item?.code || item?.shortcode) results.push(item)
+    }
+  }
+  // Recurse into object properties (limit depth by only checking known patterns)
+  for (const key of Object.keys(obj)) {
+    if (key === 'edge_owner_to_timeline_media' || key === 'edge_felix_video_timeline' ||
+        key === 'timeline_media' || key === 'media' || key === 'user' ||
+        key === 'data' || key === 'graphql' || key === 'result' ||
+        key === 'items' || key === 'feed_items' || key === 'sections' ||
+        key === 'xdt_api__v1__feed__user_timeline_graphql_connection') {
+      extractMediaNodes(obj[key], results)
+    }
+  }
+  return results
+}
+
+function cacheMediaNode(node) {
+  const sc = node.shortcode ?? node.code
+  if (!sc || igMetricsCache.has(sc)) return
+  igMetricsCache.set(sc, {
+    views: node.video_view_count ?? node.play_count ?? null,
+    likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
+    comments: node.comment_count ?? node.edge_media_to_comment?.count ?? null,
+    thumb: node.display_url ?? node.thumbnail_src ?? node.image_versions2?.candidates?.[0]?.url ?? null,
+  })
+}
+
+// Helper: fetch with 1 retry on failure
+async function fetchWithRetry(url, opts, retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, opts)
+      if (res.ok) return res
+      if (attempt < retries) {
+        console.log(`[Orianna] Fetch ${res.status}, retrying in 1s...`)
+        await new Promise(r => setTimeout(r, 1000))
+      }
+    } catch (err) {
+      if (attempt < retries) {
+        console.log(`[Orianna] Fetch error: ${err.message}, retrying in 1s...`)
+        await new Promise(r => setTimeout(r, 1000))
+      }
+    }
+  }
+  return null
+}
+
+async function fetchInstagramMetrics(items) {
+  const igHeaders = { 'X-IG-App-ID': '936619743392459' }
+
+  // Extract shortcodes from items (items are <a> links for IG overlay mode)
+  const itemShortcodes = []
   for (const item of items) {
-    const link = item.querySelector('a[href*="/reel/"], a[href*="/p/"]')
+    const link = item.tagName === 'A' ? item : item.querySelector('a[href*="/reel/"], a[href*="/p/"]')
     if (!link?.href) continue
-    // Extract shortcode: /reel/ABC123/ or /p/ABC123/
     const m = link.href.match(/\/(reel|p)\/([^/?]+)/)
-    if (m) itemShortcodes.push({ item, shortcode: m[2], url: link.href })
+    if (m) itemShortcodes.push({ item, shortcode: m[2] })
   }
 
-  // If cache is empty, fetch profile data from Instagram's internal API
-  if (igViewCache.size === 0) {
-    const handle = window.location.pathname.match(/\/([a-zA-Z0-9._]+)/)?.[1]
-    if (handle) {
+  if (igMetricsCache.size === 0) {
+    // Method 1: Parse embedded <script> tags (both typed and untyped)
+    console.log('[Orianna] Parsing embedded page data...')
+    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+    for (const script of scripts) {
       try {
-        const res = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${handle}`, {
-          headers: { 'X-IG-App-ID': '936619743392459' },
-        })
-        if (res.ok) {
-          const data = await res.json()
-          // Extract media from the profile response
-          const edges = data?.data?.user?.edge_owner_to_timeline_media?.edges
-            ?? data?.data?.user?.edge_felix_video_timeline?.edges
-            ?? []
-          for (const edge of edges) {
-            const node = edge.node
-            const sc = node?.shortcode
-            if (sc) {
-              igViewCache.set(sc, node.video_view_count ?? node.play_count ?? null)
+        const text = script.textContent?.trim()
+        if (!text || text.length < 50 || text[0] !== '{') continue
+        const data = JSON.parse(text)
+        const nodes = extractMediaNodes(data)
+        nodes.forEach(cacheMediaNode)
+      } catch {}
+    }
+    console.log('[Orianna] Found', igMetricsCache.size, 'posts from embedded data')
+
+    // Method 2: If still empty, try API
+    if (igMetricsCache.size === 0) {
+      const handle = window.location.pathname.match(/\/([a-zA-Z0-9._]+)/)?.[1]
+      if (handle) {
+        try {
+          console.log('[Orianna] Trying API for', handle)
+          const profileRes = await fetchWithRetry(
+            `https://www.instagram.com/api/v1/users/web_profile_info/?username=${handle}`,
+            { headers: igHeaders }
+          )
+          if (profileRes) {
+            const profileData = await profileRes.json()
+            // Also extract media from the profile response itself
+            const profileNodes = extractMediaNodes(profileData)
+            profileNodes.forEach(cacheMediaNode)
+
+            const userId = profileData?.data?.user?.id
+            if (userId) {
+              console.log('[Orianna] Got user ID:', userId, '— fetching feed...')
+              let nextMaxId = null
+              for (let page = 0; page < 5; page++) {
+                const feedUrl = `https://www.instagram.com/api/v1/feed/user/${userId}/?count=50${nextMaxId ? `&max_id=${nextMaxId}` : ''}`
+                const feedRes = await fetchWithRetry(feedUrl, { headers: igHeaders })
+                if (!feedRes) break
+                const feedData = await feedRes.json()
+                const nodes = extractMediaNodes(feedData)
+                nodes.forEach(cacheMediaNode)
+                nextMaxId = feedData.next_max_id
+                if (!feedData.more_available || !nextMaxId) break
+              }
+              console.log('[Orianna] Cached', igMetricsCache.size, 'posts from feed API')
             }
           }
+        } catch (err) {
+          console.log('[Orianna] API error:', err.message)
+        }
+      }
+    }
+  }
+
+  // Build metrics map: item element → { views, likes, comments, thumb }
+  const metricsMap = new Map()
+  const unmatched = []
+  for (const { item, shortcode } of itemShortcodes) {
+    const cached = igMetricsCache.get(shortcode)
+    if (cached) {
+      metricsMap.set(item, cached)
+    } else {
+      unmatched.push({ item, shortcode })
+      metricsMap.set(item, { views: null, likes: null, comments: null, thumb: null })
+    }
+  }
+
+  // Fallback: fetch individual post info for unmatched shortcodes (up to 5)
+  if (unmatched.length > 0 && unmatched.length <= 10) {
+    console.log('[Orianna] Fetching', Math.min(unmatched.length, 5), 'individual posts...')
+    for (const { item, shortcode } of unmatched.slice(0, 5)) {
+      try {
+        const res = await fetchWithRetry(
+          `https://www.instagram.com/api/v1/media/${shortcode}/info/`,
+          { headers: igHeaders },
+          0  // no retry for individual posts to stay fast
+        )
+        if (res) {
+          const data = await res.json()
+          const nodes = extractMediaNodes(data)
+          nodes.forEach(cacheMediaNode)
+          const cached = igMetricsCache.get(shortcode)
+          if (cached) metricsMap.set(item, cached)
         }
       } catch {}
     }
   }
 
-  // Build views map: item element → views
-  const viewsMap = new Map()
-  for (const { item, shortcode } of itemShortcodes) {
-    viewsMap.set(item, igViewCache.get(shortcode) ?? null)
-  }
-  return viewsMap
-}
-
-async function doSort(count) {
-  const grid = findGridAndItems()
-  if (!grid) return { success: false, message: 'No video grid found' }
-
-  const { container, items, platform } = grid
-
-  // Save original order for reset
-  if (!oriannaOriginalOrder) {
-    oriannaOriginalOrder = [...container.children]
-  }
-
-  // Extract views from each item
-  let igViews = null
-  if (platform === 'instagram') {
-    igViews = await fetchInstagramViews(items)
-  }
-
-  const itemsWithViews = items.map(item => {
-    let views = null
-    if (platform === 'youtube') {
-      const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
-      if (metaLine) views = parseNumber(metaLine.textContent)
-    } else if (platform === 'instagram' && igViews) {
-      views = igViews.get(item) ?? null
-    } else {
-      views = getViewsFromItem(item)
+  if (unmatched.length > 0) {
+    const stillMissing = unmatched.filter(u => {
+      const m = metricsMap.get(u.item)
+      return !m || (m.views == null && m.likes == null)
+    })
+    if (stillMissing.length > 0) {
+      console.log('[Orianna] Still unmatched:', stillMissing.map(u => u.shortcode))
     }
-    return { el: item, views }
-  })
-
-  // Sort by views descending
-  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-
-  const toShow = itemsWithViews.slice(0, count)
-  const toHide = itemsWithViews.slice(count)
-
-  toShow.forEach(({ el }) => {
-    el.style.display = ''
-    container.appendChild(el)
-  })
-  toHide.forEach(({ el }) => {
-    el.style.display = 'none'
-    container.appendChild(el)
-  })
-
-  const withViews = itemsWithViews.filter(i => i.views != null).length
-  return { success: true, sorted: toShow.length, total: items.length, withViews }
+  }
+  return metricsMap
 }
 
-function doReset() {
-  if (!oriannaOriginalOrder) return
-  const grid = findGridAndItems()
-  if (!grid) return
+// ─── TikTok — fetch metrics via MAIN world bridge ────────────────────────
 
-  // Restore original order and show all
-  oriannaOriginalOrder.forEach(el => {
-    el.style.display = ''
-    grid.container.appendChild(el)
-  })
-  oriannaOriginalOrder = null
-}
+let ttMetricsCache = new Map() // videoId → { views, likes, comments, thumb }
 
-async function doExportCSV() {
-  const grid = findGridAndItems()
-  if (!grid) return
+// Listen for data from tiktok-bridge.js (runs in MAIN world, can access page JS)
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'ORIANNA_TT_DATA' && Array.isArray(e.data.items)) {
+    for (const item of e.data.items) {
+      if (item.id) {
+        ttMetricsCache.set(item.id, {
+          views: item.views || null,
+          likes: item.likes || null,
+          comments: item.comments || null,
+          thumb: item.thumb || null,
+        })
+      }
+    }
+    console.log(`[Orianna] TikTok bridge: cached ${ttMetricsCache.size} items`)
+  }
+})
 
-  const { items, platform } = grid
-  const rows = [['#', 'Views', 'URL']]
-
-  // Fetch IG views if needed
-  let igViews = null
-  if (platform === 'instagram') {
-    igViews = await fetchInstagramViews(items)
+async function fetchTikTokMetrics() {
+  // Bridge may have already sent data on page load
+  if (ttMetricsCache.size > 0) {
+    console.log(`[Orianna] TikTok: already have ${ttMetricsCache.size} cached items`)
+    return
   }
 
-  const itemsWithViews = items.map(item => {
-    let views = null
-    if (platform === 'youtube') {
-      const metaLine = item.querySelector('#metadata-line span, .inline-metadata-item')
-      if (metaLine) views = parseNumber(metaLine.textContent)
-    } else if (platform === 'instagram' && igViews) {
-      views = igViews.get(item) ?? null
-    } else {
-      views = getViewsFromItem(item)
-    }
-    const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"], a[href*="/reel/"], a[href*="/p/"], a[href*="/watch"], a#thumbnail')
-    const url = link?.href ?? ''
-    return { views, url }
+  // Request fresh data from tiktok-bridge.js
+  console.log('[Orianna] TikTok: requesting data from bridge...')
+  window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, '*')
+
+  // Wait up to 5s for bridge response, re-request at 2s if still empty
+  await new Promise((resolve) => {
+    if (ttMetricsCache.size > 0) { resolve(); return }
+    let reRequested = false
+    const interval = setInterval(() => {
+      if (ttMetricsCache.size > 0) { clearInterval(interval); resolve() }
+    }, 150)
+    // Re-request at 2s — bridge may have scanned script tags by now
+    setTimeout(() => {
+      if (ttMetricsCache.size === 0 && !reRequested) {
+        reRequested = true
+        console.log('[Orianna] TikTok: re-requesting from bridge...')
+        window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, '*')
+      }
+    }, 2000)
+    setTimeout(() => { clearInterval(interval); resolve() }, 5000)
   })
 
-  itemsWithViews.sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+  // Fallback: parse <script> tags in content script (isolated world, can read DOM)
+  if (ttMetricsCache.size === 0) {
+    console.log('[Orianna] TikTok: bridge returned 0 items, trying script tag fallback...')
+    try {
+      const scripts = document.querySelectorAll('script[type="application/json"], script#__UNIVERSAL_DATA_FOR_REHYDRATION__')
+      for (const script of scripts) {
+        try {
+          const data = JSON.parse(script.textContent)
+          extractTikTokItemsFromJSON(data, 0)
+        } catch {}
+      }
+    } catch {}
+    console.log(`[Orianna] TikTok: after script fallback, cache has ${ttMetricsCache.size} items`)
+  }
 
-  itemsWithViews.forEach((v, i) => {
-    rows.push([i + 1, v.views ?? 0, v.url])
-  })
-
-  const csv = rows.map(r => r.join(',')).join('\n')
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `orianna-${platform}-export.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+  console.log(`[Orianna] TikTok: final cache has ${ttMetricsCache.size} items`)
 }
 
-function injectToolbar() {
-  if (oriannaToolbarInjected) return
-  if (document.getElementById('orianna-toolbar')) return
-
-  const grid = findGridAndItems()
-  if (!grid) return
-
-  oriannaToolbarInjected = true
-
-  const bar = document.createElement('div')
-  bar.id = 'orianna-toolbar'
-  bar.innerHTML = `
-    <style>
-      #orianna-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 16px;
-        margin: 12px 0;
-        background: #18181b;
-        border: 1px solid #27272a;
-        border-radius: 10px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-size: 13px;
-        color: #fafafa;
-        z-index: 9999;
-        flex-wrap: wrap;
-      }
-      #orianna-toolbar .ori-logo {
-        font-weight: 700;
-        font-size: 14px;
-        color: #818cf8;
-        letter-spacing: -0.3px;
-        white-space: nowrap;
-      }
-      #orianna-toolbar .ori-sep {
-        width: 1px;
-        height: 20px;
-        background: #27272a;
-      }
-      #orianna-toolbar select {
-        background: #09090b;
-        border: 1px solid #3f3f46;
-        border-radius: 6px;
-        color: #fafafa;
-        padding: 5px 8px;
-        font-size: 12px;
-        cursor: pointer;
-      }
-      #orianna-toolbar button {
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 500;
-        cursor: pointer;
-        border: none;
-        transition: all 0.15s;
-        white-space: nowrap;
-      }
-      #orianna-toolbar .ori-sort-btn {
-        background: #6366f1;
-        color: #fff;
-      }
-      #orianna-toolbar .ori-sort-btn:hover { background: #4f46e5; }
-      #orianna-toolbar .ori-reset-btn {
-        background: transparent;
-        color: #a1a1aa;
-        border: 1px solid #27272a;
-      }
-      #orianna-toolbar .ori-reset-btn:hover { background: #27272a; color: #fafafa; }
-      #orianna-toolbar .ori-export-btn {
-        background: transparent;
-        color: #4ade80;
-        border: 1px solid #27272a;
-      }
-      #orianna-toolbar .ori-export-btn:hover { background: #27272a; }
-      #orianna-toolbar .ori-status {
-        font-size: 11px;
-        color: #71717a;
-        margin-left: auto;
-      }
-    </style>
-    <span class="ori-logo">Orianna</span>
-    <span class="ori-sep"></span>
-    <span style="font-size:12px;color:#a1a1aa">Show top</span>
-    <select id="ori-count">
-      <option value="10">10</option>
-      <option value="25" selected>25</option>
-      <option value="50">50</option>
-      <option value="100">100</option>
-    </select>
-    <button class="ori-sort-btn" id="ori-sort">Sort by most views</button>
-    <button class="ori-reset-btn" id="ori-reset">Reset</button>
-    <button class="ori-export-btn" id="ori-export">Export CSV</button>
-    <span class="ori-status" id="ori-status">${grid.items.length} videos loaded</span>
-  `
-
-  // Insert toolbar above the grid container
-  grid.container.parentElement.insertBefore(bar, grid.container)
-
-  // Wire events
-  document.getElementById('ori-sort').addEventListener('click', async () => {
-    const count = parseInt(document.getElementById('ori-count').value)
-    const statusEl = document.getElementById('ori-status')
-    const sortBtn = document.getElementById('ori-sort')
-
-    statusEl.textContent = grid.platform === 'instagram' ? 'Fetching view counts...' : 'Sorting...'
-    statusEl.style.color = '#818cf8'
-    sortBtn.disabled = true
-
-    const result = await doSort(count)
-
-    sortBtn.disabled = false
-    if (result.success) {
-      const viewInfo = result.withViews < result.total ? ` (${result.withViews} with views)` : ''
-      statusEl.textContent = `Top ${result.sorted} of ${result.total} by views${viewInfo}`
-      statusEl.style.color = '#4ade80'
-    } else {
-      statusEl.textContent = result.message
-      statusEl.style.color = '#ef4444'
+// Recursively extract TikTok video items from JSON data
+function extractTikTokItemsFromJSON(obj, depth) {
+  if (!obj || typeof obj !== 'object' || depth > 6) return
+  // Direct item with stats
+  if (obj.id && (obj.stats || obj.statsV2)) {
+    const st = obj.stats || obj.statsV2 || {}
+    ttMetricsCache.set(String(obj.id), {
+      views: parseInt(st.playCount) || parseInt(st.play_count) || null,
+      likes: parseInt(st.diggCount) || parseInt(st.digg_count) || null,
+      comments: parseInt(st.commentCount) || parseInt(st.comment_count) || null,
+      thumb: obj.video?.cover || obj.video?.dynamicCover || obj.video?.originCover || null,
+    })
+    return
+  }
+  // ItemModule pattern
+  if (obj.ItemModule && typeof obj.ItemModule === 'object') {
+    for (const key of Object.keys(obj.ItemModule)) {
+      extractTikTokItemsFromJSON(obj.ItemModule[key], depth + 1)
     }
-  })
-
-  document.getElementById('ori-reset').addEventListener('click', () => {
-    doReset()
-    const statusEl = document.getElementById('ori-status')
-    const grid = findGridAndItems()
-    statusEl.textContent = grid ? `${grid.items.length} videos loaded — default order` : 'Reset'
-    statusEl.style.color = '#71717a'
-  })
-
-  document.getElementById('ori-export').addEventListener('click', async () => {
-    const statusEl = document.getElementById('ori-status')
-    statusEl.textContent = 'Exporting...'
-    statusEl.style.color = '#818cf8'
-    await doExportCSV()
-    statusEl.textContent = 'CSV exported!'
-    statusEl.style.color = '#4ade80'
-  })
-}
-
-// Auto-inject toolbar when on a profile page
-function tryInjectToolbar() {
-  const page = extractCurrentPage()
-  if (page?.pageType === 'profile') {
-    // Small delay to let the grid render
-    setTimeout(() => injectToolbar(), 500)
+  }
+  // itemList / items arrays
+  if (Array.isArray(obj.itemList)) obj.itemList.forEach(it => extractTikTokItemsFromJSON(it, depth + 1))
+  if (Array.isArray(obj.items)) obj.items.forEach(it => extractTikTokItemsFromJSON(it, depth + 1))
+  // Recurse into known keys
+  for (const key of ['data', 'defaultScope', 'webapp.video-detail', 'webapp.user-detail', '__DEFAULT_SCOPE__']) {
+    if (obj[key] && typeof obj[key] === 'object') extractTikTokItemsFromJSON(obj[key], depth + 1)
   }
 }
 
-// Run on load and on URL changes (SPA navigation)
-tryInjectToolbar()
+// ─── SPA Navigation — reset caches on URL change ─────────────────────────
 
-// Watch for SPA navigation (TikTok, Instagram, YouTube are all SPAs)
 let lastUrl = window.location.href
 const urlObserver = new MutationObserver(() => {
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href
-    oriannaToolbarInjected = false
-    oriannaOriginalOrder = null
-    igViewCache = new Map()
-    // Remove old toolbar if it exists
-    document.getElementById('orianna-toolbar')?.remove()
-    setTimeout(() => tryInjectToolbar(), 1000)
+    igMetricsCache = new Map()
+    ttMetricsCache = new Map()
   }
 })
 urlObserver.observe(document.body, { childList: true, subtree: true })
 
-// Listen for messages from popup
+// ─── Message handlers for popup ──────────────────────────────────────────
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'EXTRACT') {
     const data = extractCurrentPage()
     sendResponse({ data })
   }
-  if (msg.type === 'SORT_GRID') {
-    doSort(msg.count ?? 25).then(sendResponse)
-    return true // keep channel open for async
+
+  if (msg.type === 'GET_IG_VIDEO_URL') {
+    (async () => {
+      const videoUrl = await fetchInstagramVideoUrl(msg.shortcode)
+      sendResponse({ videoUrl })
+    })()
+    return true
   }
+
+  if (msg.type === 'GET_SORTED_METRICS') {
+    (async () => {
+      const grid = findGridAndItems()
+      if (!grid) {
+        sendResponse({ error: 'No video grid found on this page' })
+        return
+      }
+
+      const { items, platform } = grid
+      const sortBy = msg.sortBy ?? 'views'
+      let posts = []
+
+      if (platform === 'instagram') {
+        // Instagram: fetch metrics from API, thumbnails from API cache
+        const igMetrics = await fetchInstagramMetrics(items)
+        posts = items.map(link => {
+          const href = link.href
+          const m = href.match(/\/(reel|p)\/([^/?]+)/)
+          const sc = m?.[2]
+          const metrics = igMetrics.get(link) ?? { views: null, likes: null, comments: null, thumb: null }
+          // Prefer API thumbnail, fall back to DOM img
+          const domImg = link.querySelector('img')
+          const thumb = metrics.thumb ?? igMetricsCache.get(sc)?.thumb ?? domImg?.src ?? ''
+          return { href, thumb, views: metrics.views, likes: metrics.likes, comments: metrics.comments }
+        })
+      } else if (platform === 'tiktok') {
+        // TikTok: try to get likes/comments from embedded page data or API
+        await fetchTikTokMetrics()
+
+        posts = items.map(item => {
+          const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+          const href = link?.href ?? ''
+          // Extract video ID from URL or data attribute
+          const videoId = href.match(/\/video\/(\d+)/)?.[1]
+            || href.match(/\/photo\/(\d+)/)?.[1]
+            || item.getAttribute('data-video-id')
+            || item.querySelector('[data-video-id]')?.getAttribute('data-video-id')
+          const cached = videoId ? ttMetricsCache.get(videoId) : null
+
+          const views = cached?.views ?? getViewsFromItem(item)
+          const likes = cached?.likes ?? null
+          const comments = cached?.comments ?? null
+
+          // Thumbnail: try multiple sources — TikTok uses lazy loading
+          let thumb = cached?.thumb || ''
+          if (!thumb) {
+            const imgs = item.querySelectorAll('img')
+            for (const img of imgs) {
+              const src = img.src || img.getAttribute('data-src') || ''
+              // Skip tiny placeholders and data URIs
+              if (src && !src.startsWith('data:') && src.length > 50) {
+                thumb = src
+                break
+              }
+            }
+          }
+          if (!thumb) {
+            // Try srcset
+            const img = item.querySelector('img[srcset]')
+            if (img) thumb = img.srcset.split(',')[0]?.trim()?.split(' ')[0] || ''
+          }
+          if (!thumb) {
+            // Try video poster
+            const video = item.querySelector('video')
+            if (video) thumb = video.getAttribute('poster') || ''
+          }
+          return { href, thumb, views, likes, comments }
+        })
+      }
+
+      // Filter out items without a URL
+      posts = posts.filter(p => p.href)
+
+      // Sort by requested metric
+      posts.sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0))
+
+      sendResponse({ posts, total: posts.length })
+    })()
+    return true
+  }
+
   return true
 })

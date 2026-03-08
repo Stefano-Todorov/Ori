@@ -14,10 +14,15 @@ let state = {
   matchedCompetitor: null,
   view: 'loading',
   ideas: [],
+  analysis: null,
   saving: null,
   messages: {},
   errors: {},
-  notes: '',
+  showCompetitorPrompt: false,
+  dontAskCompetitor: false,
+  sortedPosts: [],
+  sortBy: 'views',
+  sortCount: 25,
 }
 
 function setState(patch) {
@@ -33,14 +38,36 @@ async function init() {
     setState({ view: 'login', auth })
     return
   }
-  setState({ auth })
+
+  // Load "don't ask again" preference
+  const stored = await chrome.storage.local.get(['dontAskCompetitor'])
+  const dontAskCompetitor = stored.dontAskCompetitor ?? false
+
+  setState({ auth, dontAskCompetitor })
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const isSupportedUrl = tab?.url && (tab.url.includes('tiktok.com') || tab.url.includes('instagram.com'))
+
   let postData = null
-  try {
-    const result = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT' })
-    postData = result?.data ?? null
-  } catch {}
+  // Try extraction, with retries for SPA navigation (DOM may not be ready)
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT' })
+      postData = result?.data ?? null
+    } catch {
+      // Content script not injected — inject it and retry
+      if (isSupportedUrl && attempt === 0) {
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js'],
+          })
+        } catch {}
+      }
+    }
+    if (postData) break
+    if (attempt < 2 && isSupportedUrl) await new Promise(r => setTimeout(r, 800))
+  }
 
   let competitors = []
   try {
@@ -81,51 +108,135 @@ async function handleLogout() {
   setState({ view: 'login', auth: { isLoggedIn: false }, postData: null, competitors: [] })
 }
 
-async function handleSaveSwipe() {
+async function handleSaveInspiration() {
   if (!state.postData) return
-  setState({ saving: 'swipe', errors: {}, messages: {} })
+  setState({ saving: 'inspiration', errors: {}, messages: {} })
   const result = await chrome.runtime.sendMessage({
     type: 'SAVE_POST',
-    payload: { type: 'swipe', notes: state.notes, ...state.postData },
+    payload: { type: 'inspiration', ...state.postData },
   })
   setState({ saving: null })
   if (result.error) {
-    if (result.duplicate) setState({ messages: { swipe: 'Already saved' } })
-    else setState({ errors: { swipe: result.error } })
-  } else {
-    setState({ messages: { swipe: 'Saved to Swipe File' } })
+    if (result.duplicate) setState({ messages: { inspiration: 'Already saved' } })
+    else setState({ errors: { inspiration: result.error } })
+    return
   }
+  setState({ messages: { inspiration: 'Saved' } })
 }
 
-async function handleSaveCompetitor() {
-  if (!state.postData) return
-  setState({ saving: 'competitor', errors: {}, messages: {} })
-  const handle = state.postData.handle
+async function handleCompetitorYes() {
+  if (!state.postData?.handle) return
+  setState({ saving: 'add-competitor-prompt', showCompetitorPrompt: false })
   const result = await chrome.runtime.sendMessage({
-    type: 'SAVE_POST',
-    payload: { type: 'competitor', handle, notes: state.notes, ...state.postData },
+    type: 'ADD_COMPETITOR',
+    handle: state.postData.handle,
+    platform: state.postData.platform,
   })
   setState({ saving: null })
-  if (result.error) {
-    if (result.duplicate) setState({ messages: { competitor: 'Already tracked' } })
-    else setState({ errors: { competitor: result.error } })
-  } else {
-    const msg = state.matchedCompetitor
-      ? `Saved to @${handle}`
-      : `Added @${handle} as competitor + saved`
-    setState({ messages: { competitor: msg } })
+  if (result.error) setState({ errors: { inspiration: result.error } })
+  else setState({
+    messages: { inspiration: `Saved + @${state.postData.handle} added as competitor` },
+    matchedCompetitor: { handle: state.postData.handle, platforms: [state.postData.platform], postCount: 0 },
+  })
+}
+
+async function handleCompetitorNo() {
+  const dontAsk = document.getElementById('dont-ask-checkbox')?.checked ?? false
+  if (dontAsk) {
+    await chrome.storage.local.set({ dontAskCompetitor: true })
+    state.dontAskCompetitor = true
   }
+  setState({ showCompetitorPrompt: false })
+}
+
+async function handleAnalyze() {
+  if (!state.postData) return
+  setState({ saving: 'analyze', errors: {}, analysis: null })
+  const result = await chrome.runtime.sendMessage({
+    type: 'ANALYZE_POST', postData: state.postData,
+  })
+  setState({ saving: null })
+  if (result.error) setState({ errors: { analyze: result.error } })
+  else setState({ analysis: result.analysis ?? '' })
+}
+
+async function handleDownload() {
+  if (!state.postData?.url) return
+  setState({ saving: 'download', errors: {} })
+
+  let directUrl = null
+  // Instagram: get direct video URL from content script (has user's IG cookies)
+  if (state.postData.platform === 'instagram' && state.postData.shortcode) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const igResult = await chrome.tabs.sendMessage(tab.id, {
+        type: 'GET_IG_VIDEO_URL',
+        shortcode: state.postData.shortcode,
+      })
+      directUrl = igResult?.videoUrl ?? null
+    } catch {}
+  }
+
+  const result = await chrome.runtime.sendMessage({
+    type: 'DOWNLOAD_VIDEO',
+    url: state.postData.url,
+    videoSrc: state.postData.videoSrc,
+    directUrl,
+    handle: state.postData.handle,
+    platform: state.postData.platform,
+  })
+  setState({ saving: null })
+  if (result.error) setState({ errors: { download: result.error } })
+  else if (result.openedSite) setState({ messages: { ...state.messages, download: 'Opened downloader site — paste the link there' } })
+  else setState({ messages: { ...state.messages, download: 'Download started' } })
 }
 
 async function handleGetIdeas() {
   if (!state.postData) return
   setState({ saving: 'ideas', errors: {}, messages: {} })
   const result = await chrome.runtime.sendMessage({
-    type: 'GET_IDEAS', postData: state.postData,
+    type: 'GET_IDEAS', postData: state.postData, count: 1,
   })
   setState({ saving: null })
   if (result.error) setState({ errors: { ideas: result.error } })
   else setState({ view: 'ideas', ideas: result.ideas ?? [] })
+}
+
+async function handleSort() {
+  const sortBy = document.getElementById('sort-by')?.value ?? 'views'
+  const sortCount = parseInt(document.getElementById('sort-count')?.value ?? '25')
+  setState({ saving: 'sorting', errors: {}, sortBy, sortCount })
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  try {
+    const result = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SORTED_METRICS', sortBy })
+    if (result.error) {
+      setState({ saving: null, errors: { sort: result.error } })
+    } else {
+      setState({ saving: null, sortedPosts: result.posts ?? [] })
+    }
+  } catch (err) {
+    setState({ saving: null, errors: { sort: 'Could not fetch metrics from page' } })
+  }
+}
+
+function handleExportCSV() {
+  const posts = state.sortedPosts ?? []
+  if (!posts.length) return
+  const sortBy = state.sortBy ?? 'views'
+  const count = state.sortCount ?? 25
+  const rows = [['#', 'Views', 'Likes', 'Comments', 'URL']]
+  posts.slice(0, count).forEach((p, i) => {
+    rows.push([i + 1, p.views ?? '', p.likes ?? '', p.comments ?? '', p.href ?? ''])
+  })
+  const csv = rows.map(r => r.join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `orianna-sorted-${sortBy}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 async function handleAddCompetitor() {
@@ -154,11 +265,6 @@ function fmt(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return n.toString()
-}
-
-function engRate(views, likes) {
-  if (!views || views === 0) return null
-  return ((likes || 0) / views * 100).toFixed(1)
 }
 
 function escHtml(str) {
@@ -201,13 +307,7 @@ function render() {
   }
 
   if (state.view === 'ideas') {
-    const ideasHtml = state.ideas.map((idea, i) => `
-      <div class="idea-item">
-        <div class="idea-num">Idea ${i + 1}</div>
-        <div class="idea-text">${escHtml(idea.idea)}</div>
-        ${idea.hook_idea ? `<div class="idea-hook">"${escHtml(idea.hook_idea)}"</div>` : ''}
-      </div>
-    `).join('')
+    const idea = state.ideas[0]
 
     app.innerHTML = `
       <div class="header">
@@ -215,8 +315,13 @@ function render() {
         <span class="user-email">${state.auth?.email ?? ''}</span>
       </div>
       <div class="ideas-result">
-        <h3>${state.ideas.length} ideas saved to Orianna</h3>
-        ${ideasHtml}
+        <h3>Idea saved to Orianna</h3>
+        ${idea ? `
+          <div class="idea-item">
+            <div class="idea-text">${escHtml(idea.idea)}</div>
+            ${idea.hook_idea ? `<div class="idea-hook">"${escHtml(idea.hook_idea)}"</div>` : ''}
+          </div>
+        ` : ''}
         <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board</a>
         <button class="btn btn-outline" id="back-btn" style="margin-top:6px">Back</button>
       </div>
@@ -230,6 +335,30 @@ function render() {
   if (state.view === 'profile') {
     const p = state.postData
     const mc = state.matchedCompetitor
+    const sortedPosts = state.sortedPosts ?? []
+    const sortBy = state.sortBy ?? 'views'
+    const sortCount = state.sortCount ?? 25
+
+    const listHtml = sortedPosts.length > 0
+      ? sortedPosts.slice(0, sortCount).map((post, i) => `
+          <div class="sorted-item" title="${escHtml(post.href)}">
+            <span class="sorted-rank">${i + 1}</span>
+            ${post.thumb ? `<img class="sorted-thumb" src="${post.thumb}" />` : `<div class="sorted-thumb"></div>`}
+            <div class="sorted-metrics">
+              <div class="sorted-metric-row">
+                ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">▶ ${fmt(post.views)}</span>` : ''}
+                ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">♥ ${fmt(post.likes)}</span>` : ''}
+                ${post.comments != null ? `<span class="${sortBy === 'comments' ? 'primary' : 'val'}">💬 ${fmt(post.comments)}</span>` : ''}
+              </div>
+              <div class="sorted-url">${post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '')}</div>
+            </div>
+            <div class="sorted-actions">
+              <button class="btn-open" data-url="${escHtml(post.href)}">Open</button>
+              <button class="btn-goto" data-url="${escHtml(post.href)}">Go to</button>
+            </div>
+          </div>
+        `).join('')
+      : ''
 
     app.innerHTML = `
       <div class="header">
@@ -241,12 +370,10 @@ function render() {
       </div>
 
       <div class="profile-header">
-        <div class="detected-row">
-          <span class="platform-badge">${p.platform}</span>
-          <span class="detected-handle">@${p.handle}</span>
-          ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
-        </div>
-        ${mc ? `<div class="tracked-info">${mc.postCount} post${mc.postCount !== 1 ? 's' : ''} tracked</div>` : ''}
+        <span class="platform-badge">${p.platform}</span>
+        <span class="detected-handle">@${p.handle}</span>
+        ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
+        ${mc ? `<span style="font-size:10px;color:#71717a;margin-left:auto">${mc.postCount} tracked</span>` : ''}
       </div>
 
       ${!mc ? `
@@ -259,14 +386,66 @@ function render() {
         </div>
       ` : ''}
 
-      <div style="padding:8px 14px;font-size:11px;color:#52525b;text-align:center;line-height:1.5">
-        Sort toolbar is on the page above the video grid.<br>Scroll down to load more videos, then sort.
+      <div class="sort-box">
+        <div class="sort-controls">
+          <span class="sort-label">Sort by</span>
+          <select id="sort-by">
+            <option value="views" ${sortBy === 'views' ? 'selected' : ''}>Views</option>
+            <option value="likes" ${sortBy === 'likes' ? 'selected' : ''}>Likes</option>
+            <option value="comments" ${sortBy === 'comments' ? 'selected' : ''}>Comments</option>
+          </select>
+          <span class="sort-label">Top</span>
+          <select id="sort-count">
+            <option value="10" ${sortCount === 10 ? 'selected' : ''}>10</option>
+            <option value="25" ${sortCount === 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${sortCount === 50 ? 'selected' : ''}>50</option>
+          </select>
+          <button class="btn btn-primary" id="sort-btn" ${state.saving === 'sorting' ? 'disabled' : ''}>
+            ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Sort'}
+          </button>
+        </div>
+
+        ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${state.errors.sort}</div>` : ''}
+
+        ${sortedPosts.length > 0 ? `
+          <div class="sort-status" style="padding:6px 0 0;margin:0">
+            Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
+          </div>
+        ` : `
+          <div style="font-size:11px;color:#52525b;text-align:center;padding:6px 0 0">
+            Click Sort to rank videos by metrics.
+          </div>
+        `}
       </div>
+
+      ${sortedPosts.length > 0 ? `
+        <div class="sorted-list">${listHtml}</div>
+        <div class="sort-export">
+          <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+        </div>
+      ` : ''}
     `
 
     // Wire events
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
     document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
+    document.getElementById('sort-btn')?.addEventListener('click', handleSort)
+    document.getElementById('export-btn')?.addEventListener('click', handleExportCSV)
+
+    // Open in background tab
+    document.querySelectorAll('.btn-open[data-url]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        chrome.tabs.create({ url: btn.dataset.url, active: false })
+      })
+    })
+    // Go to tab (foreground)
+    document.querySelectorAll('.btn-goto[data-url]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        chrome.tabs.create({ url: btn.dataset.url, active: true })
+      })
+    })
 
     return
   }
@@ -275,44 +454,7 @@ function render() {
 
   const p = state.postData
   const hasPost = !!p
-  const er = hasPost ? engRate(p.views, p.likes) : null
   const mc = state.matchedCompetitor
-
-  const detectedHtml = hasPost ? `
-    <div class="detected">
-      <div class="detected-row">
-        <span class="platform-badge">${p.platform}</span>
-        ${p.handle ? `<span class="detected-handle">@${p.handle}</span>` : ''}
-        ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
-      </div>
-
-      ${(p.views || p.likes || p.comments) ? `
-        <div class="stats-row">
-          ${p.views != null ? `<div class="stat"><div class="stat-num">${fmt(p.views)}</div><div class="stat-label">views</div></div>` : ''}
-          ${p.likes != null ? `<div class="stat"><div class="stat-num">${fmt(p.likes)}</div><div class="stat-label">likes</div></div>` : ''}
-          ${p.comments != null ? `<div class="stat"><div class="stat-num">${fmt(p.comments)}</div><div class="stat-label">comments</div></div>` : ''}
-          ${p.shares != null ? `<div class="stat"><div class="stat-num">${fmt(p.shares)}</div><div class="stat-label">shares</div></div>` : ''}
-          ${er ? `<div class="stat"><div class="stat-num eng">${er}%</div><div class="stat-label">eng rate</div></div>` : ''}
-        </div>
-      ` : ''}
-
-      ${mc ? `<div class="tracked-info">${mc.postCount} post${mc.postCount !== 1 ? 's' : ''} tracked${mc.platforms.length > 1 ? ` across ${mc.platforms.join(', ')}` : ''}</div>` : ''}
-
-      ${p.caption ? `<div class="detected-caption">${escHtml(p.caption.length > 120 ? p.caption.slice(0, 120) + '...' : p.caption)}</div>` : ''}
-
-      ${p.hashtags?.length ? `<div class="hashtag-row">${p.hashtags.slice(0, 8).map(h => `<span class="hashtag">#${escHtml(h)}</span>`).join('')}</div>` : ''}
-
-      ${p.audio ? `<div class="audio-row">&#9834; ${escHtml(p.audio)}</div>` : ''}
-    </div>
-  ` : `
-    <div class="no-post">
-      Navigate to a TikTok, Instagram Reel, or YouTube video to capture it.
-    </div>
-  `
-
-  const competitorLabel = mc
-    ? `Save to @${p.handle}`
-    : p?.handle ? `Track @${p.handle} + Save` : 'Track as Competitor'
 
   app.innerHTML = `
     <div class="header">
@@ -323,45 +465,55 @@ function render() {
       </div>
     </div>
 
-    ${detectedHtml}
-
     ${hasPost ? `
-      <div class="notes-row">
-        <input id="notes-input" type="text" placeholder="Add a note (optional)" value="${escHtml(state.notes)}" />
-      </div>
-
       <div class="actions">
-        <button class="btn btn-outline" id="swipe-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'swipe' ? '<span class="spinner"></span> Saving...' : '+ Save to Swipe File'}
+        <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : 'Save as Inspiration'}
         </button>
-        ${state.messages.swipe ? `<div class="success-msg">${state.messages.swipe}</div>` : ''}
-        ${state.errors.swipe ? `<div class="error-msg">${state.errors.swipe}</div>` : ''}
+        ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Ideas</a></div>` : ''}
+        ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
-        <button class="btn btn-outline" id="competitor-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'competitor' ? '<span class="spinner"></span> Saving...' : competitorLabel}
+        <button class="btn btn-outline" id="download-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : 'Download Video'}
         </button>
-        ${state.messages.competitor ? `<div class="success-msg">${state.messages.competitor}</div>` : ''}
-        ${state.errors.competitor ? `<div class="error-msg">${state.errors.competitor}</div>` : ''}
+        ${state.messages.download ? `<div class="success-msg">${state.messages.download}</div>` : ''}
+        ${state.errors.download ? `<div class="error-msg">${state.errors.download}</div>` : ''}
 
-        <div class="divider"></div>
+        <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : 'Why Did It Do Well?'}
+        </button>
+        ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
 
         <button class="btn btn-ai" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating ideas...' : 'Get Video Ideas'}
+          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : 'Get Video Idea'}
         </button>
         ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
       </div>
-    ` : ''}
+
+      ${state.analysis ? `
+        <div class="analysis-result">
+          <div class="analysis-title">Why it performed well</div>
+          <div class="analysis-text">${state.analysis.split('\n').map(line => {
+            const l = line.trim()
+            if (!l) return ''
+            return `<div class="analysis-bullet">${l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`
+          }).join('')}</div>
+        </div>
+      ` : ''}
+    ` : `
+      <div class="no-post">
+        Navigate to a TikTok or Instagram video to capture it.
+      </div>
+    `}
   `
 
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
 
   if (hasPost) {
-    document.getElementById('swipe-btn')?.addEventListener('click', handleSaveSwipe)
-    document.getElementById('competitor-btn')?.addEventListener('click', handleSaveCompetitor)
+    document.getElementById('inspiration-btn')?.addEventListener('click', handleSaveInspiration)
+    document.getElementById('download-btn')?.addEventListener('click', handleDownload)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
-    document.getElementById('notes-input')?.addEventListener('input', (e) => {
-      state.notes = e.target.value
-    })
+    document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
   }
 }
 
