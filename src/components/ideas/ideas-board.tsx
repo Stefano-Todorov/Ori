@@ -534,38 +534,31 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
           </Button>
         </div>
 
-        <div className="flex gap-2 flex-wrap">
-          {(['all', 'mine', 'saved', 'ai'] as const).map((s) => (
-            <Button
-              key={s}
-              variant={sourceFilter === s ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setSourceFilter(s)}
-            >
-              {SOURCE_LABEL[s]}
-              {s !== 'all' && (
-                <span className="ml-1.5 text-xs opacity-70">
-                  {ideas.filter((i) => getSourceType(i) === s).length}
-                </span>
-              )}
-            </Button>
-          ))}
-          <span className="w-px bg-border mx-1" />
-          {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
-            <Button
-              key={d}
-              variant={difficultyFilter === d ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => setDifficultyFilter(d)}
-            >
-              {DIFFICULTY_LABEL[d]}
-              {d !== 'all' && (
-                <span className="ml-1.5 text-xs opacity-70">
-                  {ideas.filter((i) => i.difficulty === d).length}
-                </span>
-              )}
-            </Button>
-          ))}
+        <div className="flex items-center gap-2">
+          <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SourceFilter)}>
+            <SelectTrigger className="h-8 w-auto text-xs gap-1.5">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(['all', 'mine', 'saved', 'ai'] as const).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {SOURCE_LABEL[s]}{s !== 'all' ? ` (${ideas.filter((i) => getSourceType(i) === s).length})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={difficultyFilter} onValueChange={(v) => setDifficultyFilter(v as DifficultyFilter)}>
+            <SelectTrigger className="h-8 w-auto text-xs gap-1.5">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
+                <SelectItem key={d} value={d}>
+                  {DIFFICULTY_LABEL[d]}{d !== 'all' ? ` (${ideas.filter((i) => i.difficulty === d).length})` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Select all + bulk actions bar */}
