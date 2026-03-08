@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { anthropic, MODEL } from '@/lib/claude'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { headers: corsHeaders })
+}
+
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+  }
+
+  const token = authHeader.slice(7)
+  const supabase = createServiceClient()
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
+  }
 
   const { imageBase64, mediaType } = await req.json()
   if (!imageBase64) return NextResponse.json({ error: 'Missing image' }, { status: 400 })
@@ -62,13 +80,13 @@ Return ONLY a JSON object with these exact keys, no other text:
   })
 
   const text = message.content[0]
-  if (text.type !== 'text') return NextResponse.json({ error: 'AI error' }, { status: 500 })
+  if (text.type !== 'text') return NextResponse.json({ error: 'AI error' }, { status: 500, headers: corsHeaders })
 
   try {
     const match = text.text.match(/\{[\s\S]*\}/)
     const data = JSON.parse(match ? match[0] : text.text)
-    return NextResponse.json(data)
+    return NextResponse.json(data, { headers: corsHeaders })
   } catch {
-    return NextResponse.json({ error: 'Could not parse response' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not parse response' }, { status: 500, headers: corsHeaders })
   }
 }
