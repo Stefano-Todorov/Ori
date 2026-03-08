@@ -80,6 +80,30 @@ function formFromIdea(item: ContentIdea): IdeaFormState {
 
 // ─── Shared form fields ───────────────────────────────────────────────────────
 
+const DIFFICULTY_PILL: Record<string, string> = {
+  easy: 'bg-green-600 border-green-500 text-white',
+  medium: 'bg-amber-600 border-amber-500 text-white',
+  hard: 'bg-red-600 border-red-500 text-white',
+}
+
+const fieldInputClass = 'bg-[#1e1e2e] border-white/8 text-white placeholder:text-[#555570] focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
+
+function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <Label className="text-xs uppercase tracking-[0.05em] text-[#a0a0b8]">
+      {children}{required && <span className="text-purple-400 ml-0.5">*</span>}
+    </Label>
+  )
+}
+
+function SectionDivider({ label }: { label: string }) {
+  return (
+    <div className="border-t border-white/6 pt-4 mt-2">
+      <p className="text-[10px] uppercase tracking-[0.08em] text-[#555570] font-semibold mb-3">{label}</p>
+    </div>
+  )
+}
+
 function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: IdeaFormState) => void }) {
   function set<K extends keyof IdeaFormState>(key: K, val: IdeaFormState[K]) {
     setForm({ ...form, [key]: val })
@@ -87,76 +111,90 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
 
   return (
     <div className="space-y-4">
+      {/* Section 1: Content */}
+      <SectionDivider label="Content" />
+
       <div className="space-y-2">
-        <Label>Video idea *</Label>
+        <FormLabel required>Video idea</FormLabel>
         <Textarea
           placeholder="What's the video about? Topic, angle..."
           value={form.idea}
           onChange={(e) => set('idea', e.target.value)}
           rows={2}
           autoFocus
+          className={fieldInputClass}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Inspiration URL</Label>
+        <FormLabel>Inspiration URL</FormLabel>
         <Input
           placeholder="https://..."
           value={form.inspirationUrl}
           onChange={(e) => set('inspirationUrl', e.target.value)}
+          className={fieldInputClass}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Hook</Label>
+        <FormLabel>Hook</FormLabel>
         <Textarea
           placeholder="Opening line — what makes someone stop scrolling?"
           value={form.hookIdea}
           onChange={(e) => set('hookIdea', e.target.value)}
           rows={2}
+          className={fieldInputClass}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Body / Script</Label>
+        <FormLabel>Body / Script</FormLabel>
         <Textarea
           placeholder="The main content, points, or full script..."
           value={form.scriptSnippet}
           onChange={(e) => set('scriptSnippet', e.target.value)}
           rows={5}
+          className={fieldInputClass}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>CTA</Label>
+        <FormLabel>CTA</FormLabel>
         <Input
           placeholder="e.g. Follow for more, Comment below..."
           value={form.cta}
           onChange={(e) => set('cta', e.target.value)}
+          className={fieldInputClass}
         />
       </div>
 
       <div className="space-y-2">
-        <Label>Caption</Label>
+        <FormLabel>Caption</FormLabel>
         <Textarea
           placeholder="Post caption with hashtags..."
           value={form.caption}
           onChange={(e) => set('caption', e.target.value)}
           rows={3}
+          className={fieldInputClass}
         />
       </div>
 
+      {/* Section 2: Settings */}
+      <SectionDivider label="Settings" />
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Difficulty</Label>
+          <FormLabel>Difficulty</FormLabel>
           <div className="flex gap-1.5">
             {(['easy', 'medium', 'hard'] as const).map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => set('difficulty', form.difficulty === d ? '' : d)}
-                className={`flex-1 py-1.5 text-xs rounded-md border-2 font-medium capitalize transition-all ${
-                  form.difficulty === d ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'
+                className={`flex-1 py-2 text-xs rounded-full border font-semibold capitalize transition-all duration-200 ${
+                  form.difficulty === d
+                    ? DIFFICULTY_PILL[d]
+                    : 'bg-[#1e1e2e] border-white/10 text-[#a0a0b8] hover:border-white/20'
                 }`}
               >
                 {d}
@@ -166,9 +204,9 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
         </div>
 
         <div className="space-y-2">
-          <Label>Video type</Label>
+          <FormLabel>Video type</FormLabel>
           <Select value={form.videoType} onValueChange={(v) => set('videoType', v)}>
-            <SelectTrigger>
+            <SelectTrigger className={`${fieldInputClass} h-9`}>
               <SelectValue placeholder="Select..." />
             </SelectTrigger>
             <SelectContent>
@@ -181,11 +219,12 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
       </div>
 
       <div className="space-y-2">
-        <Label>Source</Label>
+        <FormLabel>Source</FormLabel>
         <Input
           placeholder="e.g. saw on TikTok, from a comment..."
           value={form.source}
           onChange={(e) => set('source', e.target.value)}
+          className={fieldInputClass}
         />
       </div>
     </div>
@@ -680,24 +719,33 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#12121a] border-white/8 rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.15)]">
           <DialogHeader>
-            <DialogTitle>New idea</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">New idea</DialogTitle>
+            <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={addForm} setForm={setAddForm} />
-          <Button onClick={handleAdd} disabled={!addForm.idea.trim() || adding} className="w-full mt-2">
-            {adding ? 'Saving...' : 'Save idea'}
-          </Button>
+          <button
+            onClick={handleAdd}
+            disabled={!addForm.idea.trim() || adding}
+            className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
+            {adding ? 'Saving...' : '✓ Save idea'}
+          </button>
         </DialogContent>
       </Dialog>
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#12121a] border-white/8 rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.15)]">
           <DialogHeader>
-            <DialogTitle>Edit idea</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Edit idea</DialogTitle>
+            <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={editForm} setForm={setEditForm} />
+
+          {/* Section 3: AI Assist */}
+          <SectionDivider label="AI Assist" />
           <AiAssistPanel
             idea={editForm.idea}
             context={{
@@ -708,9 +756,13 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
               inspirationUrl: editForm.inspirationUrl,
             }}
           />
-          <Button onClick={handleEdit} disabled={!editForm.idea.trim() || saving} className="w-full mt-2">
-            {saving ? 'Saving...' : 'Save changes'}
-          </Button>
+          <button
+            onClick={handleEdit}
+            disabled={!editForm.idea.trim() || saving}
+            className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          >
+            {saving ? 'Saving...' : '✓ Save changes'}
+          </button>
         </DialogContent>
       </Dialog>
     </>
