@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
     if (!platform) return NextResponse.json({ error: 'platform is required' }, { status: 400, headers: corsHeaders })
 
     // Check duplicate by URL in both tables
-    if (url) {
+    const force = body.force // 'replace' = delete old + save new, 'keep' = save new anyway
+    if (url && !force) {
       const [{ data: existingIdea }, { data: existingPost }] = await Promise.all([
         supabase.from('content_ideas').select('id').eq('user_id', user.id).eq('inspiration_url', url).limit(1),
         supabase.from('posts').select('id').eq('user_id', user.id).eq('url', url).limit(1),
@@ -62,6 +63,14 @@ export async function POST(req: NextRequest) {
       if ((existingIdea && existingIdea.length > 0) || (existingPost && existingPost.length > 0)) {
         return NextResponse.json({ error: 'Already saved', duplicate: true }, { status: 409, headers: corsHeaders })
       }
+    }
+
+    // If replacing, delete old entries first
+    if (url && force === 'replace') {
+      await Promise.all([
+        supabase.from('content_ideas').delete().eq('user_id', user.id).eq('inspiration_url', url),
+        supabase.from('posts').delete().eq('user_id', user.id).eq('url', url),
+      ])
     }
 
     // Auto-add competitor if handle provided

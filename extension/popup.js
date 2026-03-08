@@ -19,6 +19,7 @@ let state = {
   messages: {},
   errors: {},
   showCompetitorPrompt: false,
+  showDuplicatePrompt: false,
   dontAskCompetitor: false,
   sortedPosts: [],
   sortBy: 'views',
@@ -108,20 +109,20 @@ async function handleLogout() {
   setState({ view: 'login', auth: { isLoggedIn: false }, postData: null, competitors: [] })
 }
 
-async function handleSaveInspiration() {
+async function handleSaveInspiration(force) {
   if (!state.postData) return
-  setState({ saving: 'inspiration', errors: {}, messages: {} })
+  setState({ saving: 'inspiration', errors: {}, messages: {}, showDuplicatePrompt: false })
   const result = await chrome.runtime.sendMessage({
     type: 'SAVE_POST',
-    payload: { type: 'inspiration', ...state.postData },
+    payload: { type: 'inspiration', ...state.postData, ...(force ? { force } : {}) },
   })
   setState({ saving: null })
   if (result.error) {
-    if (result.duplicate) setState({ messages: { inspiration: 'Already saved' } })
+    if (result.duplicate) setState({ showDuplicatePrompt: true })
     else setState({ errors: { inspiration: result.error } })
     return
   }
-  setState({ messages: { inspiration: 'Saved' } })
+  setState({ messages: { inspiration: force === 'replace' ? 'Replaced' : 'Saved' } })
 }
 
 async function handleCompetitorYes() {
@@ -485,6 +486,15 @@ function render() {
         <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : 'Save as Inspiration'}
         </button>
+        ${state.showDuplicatePrompt ? `
+          <div class="competitor-prompt">
+            <div class="competitor-prompt-text">This post was already saved. What would you like to do?</div>
+            <div class="competitor-prompt-actions">
+              <button class="btn-prompt-yes" id="dup-replace-btn">Replace Old</button>
+              <button class="btn-prompt-no" id="dup-keep-btn">Keep Both</button>
+            </div>
+          </div>
+        ` : ''}
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Ideas</a></div>` : ''}
         ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
@@ -525,10 +535,12 @@ function render() {
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
 
   if (hasPost) {
-    document.getElementById('inspiration-btn')?.addEventListener('click', handleSaveInspiration)
+    document.getElementById('inspiration-btn')?.addEventListener('click', () => handleSaveInspiration())
     document.getElementById('download-btn')?.addEventListener('click', handleDownload)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
     document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
+    document.getElementById('dup-replace-btn')?.addEventListener('click', () => handleSaveInspiration('replace'))
+    document.getElementById('dup-keep-btn')?.addEventListener('click', () => handleSaveInspiration('keep'))
   }
 }
 
