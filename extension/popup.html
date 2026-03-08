@@ -215,14 +215,14 @@
     }
     .sort-controls {
       display: flex; align-items: center; gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
     .sort-controls select {
       width: auto; padding: 7px 12px; font-size: 12px;
       background: #16162a; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
+      border-radius: 8px; flex-shrink: 0;
     }
-    .sort-controls .btn { width: auto; padding: 9px 28px; font-size: 13px; }
+    .sort-controls .btn { width: auto; padding: 9px 20px; font-size: 13px; flex-shrink: 0; margin-left: auto; }
 
     /* Sorted list */
     .sorted-list {
