@@ -75,8 +75,10 @@ async function apiPost(path, body) {
     body: JSON.stringify(body),
   })
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || `API error: ${res.status}`)
+    let data
+    try { data = await res.json() } catch { data = { error: `API error: ${res.status}` } }
+    // Return error object directly so callers can check flags like `duplicate`
+    return { error: data.error || `API error: ${res.status}`, ...data }
   }
   return res.json()
 }

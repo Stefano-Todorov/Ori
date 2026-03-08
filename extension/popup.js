@@ -347,8 +347,8 @@ function render() {
             ${post.thumb ? `<img class="sorted-thumb" src="${post.thumb}" />` : `<div class="sorted-thumb"></div>`}
             <div class="sorted-metrics">
               <div class="sorted-metric-row">
-                ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">▶ ${fmt(post.views)}</span>` : ''}
-                ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">♥ ${fmt(post.likes)}</span>` : ''}
+                ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">👁 ${fmt(post.views)}</span>` : ''}
+                ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">❤️ ${fmt(post.likes)}</span>` : ''}
                 ${post.comments != null ? `<span class="${sortBy === 'comments' ? 'primary' : 'val'}">💬 ${fmt(post.comments)}</span>` : ''}
               </div>
               <div class="sorted-url">${post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '')}</div>
@@ -374,7 +374,7 @@ function render() {
         <span class="platform-badge">${p.platform}</span>
         <span class="detected-handle">@${p.handle}</span>
         ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
-        ${mc ? `<span style="font-size:10px;color:#71717a;margin-left:auto">${mc.postCount} tracked</span>` : ''}
+        ${mc ? `<span style="font-size:10px;color:#3f3f46;margin-left:auto">${mc.postCount} tracked</span>` : ''}
       </div>
 
       ${!mc ? `
@@ -409,13 +409,11 @@ function render() {
         ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${state.errors.sort}</div>` : ''}
 
         ${sortedPosts.length > 0 ? `
-          <div class="sort-status" style="padding:6px 0 0;margin:0">
+          <div class="sort-status">
             Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
           </div>
         ` : `
-          <div style="font-size:11px;color:#52525b;text-align:center;padding:6px 0 0">
-            Click Sort to rank videos by metrics.
-          </div>
+          <div class="sort-helper">Click Sort to rank videos by metrics.</div>
         `}
       </div>
 
@@ -476,15 +474,15 @@ function render() {
         ${p.caption ? `<div class="detected-caption">${escHtml(p.caption).slice(0, 120)}${p.caption.length > 120 ? '...' : ''}</div>` : ''}
         ${(p.views != null || p.likes != null) ? `
           <div class="stats-row">
-            ${p.views != null ? `<div><span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
-            ${p.likes != null ? `<div><span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
-            ${p.comments != null ? `<div><span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
+            ${p.views != null ? `<div>👁 <span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
+            ${p.likes != null ? `<div>❤️ <span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
+            ${p.comments != null ? `<div>💬 <span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
           </div>
         ` : ''}
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : 'Save as Inspiration'}
+          ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : '💾 Save as Inspiration'}
         </button>
         ${state.showDuplicatePrompt ? `
           <div class="competitor-prompt">
@@ -499,18 +497,18 @@ function render() {
         ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
         <button class="btn btn-outline" id="download-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : 'Download Video'}
+          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download Video'}
         </button>
         ${state.messages.download ? `<div class="success-msg">${state.messages.download}</div>` : ''}
         ${state.errors.download ? `<div class="error-msg">${state.errors.download}</div>` : ''}
 
         <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : 'Why Did It Do Well?'}
+          ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}
         </button>
         ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
 
         <button class="btn btn-ai" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : 'Get Video Idea'}
+          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Get Video Idea'}
         </button>
         ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
       </div>
