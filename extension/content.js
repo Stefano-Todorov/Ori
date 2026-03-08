@@ -202,18 +202,135 @@ function extractTikTokProfile() {
 
 // ─── Instagram Video ──────────────────────────────────────────────────────
 
+// Extract Instagram handle from embedded page JSON data
+function extractIgHandleFromPageData() {
+  try {
+    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+    for (const script of scripts) {
+      try {
+        const text = script.textContent?.trim()
+        if (!text || text.length < 50 || (text[0] !== '{' && text[0] !== '[')) continue
+        const data = JSON.parse(text)
+        // Search for owner/user username in the JSON
+        const username = findUsername(data, 0)
+        if (username) return username
+      } catch {}
+    }
+  } catch {}
+  return null
+}
+
+// Recursively find username in IG page data
+function findUsername(obj, depth) {
+  if (!obj || typeof obj !== 'object' || depth > 6) return null
+  // Direct owner.username pattern (GraphQL)
+  if (obj.owner?.username) return obj.owner.username
+  // user.username pattern (v1 API)
+  if (obj.user?.username) return obj.user.username
+  // shortcode_media.owner pattern
+  if (obj.shortcode_media?.owner?.username) return obj.shortcode_media.owner.username
+  // Recurse into arrays
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findUsername(item, depth + 1)
+      if (found) return found
+    }
+  } else {
+    for (const key of ['data', 'graphql', 'result', 'media', 'items', 'xdt_api__v1__media__shortcode__web_info']) {
+      if (obj[key]) {
+        const found = findUsername(obj[key], depth + 1)
+        if (found) return found
+      }
+    }
+    // Also check items array elements
+    if (Array.isArray(obj.items)) {
+      for (const item of obj.items) {
+        if (item?.user?.username) return item.user.username
+        if (item?.owner?.username) return item.owner.username
+      }
+    }
+  }
+  return null
+}
+
+// Extract Instagram caption from embedded page JSON data
+function extractIgCaptionFromPageData() {
+  try {
+    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+    for (const script of scripts) {
+      try {
+        const text = script.textContent?.trim()
+        if (!text || text.length < 50 || (text[0] !== '{' && text[0] !== '[')) continue
+        const data = JSON.parse(text)
+        const caption = findCaption(data, 0)
+        if (caption) return caption
+      } catch {}
+    }
+  } catch {}
+  return null
+}
+
+// Recursively find caption text in IG page data
+function findCaption(obj, depth) {
+  if (!obj || typeof obj !== 'object' || depth > 6) return null
+  // edge_media_to_caption pattern (GraphQL)
+  if (obj.edge_media_to_caption?.edges?.[0]?.node?.text) return obj.edge_media_to_caption.edges[0].node.text
+  // caption.text pattern (v1 API)
+  if (obj.caption?.text) return obj.caption.text
+  // shortcode_media pattern
+  if (obj.shortcode_media) {
+    const found = findCaption(obj.shortcode_media, depth + 1)
+    if (found) return found
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findCaption(item, depth + 1)
+      if (found) return found
+    }
+  } else {
+    for (const key of ['data', 'graphql', 'result', 'media', 'items', 'xdt_api__v1__media__shortcode__web_info']) {
+      if (obj[key]) {
+        const found = findCaption(obj[key], depth + 1)
+        if (found) return found
+      }
+    }
+    if (Array.isArray(obj.items)) {
+      for (const item of obj.items) {
+        const found = findCaption(item, depth + 1)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+
 function extractInstagram() {
   const url = window.location.href
   const isReel = url.includes('/reel/') || url.includes('/p/')
   if (!isReel) return null
 
-  const caption = trySelectors([
+  // Try DOM selectors first, then embedded JSON, then meta tags for caption
+  let caption = trySelectors([
     'article h1',
     '._aacl._aaco._aacu._aacx._aad7._aade span',
     'div[class*="Caption"] span',
     'article div[role="button"] span',
     'h1._aacl',
   ])
+
+  if (!caption) {
+    caption = extractIgCaptionFromPageData()
+  }
+
+  if (!caption) {
+    // og:description often has the caption text
+    const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+    if (ogDesc) {
+      // Format: "123 likes, 45 comments - Username on Instagram: "caption text""
+      const descMatch = ogDesc.match(/on Instagram:\s*["""](.+?)["""]/) || ogDesc.match(/:\s*["""](.+?)["""]/)
+      caption = descMatch?.[1] ?? ogDesc
+    }
+  }
 
   const viewsRaw = trySelectors([
     'span[class*="view"]',
@@ -233,10 +350,46 @@ function extractInstagram() {
     'span[class*="comment"]',
   ])
 
-  const handleMatch = url.match(/instagram\.com\/(?:reel|p)\/[^/]+\/?/)
-  const handleEl = document.querySelector('header a[href*="/"] span, a[role="link"] span._aacl')
-  const handle = handleEl?.textContent?.trim() ??
-    document.querySelector('header a[href]')?.getAttribute('href')?.replace(/\//g, '') ?? null
+  // Handle extraction — try multiple methods
+  // Method 1: Embedded page JSON data (most reliable)
+  let handle = extractIgHandleFromPageData()
+
+  // Method 2: DOM selectors
+  if (!handle) {
+    // Look for profile link near the post
+    const profileLink = document.querySelector('article a[href]:not([href*="/reel/"]):not([href*="/p/"]):not([href*="/explore/"])')
+    if (profileLink) {
+      const href = profileLink.getAttribute('href')
+      const hMatch = href?.match(/^\/([a-zA-Z0-9._]+)\/?$/)
+      if (hMatch) handle = hMatch[1]
+    }
+  }
+
+  // Method 3: og:description meta tag ("Username on Instagram")
+  if (!handle) {
+    const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+    if (ogDesc) {
+      const descMatch = ogDesc.match(/^[\d,.]+ likes?,\s*[\d,.]+ comments?\s*-\s*(.+?)\s+on Instagram/)
+      if (descMatch) handle = descMatch[1].replace(/\s/g, '').replace(/@/g, '')
+    }
+  }
+
+  // Method 4: og:title meta tag
+  if (!handle) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
+    if (ogTitle) {
+      // Format: "Username on Instagram: "caption"" or just "Username"
+      const titleMatch = ogTitle.match(/^(.+?)\s+on Instagram/) || ogTitle.match(/^@?([a-zA-Z0-9._]+)/)
+      if (titleMatch) handle = titleMatch[1].replace(/\s/g, '').replace(/@/g, '')
+    }
+  }
+
+  // Method 5: Legacy DOM selectors
+  if (!handle) {
+    const handleEl = document.querySelector('header a[href*="/"] span, a[role="link"] span._aacl')
+    handle = handleEl?.textContent?.trim() ??
+      document.querySelector('header a[href]')?.getAttribute('href')?.replace(/\//g, '') ?? null
+  }
 
   const audio = trySelectors([
     'a[href*="/audio/"]',

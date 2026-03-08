@@ -466,6 +466,21 @@ function render() {
     </div>
 
     ${hasPost ? `
+      <div class="detected">
+        <div class="detected-row">
+          <span class="platform-badge">${p.platform}</span>
+          <span class="detected-handle">@${p.handle || 'unknown'}</span>
+          ${mc ? '<span class="competitor-tag">Tracked</span>' : ''}
+        </div>
+        ${p.caption ? `<div class="detected-caption">${escHtml(p.caption).slice(0, 120)}${p.caption.length > 120 ? '...' : ''}</div>` : ''}
+        ${(p.views != null || p.likes != null) ? `
+          <div class="stats-row">
+            ${p.views != null ? `<div><span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
+            ${p.likes != null ? `<div><span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
+            ${p.comments != null ? `<div><span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
+          </div>
+        ` : ''}
+      </div>
       <div class="actions">
         <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : 'Save as Inspiration'}
