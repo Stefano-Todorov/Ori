@@ -28,6 +28,7 @@ export default async function PostsPage() {
     .select('*')
     .eq('user_id', user.id)
     .eq('is_competitor', false)
+    .eq('is_trending', false)
     .order('views', { ascending: false })
 
   return (

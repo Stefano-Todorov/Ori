@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge'
 import { DeleteButton } from '@/components/ui/delete-button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink } from 'lucide-react'
-import { addIdea, deleteIdea, updateIdeaStatus, updateIdea } from '@/app/actions'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown } from 'lucide-react'
+import { addIdea, deleteIdea, updateIdeaStatus, updateIdea, bulkDeleteIdeas, bulkUpdateIdeaStatus, restoreIdea } from '@/app/actions'
+import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
 import type { ContentIdea } from '@/lib/types'
 
 interface Props {
@@ -25,13 +26,6 @@ const STATUS_COLORS: Record<IdeaStatus, string> = {
   in_progress: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
   done: 'bg-green-100 text-green-700 hover:bg-green-200',
   archived: 'bg-gray-100 text-gray-500 hover:bg-gray-200',
-}
-
-const STATUS_NEXT: Record<IdeaStatus, IdeaStatus> = {
-  new: 'in_progress',
-  in_progress: 'done',
-  done: 'archived',
-  archived: 'new',
 }
 
 const STATUS_LABEL: Record<IdeaStatus, string> = {
@@ -211,22 +205,32 @@ function Section({ label, text }: { label: string; text: string }) {
 
 function IdeaCard({
   item,
+  selected,
+  onToggleSelect,
   onDelete,
-  onStatusCycle,
+  onStatusChange,
   onEdit,
 }: {
   item: ContentIdea
+  selected: boolean
+  onToggleSelect: () => void
   onDelete: () => Promise<void>
-  onStatusCycle: () => void
+  onStatusChange: (status: IdeaStatus) => void
   onEdit: () => void
 }) {
   const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption || item.inspiration_url
 
   return (
-    <Card className="border-border">
+    <Card className={`border-border transition-colors ${selected ? 'ring-2 ring-primary/50 bg-primary/5' : ''}`}>
       <CardContent className="pt-5 pb-5 space-y-4">
         {/* Header */}
         <div className="flex items-start gap-3 flex-wrap">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            className="mt-1.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
+          />
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base leading-snug">{item.idea}</h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -245,14 +249,16 @@ function IdeaCard({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              className={`text-xs px-3 py-1.5 rounded-full font-semibold transition-colors cursor-pointer ${STATUS_COLORS[item.status]}`}
-              onClick={onStatusCycle}
-              title="Click to advance status"
-            >
-              {STATUS_LABEL[item.status]}
-            </button>
+            <Select value={item.status} onValueChange={(v) => onStatusChange(v as IdeaStatus)}>
+              <SelectTrigger className={`h-8 w-auto text-xs font-semibold border-0 rounded-full px-3 gap-1 ${STATUS_COLORS[item.status]}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               type="button"
               onClick={onEdit}
@@ -299,11 +305,44 @@ function IdeaCard({
   )
 }
 
+// ─── Source helpers ───────────────────────────────────────────────────────────
+
+type SourceFilter = 'all' | 'mine' | 'saved' | 'ai'
+
+function getSourceType(item: ContentIdea): SourceFilter {
+  const s = item.source ?? ''
+  if (s.startsWith('inspiration:')) return 'saved'
+  if (s.startsWith('competitor:')) return 'ai'
+  return 'mine'
+}
+
+const SOURCE_LABEL: Record<SourceFilter, string> = {
+  all: 'All Sources',
+  mine: 'Created by Me',
+  saved: 'From Competitor',
+  ai: 'Created by AI',
+}
+
+type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
+
+const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
+  all: 'All Difficulties',
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+}
+
 // ─── Main board ───────────────────────────────────────────────────────────────
 
 export function IdeasBoard({ ideas: initialIdeas }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
   const [filter, setFilter] = useState<IdeaStatus | 'all'>('all')
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
+  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [recentlyDeleted, setRecentlyDeleted] = useState<ContentIdea[]>([])
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [bulkAction, setBulkAction] = useState(false)
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false)
@@ -377,42 +416,201 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
   }
 
   async function handleDelete(id: string) {
+    const item = ideas.find((i) => i.id === id)
+    if (item) setRecentlyDeleted((prev) => [item, ...prev])
     await deleteIdea(id)
     setIdeas((prev) => prev.filter((i) => i.id !== id))
+    setSelected((prev) => { const next = new Set(prev); next.delete(id); return next })
   }
 
-  async function handleStatusCycle(id: string, current: IdeaStatus) {
-    const next = STATUS_NEXT[current]
-    await updateIdeaStatus(id, next)
-    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, status: next } : i))
+  async function handleStatusChange(id: string, status: IdeaStatus) {
+    await updateIdeaStatus(id, status)
+    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, status } : i))
   }
 
-  const filtered = filter === 'all' ? ideas : ideas.filter((i) => i.status === filter)
+  // ─── Bulk actions ─────────────────────────────────────────────────────────
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    const filteredIds = filtered.map((i) => i.id)
+    const allSelected = filteredIds.every((id) => selected.has(id))
+    if (allSelected) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filteredIds))
+    }
+  }
+
+  async function handleBulkDelete() {
+    const ids = Array.from(selected)
+    const deletedItems = ideas.filter((i) => ids.includes(i.id))
+    setRecentlyDeleted((prev) => [...deletedItems, ...prev])
+    setBulkAction(true)
+    await bulkDeleteIdeas(ids)
+    setIdeas((prev) => prev.filter((i) => !ids.includes(i.id)))
+    setSelected(new Set())
+    setBulkAction(false)
+  }
+
+  async function handleBulkStatus(status: IdeaStatus) {
+    const ids = Array.from(selected)
+    setBulkAction(true)
+    await bulkUpdateIdeaStatus(ids, status)
+    setIdeas((prev) => prev.map((i) => ids.includes(i.id) ? { ...i, status } : i))
+    setSelected(new Set())
+    setBulkAction(false)
+  }
+
+  // ─── Recently deleted ──────────────────────────────────────────────────────
+
+  async function handleRestore(item: ContentIdea) {
+    const restored = await restoreIdea({
+      idea: item.idea,
+      source: item.source,
+      hook_idea: item.hook_idea,
+      inspiration_url: item.inspiration_url,
+      script_snippet: item.script_snippet,
+      cta: item.cta,
+      caption: item.caption,
+      difficulty: item.difficulty,
+      video_type: item.video_type,
+      status: item.status,
+    })
+    if (restored) {
+      setIdeas((prev) => [restored, ...prev])
+    } else {
+      // Fallback: add back with old data
+      setIdeas((prev) => [item, ...prev])
+    }
+    setRecentlyDeleted((prev) => prev.filter((i) => i.id !== item.id))
+  }
+
+  function clearRecentlyDeleted() {
+    setRecentlyDeleted([])
+  }
+
+  // ─── Filtering ──────────────────────────────────────────────────────────────
+
+  const filtered = ideas
+    .filter((i) => filter === 'all' || i.status === filter)
+    .filter((i) => sourceFilter === 'all' || getSourceType(i) === sourceFilter)
+    .filter((i) => difficultyFilter === 'all' || i.difficulty === difficultyFilter)
+
+  const hasSelection = selected.size > 0
+  const allFilteredSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.id))
 
   return (
     <>
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex gap-2 flex-wrap">
+            {(['all', 'new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+              <Button
+                key={s}
+                variant={filter === s ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter(s)}
+              >
+                {s === 'all' ? 'All' : STATUS_LABEL[s]}
+                {s !== 'all' && (
+                  <span className="ml-1.5 text-xs opacity-70">
+                    {ideas.filter((i) => i.status === s).length}
+                  </span>
+                )}
+              </Button>
+            ))}
+          </div>
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus size={16} className="mr-2" />
+            Add idea
+          </Button>
+        </div>
+
         <div className="flex gap-2 flex-wrap">
-          {(['all', 'new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+          {(['all', 'mine', 'saved', 'ai'] as const).map((s) => (
             <Button
               key={s}
-              variant={filter === s ? 'default' : 'outline'}
+              variant={sourceFilter === s ? 'secondary' : 'ghost'}
               size="sm"
-              onClick={() => setFilter(s)}
+              onClick={() => setSourceFilter(s)}
             >
-              {s === 'all' ? 'All' : STATUS_LABEL[s]}
+              {SOURCE_LABEL[s]}
               {s !== 'all' && (
                 <span className="ml-1.5 text-xs opacity-70">
-                  {ideas.filter((i) => i.status === s).length}
+                  {ideas.filter((i) => getSourceType(i) === s).length}
+                </span>
+              )}
+            </Button>
+          ))}
+          <span className="w-px bg-border mx-1" />
+          {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
+            <Button
+              key={d}
+              variant={difficultyFilter === d ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setDifficultyFilter(d)}
+            >
+              {DIFFICULTY_LABEL[d]}
+              {d !== 'all' && (
+                <span className="ml-1.5 text-xs opacity-70">
+                  {ideas.filter((i) => i.difficulty === d).length}
                 </span>
               )}
             </Button>
           ))}
         </div>
-        <Button onClick={() => setAddOpen(true)}>
-          <Plus size={16} className="mr-2" />
-          Add idea
-        </Button>
+
+        {/* Select all + bulk actions bar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={selectAll}
+              className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
+            />
+            {allFilteredSelected ? 'Deselect all' : 'Select all'}
+          </label>
+
+          {hasSelection && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+
+              <Select
+                value=""
+                onValueChange={(v) => handleBulkStatus(v as IdeaStatus)}
+              >
+                <SelectTrigger className="h-8 w-auto text-xs gap-1" disabled={bulkAction}>
+                  <span>Move to</span>
+                  <ChevronDown size={12} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(['new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+                    <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={bulkAction}
+              >
+                <Trash2 size={14} className="mr-1" />
+                Delete {selected.size}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -429,13 +627,63 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
             <IdeaCard
               key={item.id}
               item={item}
+              selected={selected.has(item.id)}
+              onToggleSelect={() => toggleSelect(item.id)}
               onDelete={() => handleDelete(item.id)}
-              onStatusCycle={() => handleStatusCycle(item.id, item.status)}
+              onStatusChange={(status) => handleStatusChange(item.id, status)}
               onEdit={() => openEdit(item)}
             />
           ))
         )}
       </div>
+
+      {/* Recently Deleted */}
+      {recentlyDeleted.length > 0 && (
+        <div className="space-y-3 mt-8">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowDeleted(!showDeleted)}
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Trash2 size={14} />
+              Recently Deleted ({recentlyDeleted.length})
+              <ChevronDown size={14} className={`transition-transform ${showDeleted ? 'rotate-180' : ''}`} />
+            </button>
+            {showDeleted && (
+              <Button variant="ghost" size="sm" onClick={clearRecentlyDeleted} className="text-xs">
+                Clear all
+              </Button>
+            )}
+          </div>
+
+          {showDeleted && (
+            <div className="space-y-2">
+              {recentlyDeleted.map((item) => (
+                <Card key={item.id} className="border-dashed opacity-60 hover:opacity-100 transition-opacity">
+                  <CardContent className="py-3 flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.idea}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.source ? `via ${item.source}` : 'My idea'} — {STATUS_LABEL[item.status]}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestore(item)}
+                      className="shrink-0"
+                    >
+                      <RotateCcw size={14} className="mr-1" />
+                      Restore
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
@@ -452,11 +700,21 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit idea</DialogTitle>
           </DialogHeader>
           <IdeaFormFields form={editForm} setForm={setEditForm} />
+          <AiAssistPanel
+            idea={editForm.idea}
+            context={{
+              hook: editForm.hookIdea,
+              caption: editForm.caption,
+              cta: editForm.cta,
+              scriptSnippet: editForm.scriptSnippet,
+              inspirationUrl: editForm.inspirationUrl,
+            }}
+          />
           <Button onClick={handleEdit} disabled={!editForm.idea.trim() || saving} className="w-full mt-2">
             {saving ? 'Saving...' : 'Save changes'}
           </Button>

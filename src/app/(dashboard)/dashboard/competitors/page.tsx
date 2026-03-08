@@ -41,16 +41,16 @@ export default async function CompetitorsPage() {
       .order('views', { ascending: false }),
   ])
 
-  // Group posts by competitor handle
+  // Group posts by competitor handle (case-insensitive)
   const postsByHandle: Record<string, Post[]> = {}
   for (const post of (competitorPosts ?? [])) {
-    const key = post.competitor_handle ?? '__unknown__'
+    const key = (post.competitor_handle ?? '__unknown__').toLowerCase()
     if (!postsByHandle[key]) postsByHandle[key] = []
     postsByHandle[key].push(post)
   }
 
   // Collect handles that have posts but no competitor row (orphaned posts)
-  const trackedHandles = new Set((competitors ?? []).map(c => c.handle))
+  const trackedHandles = new Set((competitors ?? []).map(c => c.handle.toLowerCase()))
   const orphanedHandles = Object.keys(postsByHandle).filter(
     h => h !== '__unknown__' && !trackedHandles.has(h)
   )
@@ -80,7 +80,7 @@ export default async function CompetitorsPage() {
       ) : (
         <div className="space-y-6">
           {(competitors ?? []).map((c: Competitor) => {
-            const posts = postsByHandle[c.handle] ?? []
+            const posts = postsByHandle[c.handle.toLowerCase()] ?? []
             return (
               <CompetitorCard
                 key={c.id}
