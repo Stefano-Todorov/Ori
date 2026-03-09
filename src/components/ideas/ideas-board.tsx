@@ -86,7 +86,7 @@ const DIFFICULTY_PILL: Record<string, string> = {
   hard: 'bg-red-600 border-red-500 text-white',
 }
 
-const fieldInputClass = 'bg-[#1e1e2e] border-white/8 text-white placeholder:text-[#555570] focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
+const fieldInputClass = 'bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
 
 function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -98,7 +98,7 @@ function FormLabel({ children, required }: { children: React.ReactNode; required
 
 function SectionDivider({ label }: { label: string }) {
   return (
-    <div className="border-t border-white/6 pt-4 mt-2">
+    <div className="border-t border-border pt-4 mt-2">
       <p className="text-[10px] uppercase tracking-[0.08em] text-[#555570] font-semibold mb-3">{label}</p>
     </div>
   )
@@ -194,7 +194,7 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
                 className={`flex-1 py-2 text-xs rounded-full border font-semibold capitalize transition-all duration-200 ${
                   form.difficulty === d
                     ? DIFFICULTY_PILL[d]
-                    : 'bg-[#1e1e2e] border-white/10 text-[#a0a0b8] hover:border-white/20'
+                    : 'bg-muted border-border text-muted-foreground hover:border-purple-300'
                 }`}
               >
                 {d}
@@ -719,9 +719,9 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#12121a] border-white/8 rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.15)]">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-background border-border rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">New idea</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-foreground">New idea</DialogTitle>
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={addForm} setForm={setAddForm} />
@@ -737,9 +737,9 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#12121a] border-white/8 rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.15)]">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-background border-border rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-white">Edit idea</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={editForm} setForm={setEditForm} />

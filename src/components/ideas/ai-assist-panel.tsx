@@ -77,7 +77,7 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
   }
 
   return (
-    <div className="rounded-xl border border-purple-500/20 bg-[#1a1a2e] p-4 space-y-4 animate-in fade-in duration-300 relative overflow-hidden">
+    <div className="rounded-xl border border-purple-500/20 bg-muted p-4 space-y-4 animate-in fade-in duration-300 relative overflow-hidden">
       {/* Shimmer border effect */}
       <div className="absolute inset-0 rounded-xl pointer-events-none" style={{
         background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.08), transparent)',
@@ -86,24 +86,24 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
       <style>{`@keyframes shimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }`}</style>
 
       <div className="flex items-center gap-2 relative">
-        <Sparkles size={16} className="text-purple-400" />
-        <span className="text-sm font-semibold text-purple-300">AI Assist</span>
+        <Sparkles size={16} className="text-purple-500" />
+        <span className="text-sm font-semibold text-purple-600">AI Assist</span>
       </div>
 
       <div className="flex gap-3 items-end relative">
         <div className="flex-1 space-y-1.5">
-          <Label className="text-xs uppercase tracking-wider text-[#a0a0b8]">Instructions (optional)</Label>
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Instructions (optional)</Label>
           <Input
             placeholder="e.g. negative connotation, storytime style, funny tone..."
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            className="text-sm bg-[#1e1e2e] border-white/8 focus:border-purple-500 focus:ring-purple-500/20"
+            className="text-sm bg-background border-border focus:border-purple-500 focus:ring-purple-500/20"
           />
         </div>
         <div className="w-20 space-y-1.5">
-          <Label className="text-xs uppercase tracking-wider text-[#a0a0b8]">Qty</Label>
+          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Qty</Label>
           <Select value={count} onValueChange={setCount}>
-            <SelectTrigger className="h-9 bg-[#1e1e2e] border-white/8">
+            <SelectTrigger className="h-9 bg-background border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -121,7 +121,7 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
             key={type}
             disabled={generating || !idea.trim()}
             onClick={() => generate(type)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 transition-all hover:bg-gradient-to-r hover:from-purple-600 hover:to-purple-500 hover:text-white hover:border-purple-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 transition-all hover:bg-gradient-to-r hover:from-purple-600 hover:to-purple-500 hover:text-white hover:border-purple-400 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {generating && generationType === type ? (
               <Loader2 size={13} className="animate-spin" />
@@ -139,17 +139,17 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
 
       {results.length > 0 && generationType && (
         <div className="space-y-2 relative">
-          <p className="text-xs font-medium text-[#a0a0b8] uppercase tracking-wider">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Generated {TYPE_LABELS[generationType]}s ({results.length})
           </p>
           {results.map((result, i) => (
-            <div key={i} className="rounded-lg border border-white/8 bg-[#12121a] p-3 space-y-2">
+            <div key={i} className="rounded-lg border border-border bg-background p-3 space-y-2">
               <p className="text-sm whitespace-pre-wrap">{result}</p>
               <div className="flex justify-end">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-purple-300 hover:text-purple-200"
+                  className="h-7 text-xs text-purple-600 hover:text-purple-500"
                   onClick={() => copyToClipboard(result, i)}
                 >
                   {copied === i ? (

@@ -85,7 +85,7 @@ export default function SignupPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white border-0 shadow-lg shadow-purple-500/20" disabled={loading}>
             {loading ? 'Creating account...' : 'Create account'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">

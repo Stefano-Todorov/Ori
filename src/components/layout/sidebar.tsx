@@ -43,9 +43,9 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-60 border-r bg-card flex flex-col h-full">
-      <div className="p-6 border-b">
-        <h1 className="text-xl font-bold">Orianna</h1>
+    <aside className="w-60 border-r border-border bg-sidebar flex flex-col h-full">
+      <div className="p-6 border-b border-border">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Orianna</h1>
         <p className="text-xs text-muted-foreground mt-0.5">AI Content Coach</p>
       </div>
 
@@ -60,10 +60,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/20'
+                  : 'text-muted-foreground hover:bg-purple-500/8 hover:text-foreground'
               )}
             >
               <Icon size={16} />
@@ -73,11 +73,11 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-3 border-t">
+      <div className="p-3 border-t border-border">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start gap-3 text-muted-foreground"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
           onClick={handleSignOut}
         >
           <LogOut size={16} />
