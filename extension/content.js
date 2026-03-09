@@ -365,42 +365,58 @@ function extractInstagram() {
     }
   }
 
-  // Method 3: URL path — /reel/ and /p/ URLs have username in og:url or canonical
+  // Method 3: URL path — instagram.com/username/reel/xxx (exclude "reel" and "p" themselves)
   if (!handle) {
-    const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href') ??
-                      document.querySelector('meta[property="og:url"]')?.getAttribute('content')
-    if (canonical) {
-      // Instagram canonical URLs don't always have the username, but the page URL might
-      // Try extracting from actual page URL: instagram.com/username/reel/xxx
-      const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
-      if (urlMatch) handle = urlMatch[1]
+    const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
+    if (urlMatch && urlMatch[1] !== 'reel' && urlMatch[1] !== 'p') {
+      handle = urlMatch[1]
     }
   }
 
-  // Method 4: og:description — only extract if it looks like a clean username (no spaces/pipes)
+  // Method 4: og:title — format: "Username (@handle) on Instagram..." or "@handle on Instagram Reels"
+  if (!handle) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
+    if (ogTitle) {
+      // Try "@handle" pattern first (most reliable)
+      const atMatch = ogTitle.match(/@([a-zA-Z0-9._]{1,30})/)
+      if (atMatch) {
+        handle = atMatch[1]
+      } else {
+        // Try "Username on Instagram" but only if it looks like a username
+        const titleMatch = ogTitle.match(/^([a-zA-Z0-9._]{1,30})\s+on Instagram/)
+        if (titleMatch) handle = titleMatch[1]
+      }
+    }
+  }
+
+  // Method 5: og:description — only extract if it looks like a clean username
   if (!handle) {
     const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
     if (ogDesc) {
       const descMatch = ogDesc.match(/^[\d,.]+ likes?,\s*[\d,.]+ comments?\s*-\s*(.+?)\s+on Instagram/)
       if (descMatch) {
         const candidate = descMatch[1].trim()
-        // Only use if it looks like a username (no spaces, pipes, or long names)
         if (/^[a-zA-Z0-9._]{1,30}$/.test(candidate)) handle = candidate
       }
     }
   }
 
-  // Method 5: URL path directly
+  // Method 6: Legacy DOM selectors — username links in post header
   if (!handle) {
-    const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
-    if (urlMatch) handle = urlMatch[1]
+    // Try header links that look like profile links
+    const headerLinks = document.querySelectorAll('article header a[href], article a[role="link"][href]')
+    for (const link of headerLinks) {
+      const href = link.getAttribute('href')
+      const m = href?.match(/^\/([a-zA-Z0-9._]{1,30})\/?$/)
+      if (m) { handle = m[1]; break }
+    }
   }
-
-  // Method 5: Legacy DOM selectors
   if (!handle) {
     const handleEl = document.querySelector('header a[href*="/"] span, a[role="link"] span._aacl')
-    handle = handleEl?.textContent?.trim() ??
-      document.querySelector('header a[href]')?.getAttribute('href')?.replace(/\//g, '') ?? null
+    const candidate = handleEl?.textContent?.trim()
+    if (candidate && /^[a-zA-Z0-9._]{1,30}$/.test(candidate)) {
+      handle = candidate
+    }
   }
 
   const audio = trySelectors([
