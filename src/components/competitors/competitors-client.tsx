@@ -355,13 +355,27 @@ function EmptyPostsState({ handle, platform }: { handle: string; platform: Platf
 
 // ─── Post Card ────────────────────────────────────────
 
+function cleanCaption(raw: string | null): string {
+  if (!raw) return ''
+  let text = raw.trim()
+  // Strip og:description metadata prefix: "123K likes, 456 comments - user on Date: "caption""
+  const metaMatch = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)[""\u201d]\s*\.?\s*$/)
+  if (metaMatch) return metaMatch[1].trim()
+  const metaMatch2 = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)/)
+  if (metaMatch2) return metaMatch2[1].replace(/[""\u201d]\s*\.?\s*$/, '').trim()
+  return text
+}
+
 function postTitle(post: Post): string {
-  const cap = post.caption?.trim()
+  const cap = cleanCaption(post.caption)
   if (!cap) return 'Untitled post'
-  // Use first sentence or first 80 chars as title
-  const firstLine = cap.split(/[.\n]/)[0].trim()
-  if (firstLine.length <= 80) return firstLine
-  return firstLine.slice(0, 77) + '...'
+  // Strip hashtags and emojis for a cleaner title
+  const stripped = cap.replace(/#[\w]+/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '').trim()
+  // Take first meaningful sentence
+  const firstSentence = stripped.split(/[!.\n]/)[0].trim()
+  if (!firstSentence) return cap.slice(0, 60)
+  if (firstSentence.length <= 80) return firstSentence
+  return firstSentence.slice(0, 77) + '...'
 }
 
 function PostCard({ post, handle }: { post: Post; handle: string }) {
@@ -463,29 +477,25 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
   return (
     <>
       <div className="rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] overflow-hidden transition-all hover:border-purple-500/20">
-        {/* Main row — clickable to expand */}
+        {/* Header — clickable to expand */}
         <button
           onClick={() => setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
-          <div className="flex-1 min-w-0 space-y-1.5">
-            {/* Title */}
-            <p className="text-sm font-semibold text-foreground leading-snug">
-              {postTitle(post)}
-            </p>
-            {post.hook_text && (
-              <p className="text-xs italic text-muted-foreground leading-snug">
-                &ldquo;{post.hook_text}&rdquo;
+          <div className="flex-1 min-w-0 space-y-1">
+            {/* Title + date row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0">
+                {postTitle(post)}
               </p>
-            )}
-            {post.caption && !expanded && (
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {post.caption}
-              </p>
-            )}
+              <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
+                <Calendar size={9} />
+                {timeAgo(post.created_at)}
+              </span>
+            </div>
 
             {/* Stats row */}
-            <div className="flex gap-4 text-xs pt-1">
+            <div className="flex items-center gap-3 text-xs">
               {post.views > 0 && (
                 <span className="flex items-center gap-1">
                   <Eye size={11} className="text-muted-foreground" />
@@ -509,30 +519,27 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   {er.toFixed(1)}% <span className="font-normal text-muted-foreground">eng.</span>
                 </span>
               )}
+              {badge && (
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
+                  {badge.icon} {badge.label}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Right side: badge + chevron */}
-          <div className="flex items-center gap-2 shrink-0 pt-0.5">
-            {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                {badge.icon} {badge.label}
-              </span>
-            )}
-            <ChevronDown
-              size={14}
-              className={`text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
-            />
-          </div>
+          <ChevronDown
+            size={14}
+            className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {/* Expanded section */}
         {expanded && (
           <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
-            {/* Full caption */}
+            {/* Caption */}
             {post.caption && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap pt-3">
-                {post.caption}
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap pt-3 leading-relaxed">
+                {cleanCaption(post.caption)}
               </p>
             )}
 
@@ -558,97 +565,53 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
               onSave={(val) => updatePostNotes(post.id, val)}
             />
 
-            {/* Date + Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-border dark:border-white/6">
-              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <Calendar size={10} />
-                Tracked {timeAgo(post.created_at)}
-              </div>
-              <div className="flex items-center gap-2">
-                {post.url && (
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
-                  >
-                    <ExternalLink size={11} />
-                    Open
-                  </a>
-                )}
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-semibold shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all"
+              >
+                <Sparkles size={12} />
+                Get Ideas
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+              >
+                <Lightbulb size={12} />
+                Why it worked
+              </button>
+              {ideaCreated ? (
+                <span className="inline-flex items-center gap-1 h-8 px-3.5 text-xs font-medium text-green-600 dark:text-green-400">
+                  <Check size={12} /> Idea created
+                </span>
+              ) : (
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-medium shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all"
+                  onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
+                  disabled={creatingIdea}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
                 >
-                  <Sparkles size={11} />
-                  Get Ideas
+                  {creatingIdea ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                  Create idea
                 </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-purple-500/30 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
-                >
-                  <Lightbulb size={11} />
-                  Why it worked
-                </button>
-                {ideaCreated ? (
-                  <span className="inline-flex items-center gap-1 h-7 px-3 text-[10px] font-medium text-green-600 dark:text-green-400">
-                    <Check size={11} /> Idea created
-                  </span>
-                ) : (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
-                    disabled={creatingIdea}
-                    className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
-                  >
-                    {creatingIdea ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
-                    Create idea
-                  </button>
-                )}
-                <div className="w-px h-4 bg-border dark:bg-white/10 mx-0.5" />
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeletePost() }}
-                  disabled={deleting}
-                  className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Collapsed: quick action row */}
-        {!expanded && (
-          <div className="px-4 pb-3 flex items-center justify-between">
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Calendar size={9} />
-              {timeAgo(post.created_at)}
-            </span>
-            <div className="flex items-center gap-1.5">
+              )}
               {post.url && (
                 <a
                   href={post.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-purple-500 transition-colors"
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all ml-auto"
                 >
-                  <ExternalLink size={11} />
+                  <ExternalLink size={12} />
+                  Go to
                 </a>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
-                className="inline-flex items-center gap-1 h-6 px-2 rounded text-[10px] font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
-              >
-                <Sparkles size={10} />
-                Ideas
-              </button>
-              <button
                 onClick={(e) => { e.stopPropagation(); handleDeletePost() }}
                 disabled={deleting}
-                className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
               >
-                <Trash2 size={11} />
+                <Trash2 size={13} />
               </button>
             </div>
           </div>
