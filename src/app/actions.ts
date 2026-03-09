@@ -313,3 +313,22 @@ export async function disconnectAccount(platform: Platform) {
   revalidatePath('/dashboard/settings')
   return { error: null }
 }
+
+export async function cleanupZeroStatsPosts() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { deleted: 0 }
+  const { data } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('views', 0)
+    .eq('likes', 0)
+    .eq('comments', 0)
+  if (!data || data.length === 0) return { deleted: 0 }
+  const ids = data.map(p => p.id)
+  await supabase.from('posts').delete().in('id', ids)
+  revalidatePath('/dashboard/competitors')
+  revalidatePath('/dashboard/inspo')
+  return { deleted: ids.length }
+}
