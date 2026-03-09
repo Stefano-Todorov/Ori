@@ -1,11 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, Sparkles, ChevronDown, ChevronUp, Trash2, Bookmark, Copy, Check, Dices } from 'lucide-react'
+import { Loader2, Sparkles, ChevronDown, ChevronUp, Trash2, Bookmark, Copy, Check, Dices, Camera } from 'lucide-react'
 import { updateScriptStatus, deleteScript, addIdea } from '@/app/actions'
 
 interface GeneratedScript {
@@ -32,10 +29,10 @@ interface Props {
   defaultPlatform: string
 }
 
-const DIFFICULTY_COLORS = {
-  easy: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  hard: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+const DIFFICULTY_PILL_STYLES: Record<string, string> = {
+  easy: 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400',
+  medium: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400',
+  hard: 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400',
 }
 
 const DIFFICULTY_DESCRIPTIONS = {
@@ -56,10 +53,23 @@ const STATUS_NEXT: Record<string, 'draft' | 'used' | 'archived'> = {
   archived: 'draft',
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400',
-  used: 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400',
-  archived: 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400',
+const STATUS_STYLES: Record<string, string> = {
+  draft: 'border-amber-500 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10',
+  used: 'border-green-500 text-green-600 dark:text-green-400 hover:bg-green-500/10',
+  archived: 'border-gray-400 text-gray-500 dark:text-gray-400 hover:bg-gray-500/10',
+}
+
+const SECTION_LABEL_COLORS: Record<string, string> = {
+  INTRO: 'text-blue-500 dark:text-blue-400',
+  TRANSITION: 'text-gray-500 dark:text-gray-400',
+  OUTRO: 'text-teal-500 dark:text-teal-400',
+}
+
+function getSectionColor(label: string): string {
+  const upper = label.toUpperCase()
+  if (SECTION_LABEL_COLORS[upper]) return SECTION_LABEL_COLORS[upper]
+  if (upper.startsWith('MAIN POINT')) return 'text-purple-500 dark:text-purple-400'
+  return 'text-muted-foreground'
 }
 
 const HOOK_ANGLES = [
@@ -358,140 +368,201 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
       </div>
 
       {result && (
-        <div className="space-y-4">
-          <Card className="border-primary/30">
-            <CardContent className="pt-6 space-y-5">
-              {/* Header row */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="font-semibold text-lg flex-1 truncate">{result.script.topic}</h3>
-                <Badge className={DIFFICULTY_COLORS[result.script.difficulty as keyof typeof DIFFICULTY_COLORS]}>
-                  {result.script.difficulty}
-                </Badge>
-                <Badge variant="outline">{result.script.estimated_duration}</Badge>
-              </div>
+        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-5">
+          {/* ─── Title row ─── */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <h3 className="font-bold text-lg flex-1 truncate text-foreground leading-tight">{result.script.topic}</h3>
+            {result.script.difficulty && (
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${DIFFICULTY_PILL_STYLES[result.script.difficulty] ?? ''}`}>
+                {result.script.difficulty}
+              </span>
+            )}
+            {result.script.estimated_duration && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center gap-1">
+                &#128336; {result.script.estimated_duration}
+              </span>
+            )}
+          </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleStatusCycle}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${STATUS_COLORS[scriptStatus]}`}
-                >
-                  {scriptStatus}
-                </button>
-                <Button size="sm" variant="outline" onClick={handleCopyScript}>
-                  {copied ? <><Check size={14} className="mr-1" />Copied</> : <><Copy size={14} className="mr-1" />Copy script</>}
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleSaveAsIdea} disabled={ideaSaved}>
-                  <Bookmark size={14} className="mr-1" />
-                  {ideaSaved ? 'Saved as idea!' : 'Save as idea'}
-                </Button>
-                <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" onClick={handleDelete}>
-                  <Trash2 size={14} className="mr-1" />Delete
-                </Button>
-              </div>
+          {/* ─── Actions ─── */}
+          <div className="flex items-center gap-2 flex-wrap pb-4 border-b border-border dark:border-white/6">
+            <button
+              type="button"
+              onClick={handleStatusCycle}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 ${STATUS_STYLES[scriptStatus]}`}
+            >
+              {scriptStatus}
+            </button>
+            <button
+              onClick={handleCopyScript}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted dark:bg-white/[0.06] text-foreground hover:bg-muted/80 dark:hover:bg-white/10 transition-all duration-150"
+            >
+              {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
+            </button>
+            <button
+              onClick={handleSaveAsIdea}
+              disabled={ideaSaved}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
+                ideaSaved
+                  ? 'bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30'
+                  : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5'
+              }`}
+            >
+              <Bookmark size={13} />
+              {ideaSaved ? 'Saved!' : 'Save as idea'}
+            </button>
+            <div className="ml-auto">
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all duration-150"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
 
-              {/* Hook */}
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wide">Hook</span>
-                  {result.meta.hook_type && (
-                    <Badge variant="outline" className="text-xs">{result.meta.hook_type}</Badge>
+          {/* ─── Hook ─── */}
+          {result.script.hook && (
+            <div className="relative bg-gradient-to-br from-purple-500/15 to-purple-500/5 dark:from-purple-500/15 dark:to-purple-500/[0.03] border border-purple-500/30 rounded-xl p-4 pl-6 border-l-[3px] border-l-purple-500">
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-[11px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-[0.08em] flex items-center gap-1.5">
+                  &#9889; Hook
+                </p>
+                {result.meta.hook_type && (
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400">
+                    {result.meta.hook_type}
+                  </span>
+                )}
+              </div>
+              <p className="text-base font-medium italic text-foreground leading-relaxed">&quot;{result.script.hook}&quot;</p>
+              {result.meta.hook_explanation && (
+                <details className="mt-3 group">
+                  <summary className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 cursor-pointer hover:text-purple-500 transition-colors select-none">
+                    Why this works
+                  </summary>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{result.meta.hook_explanation}</p>
+                </details>
+              )}
+            </div>
+          )}
+
+          {/* ─── Script body ─── */}
+          {result.script.body && (
+            <div className="space-y-2">
+              <button
+                className="flex items-center gap-3 w-full group"
+                onClick={() => setShowBody(!showBody)}
+              >
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em] shrink-0 flex items-center gap-1.5">
+                  Full Script
+                  <span className={`transition-transform duration-200 ${showBody ? 'rotate-180' : ''}`}>
+                    <ChevronDown size={12} />
+                  </span>
+                </p>
+                <div className="flex-1 h-px bg-border dark:bg-white/6" />
+              </button>
+              {showBody && (
+                <div className="space-y-2">
+                  {bodySegments.length > 0 ? (
+                    bodySegments.map((seg, i) => (
+                      <div key={i} className="rounded-[10px] border border-border dark:border-white/6 bg-muted/50 dark:bg-[#1a1a2e] p-3.5 transition-colors hover:bg-muted dark:hover:bg-[#1e1e38]">
+                        {seg.label && (
+                          <p className={`text-[10px] font-bold uppercase tracking-[0.08em] mb-1.5 ${getSectionColor(seg.label)}`}>
+                            {seg.label}
+                          </p>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/85 dark:text-[#d1d5db]">{seg.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-muted dark:bg-[#1a1a2e] rounded-[10px] p-3.5">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/85 dark:text-[#d1d5db]">{result.script.body}</p>
+                    </div>
                   )}
                 </div>
-                <p className="font-medium text-lg">&quot;{result.script.hook}&quot;</p>
-                {result.meta.hook_explanation && (
-                  <p className="text-xs text-muted-foreground mt-2">{result.meta.hook_explanation}</p>
+              )}
+            </div>
+          )}
+
+          {/* ─── CTA ─── */}
+          {result.script.cta && (
+            <div className="bg-teal-500/[0.06] border border-teal-500/20 rounded-xl p-3.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <p className="text-[11px] font-bold text-teal-600 dark:text-teal-400 uppercase tracking-[0.08em] flex items-center gap-1.5">
+                  &#128227; CTA
+                </p>
+                {result.meta.cta_type && (
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-600 dark:text-teal-400">
+                    {result.meta.cta_type}
+                  </span>
                 )}
               </div>
+              <p className="text-sm text-foreground font-medium">{result.script.cta}</p>
+            </div>
+          )}
 
-              {/* Script body — structured sections */}
-              <div>
-                <button
-                  className="flex items-center gap-2 text-sm font-semibold mb-3 hover:text-primary transition-colors"
-                  onClick={() => setShowBody(!showBody)}
-                >
-                  Full Script
-                  {showBody ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                </button>
-                {showBody && (
-                  <div className="space-y-3">
-                    {bodySegments.length > 0 ? (
-                      bodySegments.map((seg, i) => (
-                        <div key={i} className="rounded-lg border bg-muted/30 p-3">
-                          {seg.label && (
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                              {seg.label}
-                            </p>
-                          )}
-                          <p className="text-sm whitespace-pre-wrap">{seg.text}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="bg-muted rounded-lg p-4">
-                        <p className="text-sm whitespace-pre-wrap">{result.script.body}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+          {/* ─── Filming tips ─── */}
+          {result.meta.filming_tips && (
+            <div className="relative overflow-hidden bg-amber-500/[0.06] border border-amber-500/20 rounded-xl p-3.5">
+              <Camera size={80} className="absolute -right-2 -bottom-2 text-amber-500/[0.07] rotate-12 pointer-events-none" />
+              <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-[0.08em] mb-1.5 flex items-center gap-1.5">
+                &#127909; Filming tips
+              </p>
+              <p className="text-sm text-foreground/85 dark:text-[#d1d5db] leading-relaxed relative">{result.meta.filming_tips}</p>
+            </div>
+          )}
+
+          {/* ─── Hashtags ─── */}
+          {result.script.hashtags?.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
+                # Tags
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {result.script.hashtags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-xs px-2.5 py-1 rounded-full bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/8 text-muted-foreground transition-all duration-150 hover:border-purple-500 hover:text-foreground"
+                  >
+                    #{tag}
+                  </span>
+                ))}
               </div>
+            </div>
+          )}
 
-              {/* CTA */}
-              {result.script.cta && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">CTA</p>
-                    {result.meta.cta_type && (
-                      <Badge variant="outline" className="text-xs">{result.meta.cta_type}</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm">{result.script.cta}</p>
-                </div>
-              )}
-
-              {/* Filming tips */}
-              {result.meta.filming_tips && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Filming tips</p>
-                  <p className="text-sm">{result.meta.filming_tips}</p>
-                </div>
-              )}
-
-              {/* Hashtags */}
-              {result.script.hashtags?.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {result.script.hashtags.map((tag) => (
-                    <Badge key={tag} variant="secondary">#{tag}</Badge>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Variant hooks */}
+          {/* ─── Alternative hooks ─── */}
           {result.script.variants?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Alternative hooks ({result.script.variants.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="space-y-3 pt-2">
+              <p className="text-sm font-bold text-foreground">
+                <span className="border-b-2 border-purple-500 pb-0.5">Alternative hooks</span>
+                <span className="text-muted-foreground font-normal ml-1.5">({result.script.variants.length})</span>
+              </p>
+              <div className="space-y-2">
                 {result.script.variants.map((v, i) => (
                   <div
                     key={i}
-                    className="border rounded-lg p-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                    className="rounded-[10px] border border-border dark:border-white/6 p-3.5 cursor-pointer transition-all duration-150 hover:border-purple-500/40 hover:bg-muted/50 dark:hover:bg-[#1a1a2e]"
                     onClick={() => setExpandedVariant(expandedVariant === i ? null : i)}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium">&quot;{v.hook}&quot;</p>
-                      {expandedVariant === i ? <ChevronUp size={14} className="shrink-0 mt-0.5" /> : <ChevronDown size={14} className="shrink-0 mt-0.5" />}
+                      <div className="flex items-start gap-2.5">
+                        <span className="shrink-0 w-5 h-5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 text-[10px] font-bold flex items-center justify-center mt-0.5">
+                          {i + 1}
+                        </span>
+                        <p className="text-sm font-medium text-foreground italic">&quot;{v.hook}&quot;</p>
+                      </div>
+                      <span className={`transition-transform duration-200 shrink-0 mt-0.5 text-muted-foreground ${expandedVariant === i ? 'rotate-180' : ''}`}>
+                        <ChevronDown size={14} />
+                      </span>
                     </div>
                     {expandedVariant === i && (
-                      <p className="text-xs text-muted-foreground mt-2">{v.angle}</p>
+                      <p className="text-xs text-muted-foreground mt-2 ml-7.5 leading-relaxed">{v.angle}</p>
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
       )}
