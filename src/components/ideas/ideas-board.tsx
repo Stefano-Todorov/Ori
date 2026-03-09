@@ -282,6 +282,17 @@ function IdeaCard({
               {item.source && (
                 <span className="text-xs text-muted-foreground">via {item.source}</span>
               )}
+              {item.inspiration_url && (
+                <a
+                  href={item.inspiration_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-0.5 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View original <ExternalLink size={10} />
+                </a>
+              )}
               <span className="text-xs text-muted-foreground">
                 {new Date(item.created_at).toLocaleDateString()}
               </span>

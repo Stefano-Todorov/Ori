@@ -81,13 +81,13 @@ export async function addSwipePost(fields: {
     shares: 0,
     saves: 0,
   })
-  revalidatePath('/dashboard/trending')
+  revalidatePath('/dashboard/inspo')
 }
 
 export async function deleteSwipePost(id: string) {
   const supabase = await createClient()
   await supabase.from('posts').delete().eq('id', id)
-  revalidatePath('/dashboard/trending')
+  revalidatePath('/dashboard/inspo')
 }
 
 export async function updateProfile(fields: {
@@ -266,6 +266,36 @@ export async function updatePostNotes(id: string, notes: string) {
   const supabase = await createClient()
   await supabase.from('posts').update({ ai_notes: notes || null }).eq('id', id)
   revalidatePath('/dashboard/competitors')
+  revalidatePath('/dashboard/inspo')
+}
+
+export async function createIdeaFromInspo(postId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: post } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('id', postId)
+    .eq('user_id', user.id)
+    .single()
+  if (!post) return { error: 'Post not found' }
+
+  const { data: idea, error } = await supabase.from('content_ideas').insert({
+    user_id: user.id,
+    idea: post.caption || `Inspired by @${post.competitor_handle || 'unknown'} on ${post.platform}`,
+    source: `inspiration: @${post.competitor_handle || 'unknown'} (${post.platform})`,
+    inspiration_url: post.url || null,
+    hook_idea: post.hook_text || null,
+    caption: null,
+    status: 'new' as const,
+  }).select().single()
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard/inspo')
+  return { idea, error: null }
 }
 
 export async function disconnectAccount(platform: Platform) {

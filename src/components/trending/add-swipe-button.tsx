@@ -49,7 +49,7 @@ export function AddSwipeButton() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-background dark:bg-[#16161e] border border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)] w-full max-w-md space-y-5 p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Add to Swipe File</h2>
+          <h2 className="text-lg font-bold text-foreground">Add to Inspo</h2>
           <button type="button" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg p-1.5 transition-colors">
             <X size={16} />
           </button>
