@@ -94,7 +94,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       <div className="flex gap-3 flex-wrap">
         <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
           <Users size={13} className="text-purple-500" />
-          <span className="text-xs font-bold text-foreground">{competitors.length}</span>
+          <span className="text-xs font-bold text-foreground">{competitors.length + orphanedHandles.length}</span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Competitors</span>
         </div>
         <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
@@ -116,33 +116,33 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       </div>
 
       {/* Competitor cards */}
-      {(!competitors || competitors.length === 0) ? (
+      {competitors.length === 0 && orphanedHandles.length === 0 && (
         <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
           <p className="font-bold text-foreground">No competitors yet</p>
           <p className="text-sm text-muted-foreground">Add a competitor to start tracking their content and get AI-generated ideas from their top posts.</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {competitors.map((c) => {
-            const posts = postsByHandle[c.handle.toLowerCase()] ?? []
-            return <CompetitorCard key={c.id} competitor={c} posts={posts} />
-          })}
-
-          {orphanedHandles.map(handle => (
-            <div key={handle} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="text-base font-semibold text-muted-foreground">@{handle}</span>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-gray-400 text-gray-500">account removed</span>
-              </div>
-              <div className="space-y-2">
-                {postsByHandle[handle].map(post => (
-                  <PostCard key={post.id} post={post} handle={handle} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       )}
+
+      <div className="space-y-4">
+        {competitors.map((c) => {
+          const posts = postsByHandle[c.handle.toLowerCase()] ?? []
+          return <CompetitorCard key={c.id} competitor={c} posts={posts} />
+        })}
+
+        {orphanedHandles.map(handle => (
+          <div key={handle} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold text-muted-foreground">@{handle}</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-gray-400 text-gray-500">account removed</span>
+            </div>
+            <div className="space-y-2">
+              {postsByHandle[handle].map(post => (
+                <PostCard key={post.id} post={post} handle={handle} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
