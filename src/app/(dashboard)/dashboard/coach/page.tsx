@@ -16,8 +16,8 @@ export default async function CoachPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b">
-        <h1 className="text-2xl font-bold">AI Coach</h1>
+      <div className="p-6 border-b border-border dark:border-white/6">
+        <h1 className="text-2xl font-bold text-foreground">AI Coach</h1>
         <p className="text-muted-foreground mt-1">
           Your personal content strategist — ask anything about your niche, scripts, or growth strategy.
         </p>

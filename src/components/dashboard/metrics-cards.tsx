@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, Heart, TrendingUp, Video } from 'lucide-react'
 
 function formatNumber(n: number): string {
@@ -14,51 +13,38 @@ interface Props {
   avgEngagement: number
 }
 
+const CARDS = [
+  { title: 'Total Posts', icon: Video, description: 'Across all platforms', color: 'text-purple-500', bg: 'bg-purple-500/10' },
+  { title: 'Total Views', icon: Eye, description: 'All-time views', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { title: 'Total Likes', icon: Heart, description: 'All-time likes', color: 'text-pink-500', bg: 'bg-pink-500/10' },
+  { title: 'Avg Engagement', icon: TrendingUp, description: 'Likes / Views ratio', color: 'text-green-500', bg: 'bg-green-500/10' },
+]
+
 export function MetricsCards({ totalPosts, totalViews, totalLikes, avgEngagement }: Props) {
-  const cards = [
-    {
-      title: 'Total Posts',
-      value: totalPosts.toString(),
-      icon: Video,
-      description: 'Across all platforms',
-    },
-    {
-      title: 'Total Views',
-      value: formatNumber(totalViews),
-      icon: Eye,
-      description: 'All-time views',
-    },
-    {
-      title: 'Total Likes',
-      value: formatNumber(totalLikes),
-      icon: Heart,
-      description: 'All-time likes',
-    },
-    {
-      title: 'Avg Engagement',
-      value: `${avgEngagement.toFixed(1)}%`,
-      icon: TrendingUp,
-      description: 'Likes / Views ratio',
-    },
+  const values = [
+    totalPosts.toString(),
+    formatNumber(totalViews),
+    formatNumber(totalLikes),
+    `${avgEngagement.toFixed(1)}%`,
   ]
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map((card) => {
+      {CARDS.map((card, i) => {
         const Icon = card.icon
         return (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+          <div key={card.title} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-5 space-y-3 transition-all duration-150 hover:border-purple-500/20 hover:shadow-lg hover:shadow-purple-500/5">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
                 {card.title}
-              </CardTitle>
-              <Icon size={16} className="text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
-            </CardContent>
-          </Card>
+              </p>
+              <span className={`w-8 h-8 rounded-xl ${card.bg} flex items-center justify-center`}>
+                <Icon size={16} className={card.color} />
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{values[i]}</p>
+            <p className="text-xs text-muted-foreground">{card.description}</p>
+          </div>
         )
       })}
     </div>

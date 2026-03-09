@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus, Loader2, Link, ImageIcon, X } from 'lucide-react'
 import { addCompetitorPost } from '@/app/actions'
@@ -148,44 +146,48 @@ export function AddPostButton({ handle, platform }: Props) {
     })
   }
 
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <Plus size={14} className="mr-1" />
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-foreground hover:border-purple-500/40 hover:bg-purple-500/5 transition-all duration-150"
+      >
+        <Plus size={12} />
         Add post
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle>Add post from @{handle}</DialogTitle>
+            <DialogTitle className="text-foreground">Add post from @{handle}</DialogTitle>
           </DialogHeader>
 
           {/* Tabs */}
-          <div className="flex border rounded-lg overflow-hidden">
+          <div className="flex rounded-xl overflow-hidden border border-border dark:border-white/8">
             <button
               type="button"
               onClick={() => setTab('screenshot')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                tab === 'screenshot' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+              className={`flex-1 py-2.5 text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                tab === 'screenshot' ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white' : 'text-muted-foreground hover:bg-muted dark:hover:bg-white/5'
               }`}
             >
-              <ImageIcon size={14} />
+              <ImageIcon size={13} />
               Screenshot
             </button>
             <button
               type="button"
               onClick={() => setTab('url')}
-              className={`flex-1 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                tab === 'url' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'
+              className={`flex-1 py-2.5 text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+                tab === 'url' ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white' : 'text-muted-foreground hover:bg-muted dark:hover:bg-white/5'
               }`}
             >
-              <Link size={14} />
+              <Link size={13} />
               URL
             </button>
           </div>
 
           <div className="space-y-4">
-            {/* Screenshot tab */}
             {tab === 'screenshot' && (
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
@@ -193,57 +195,43 @@ export function AddPostButton({ handle, platform }: Props) {
                 </p>
                 {screenshot ? (
                   <div className="relative">
-                    <img
-                      src={screenshot.preview}
-                      alt="Screenshot preview"
-                      className="w-full max-h-48 object-contain rounded-lg border"
-                    />
+                    <img src={screenshot.preview} alt="Screenshot preview" className="w-full max-h-48 object-contain rounded-xl border border-border dark:border-white/8" />
                     <button
                       onClick={() => { setScreenshot(null); setReadMsg(null); if (fileRef.current) fileRef.current.value = '' }}
-                      className="absolute top-2 right-2 bg-background rounded-full p-1 border shadow-sm"
+                      className="absolute top-2 right-2 bg-background dark:bg-[#1a1a2e] rounded-full p-1.5 border border-border dark:border-white/10 shadow-sm hover:bg-muted transition-colors"
                     >
-                      <X size={12} />
+                      <X size={10} />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                  <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-border dark:border-white/10 rounded-xl cursor-pointer hover:border-purple-500/40 hover:bg-purple-500/[0.02] transition-all duration-150">
                     <ImageIcon size={20} className="text-muted-foreground mb-1" />
                     <span className="text-sm text-muted-foreground">Click to upload screenshot</span>
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                   </label>
                 )}
                 {screenshot && (
-                  <Button onClick={handleReadScreenshot} disabled={reading} className="w-full" variant="outline">
-                    {reading ? <><Loader2 size={14} className="mr-2 animate-spin" />Reading...</> : '✦ Read stats with AI'}
-                  </Button>
+                  <button onClick={handleReadScreenshot} disabled={reading} className="w-full h-9 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                    {reading ? <><Loader2 size={13} className="animate-spin" />Reading...</> : '✦ Read stats with AI'}
+                  </button>
                 )}
                 {readMsg && (
-                  <p className={`text-xs ${readMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                    {readMsg.text}
-                  </p>
+                  <p className={`text-xs ${readMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>{readMsg.text}</p>
                 )}
               </div>
             )}
 
-            {/* URL tab */}
             {tab === 'url' && (
               <div className="space-y-2">
-                <Label>Post URL</Label>
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Post URL</label>
                 <div className="flex gap-2">
-                  <Input
-                    placeholder={`https://www.${platform}.com/...`}
-                    value={url}
-                    onChange={(e) => { setUrl(e.target.value); setFetchMsg(null) }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleFetchUrl() }}
-                  />
-                  <Button type="button" variant="outline" size="sm" onClick={handleFetchUrl} disabled={!url.trim() || fetching} className="shrink-0">
-                    {fetching ? <Loader2 size={14} className="animate-spin" /> : 'Fetch'}
-                  </Button>
+                  <Input placeholder={`https://www.${platform}.com/...`} value={url} onChange={(e) => { setUrl(e.target.value); setFetchMsg(null) }} onKeyDown={(e) => { if (e.key === 'Enter') handleFetchUrl() }} className={inputClass} />
+                  <button onClick={handleFetchUrl} disabled={!url.trim() || fetching} className="shrink-0 h-9 px-3.5 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all disabled:opacity-50">
+                    {fetching ? <Loader2 size={13} className="animate-spin" /> : 'Fetch'}
+                  </button>
                 </div>
                 {fetchMsg && (
-                  <p className={`text-xs ${fetchMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
-                    {fetchMsg.text}
-                  </p>
+                  <p className={`text-xs ${fetchMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>{fetchMsg.text}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   Works best for YouTube (full stats). TikTok/Instagram return caption only — use the Screenshot tab for stats.
@@ -251,45 +239,39 @@ export function AddPostButton({ handle, platform }: Props) {
               </div>
             )}
 
-            {/* Manual fields */}
-            <div className="space-y-3 pt-1 border-t">
+            <div className="space-y-3 pt-3 border-t border-border dark:border-white/6">
               <div className="space-y-2">
-                <Label>Caption</Label>
-                <Textarea
-                  placeholder="What the video is about..."
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  rows={2}
-                />
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Caption</label>
+                <Textarea placeholder="What the video is about..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={2} className={inputClass} />
               </div>
               <div className="space-y-2">
-                <Label>Hook (opening line)</Label>
-                <Input
-                  placeholder="The first line that grabbed attention..."
-                  value={hookText}
-                  onChange={(e) => setHookText(e.target.value)}
-                />
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Hook (opening line)</label>
+                <Input placeholder="The first line that grabbed attention..." value={hookText} onChange={(e) => setHookText(e.target.value)} className={inputClass} />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">Views</Label>
-                  <Input type="number" placeholder="0" value={views} onChange={(e) => setViews(e.target.value)} min={0} />
+                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Views</label>
+                  <Input type="number" placeholder="0" value={views} onChange={(e) => setViews(e.target.value)} min={0} className={inputClass} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Likes</Label>
-                  <Input type="number" placeholder="0" value={likes} onChange={(e) => setLikes(e.target.value)} min={0} />
+                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Likes</label>
+                  <Input type="number" placeholder="0" value={likes} onChange={(e) => setLikes(e.target.value)} min={0} className={inputClass} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Comments</Label>
-                  <Input type="number" placeholder="0" value={comments} onChange={(e) => setComments(e.target.value)} min={0} />
+                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Comments</label>
+                  <Input type="number" placeholder="0" value={comments} onChange={(e) => setComments(e.target.value)} min={0} className={inputClass} />
                 </div>
               </div>
             </div>
 
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
-            <Button onClick={handleSubmit} disabled={isPending || (!caption && !url && !screenshot)} className="w-full">
+            <button
+              onClick={handleSubmit}
+              disabled={isPending || (!caption && !url && !screenshot)}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {isPending ? 'Saving...' : 'Save post'}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

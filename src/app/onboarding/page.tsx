@@ -3,13 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 
 const PLATFORMS = [
   { id: 'tiktok', label: 'TikTok' },
@@ -36,6 +31,8 @@ export default function OnboardingPage() {
   const [goals, setGoals] = useState('')
   const [platforms, setPlatforms] = useState<string[]>([])
   const [postingTarget, setPostingTarget] = useState(3)
+
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   function togglePlatform(id: string) {
     setPlatforms((prev) =>
@@ -78,7 +75,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Orianna</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Orianna</h1>
           <p className="text-muted-foreground mt-1">Let&apos;s set up your profile</p>
         </div>
 
@@ -87,33 +84,44 @@ export default function OnboardingPage() {
             <span>Step {step + 1} of {STEPS.length}</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full h-2.5 bg-muted dark:bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{STEPS[step].title}</CardTitle>
-            <CardDescription>{STEPS[step].description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-5">
+          <div>
+            <p className="text-lg font-bold text-foreground">{STEPS[step].title}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">{STEPS[step].description}</p>
+          </div>
+
+          <div className="space-y-4">
             {step === 0 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="niche">Main niche *</Label>
+                  <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                    Main niche <span className="text-purple-500">*</span>
+                  </label>
                   <Input
-                    id="niche"
                     placeholder="e.g. Fitness, Comedy, Finance, Gaming..."
                     value={niche}
                     onChange={(e) => setNiche(e.target.value)}
+                    className={inputClass}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sub-niche">Sub-niche (optional)</Label>
+                  <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                    Sub-niche
+                    <span className="text-[10px] font-medium normal-case tracking-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground/60">optional</span>
+                  </label>
                   <Input
-                    id="sub-niche"
                     placeholder="e.g. Calisthenics, Dark humor, Crypto..."
                     value={subNiche}
                     onChange={(e) => setSubNiche(e.target.value)}
+                    className={inputClass}
                   />
                 </div>
               </>
@@ -121,33 +129,37 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <div className="space-y-2">
-                <Label htmlFor="goals">What are your content goals?</Label>
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                  Content goals <span className="text-purple-500">*</span>
+                </label>
                 <Textarea
-                  id="goals"
                   placeholder="e.g. Reach 100k followers in 6 months, monetize through brand deals, grow my personal brand..."
                   value={goals}
                   onChange={(e) => setGoals(e.target.value)}
                   rows={5}
+                  className={inputClass}
                 />
               </div>
             )}
 
             {step === 2 && (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 {PLATFORMS.map((p) => (
                   <button
                     key={p.id}
                     type="button"
                     onClick={() => togglePlatform(p.id)}
-                    className={`flex items-center justify-between p-4 rounded-lg border-2 transition-colors text-left ${
+                    className={`flex items-center justify-between p-4 rounded-xl transition-all duration-150 text-left ${
                       platforms.includes(p.id)
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                        ? 'bg-purple-500/10 border-2 border-purple-500 shadow-md shadow-purple-500/10'
+                        : 'border border-border dark:border-white/8 hover:border-purple-500/40 hover:bg-muted/50'
                     }`}
                   >
-                    <span className="font-medium">{p.label}</span>
+                    <span className={`font-medium ${platforms.includes(p.id) ? 'text-foreground' : 'text-muted-foreground'}`}>{p.label}</span>
                     {platforms.includes(p.id) && (
-                      <Badge variant="default">Selected</Badge>
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400">
+                        Selected
+                      </span>
                     )}
                   </button>
                 ))}
@@ -156,24 +168,24 @@ export default function OnboardingPage() {
 
             {step === 3 && (
               <div className="space-y-3">
-                <Label>Posts per week target</Label>
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Posts per week target</label>
                 <div className="grid grid-cols-5 gap-2">
                   {POSTING_TARGETS.map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => setPostingTarget(t)}
-                      className={`py-3 rounded-lg border-2 font-medium transition-colors ${
+                      className={`py-3 rounded-xl font-bold transition-all duration-150 ${
                         postingTarget === t
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border hover:border-primary/50'
+                          ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                          : 'border border-border dark:border-white/8 text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
                       }`}
                     >
                       {t}x
                     </button>
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className={`text-sm font-medium ${postingTarget >= 5 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
                   {postingTarget >= 7
                     ? 'Elite level — consistency is king!'
                     : postingTarget >= 5
@@ -187,30 +199,33 @@ export default function OnboardingPage() {
 
             <div className="flex gap-3 pt-2">
               {step > 0 && (
-                <Button variant="outline" onClick={() => setStep(step - 1)} className="flex-1">
+                <button
+                  onClick={() => setStep(step - 1)}
+                  className="flex-1 h-11 rounded-xl border border-border dark:border-white/10 text-foreground text-sm font-medium hover:bg-muted dark:hover:bg-white/5 transition-all"
+                >
                   Back
-                </Button>
+                </button>
               )}
               {step < STEPS.length - 1 ? (
-                <Button
+                <button
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed}
-                  className="flex-1"
+                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   Continue
-                </Button>
+                </button>
               ) : (
-                <Button
+                <button
                   onClick={handleFinish}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                 >
                   {loading ? 'Setting up...' : "Let's go!"}
-                </Button>
+                </button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )

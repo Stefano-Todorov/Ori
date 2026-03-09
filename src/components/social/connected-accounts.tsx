@@ -1,18 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useState, useTransition, useEffect } from 'react'
 import { disconnectAccount } from '@/app/actions'
 import type { SocialAccount, Platform } from '@/lib/types'
 import { useSearchParams } from 'next/navigation'
-import { useEffect } from 'react'
 
-const PLATFORMS: { id: Platform; label: string; color: string }[] = [
-  { id: 'youtube', label: 'YouTube Shorts', color: 'bg-red-500' },
-  { id: 'tiktok', label: 'TikTok', color: 'bg-black' },
-  { id: 'instagram', label: 'Instagram', color: 'bg-pink-500' },
+const PLATFORMS: { id: Platform; label: string; dotColor: string }[] = [
+  { id: 'youtube', label: 'YouTube Shorts', dotColor: 'bg-red-500' },
+  { id: 'tiktok', label: 'TikTok', dotColor: 'bg-black dark:bg-white' },
+  { id: 'instagram', label: 'Instagram', dotColor: 'bg-pink-500' },
 ]
 
 interface Props {
@@ -28,7 +24,7 @@ export function ConnectedAccounts({ accounts }: Props) {
   useEffect(() => {
     const connected = searchParams.get('connected')
     const error = searchParams.get('error')
-    if (connected) setNotification(`✓ ${connected} connected successfully`)
+    if (connected) setNotification(`${connected} connected successfully`)
     if (error) setNotification(`Error: ${decodeURIComponent(error)}`)
     if (connected || error) {
       const timer = setTimeout(() => setNotification(null), 5000)
@@ -49,26 +45,27 @@ export function ConnectedAccounts({ accounts }: Props) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Connected Accounts</CardTitle>
-        <CardDescription>Connect your social media accounts to schedule and publish posts</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {notification && (
-          <div className={`text-sm p-3 rounded-md ${notification.startsWith('Error') ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-700 dark:text-green-400'}`}>
-            {notification}
-          </div>
-        )}
+    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div>
+        <p className="text-sm font-bold text-foreground">Connected Accounts</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Connect your social media accounts to schedule and publish posts</p>
+      </div>
 
+      {notification && (
+        <div className={`text-sm p-3 rounded-xl ${notification.startsWith('Error') ? 'bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400' : 'bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400'}`}>
+          {notification}
+        </div>
+      )}
+
+      <div className="space-y-2">
         {PLATFORMS.map((p) => {
           const account = accounts.find(a => a.platform === p.id)
           return (
-            <div key={p.id} className="flex items-center justify-between p-4 rounded-lg border">
+            <div key={p.id} className="flex items-center justify-between p-4 rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] transition-colors hover:bg-muted/50 dark:hover:bg-[#1e1e38]">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${p.color}`} />
+                <div className={`w-2.5 h-2.5 rounded-full ${p.dotColor}`} />
                 <div>
-                  <div className="font-medium text-sm">{p.label}</div>
+                  <div className="font-medium text-sm text-foreground">{p.label}</div>
                   {account && (
                     <div className="text-xs text-muted-foreground">
                       {account.display_name ?? account.username}
@@ -79,29 +76,30 @@ export function ConnectedAccounts({ accounts }: Props) {
               <div className="flex items-center gap-2">
                 {account ? (
                   <>
-                    <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                    <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-green-500/15 border border-green-500/30 text-green-600 dark:text-green-400">
                       Connected
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    </span>
+                    <button
                       onClick={() => handleDisconnect(p.id)}
                       disabled={isPending && disconnecting === p.id}
-                      className="text-xs text-muted-foreground hover:text-destructive"
+                      className="text-xs text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-2.5 py-1 rounded-lg transition-all duration-150"
                     >
                       Disconnect
-                    </Button>
+                    </button>
                   </>
                 ) : (
-                  <Button size="sm" variant="outline" onClick={() => handleConnect(p.id)}>
+                  <button
+                    onClick={() => handleConnect(p.id)}
+                    className="text-xs font-medium px-3.5 py-1.5 rounded-xl border border-border dark:border-white/10 text-foreground hover:border-purple-500/40 hover:bg-purple-500/5 transition-all duration-150"
+                  >
                     Connect
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
           )
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

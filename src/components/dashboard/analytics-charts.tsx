@@ -1,6 +1,5 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -76,59 +75,47 @@ export function AnalyticsCharts({ posts }: Props) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Views Over Time</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {viewsData.length < 2 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Not enough dated posts to show a trend. Make sure your CSV includes post dates.
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={viewsData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} />
-                <Tooltip formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''} />
-                <Line
-                  type="monotone"
-                  dataKey="views"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+        <p className="text-sm font-bold text-foreground">Views Over Time</p>
+        {viewsData.length < 2 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Not enough dated posts to show a trend. Make sure your CSV includes post dates.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={viewsData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+              <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} className="fill-muted-foreground" />
+              <Tooltip
+                formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''}
+                contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
+              />
+              <Line type="monotone" dataKey="views" stroke="#7c3aed" strokeWidth={2.5} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium">Avg Views by Platform</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {platformData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No platform data yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={platformData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="platform" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} />
-                <Tooltip formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''} />
-                <Bar
-                  dataKey="avgViews"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+        <p className="text-sm font-bold text-foreground">Avg Views by Platform</p>
+        {platformData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No platform data yet.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={platformData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="platform" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+              <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} className="fill-muted-foreground" />
+              <Tooltip
+                formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''}
+                contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
+              />
+              <Bar dataKey="avgViews" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
     </div>
   )
 }

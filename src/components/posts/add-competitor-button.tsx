@@ -1,10 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
@@ -19,6 +17,8 @@ export function AddCompetitorButton() {
   const [profileUrl, setProfileUrl] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   async function handleAdd() {
     if (!platform || !handle.trim()) return
@@ -47,21 +47,24 @@ export function AddCompetitorButton() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        <Plus size={16} className="mr-2" />
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200"
+      >
+        <Plus size={16} />
         Add competitor
-      </Button>
+      </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle>Add a competitor</DialogTitle>
+            <DialogTitle className="text-foreground">Add a competitor</DialogTitle>
             <DialogDescription>Track their content to find what works in your niche.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Platform</Label>
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Platform</label>
               <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                <SelectTrigger className={inputClass}><SelectValue placeholder="Select platform" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="tiktok">TikTok</SelectItem>
                   <SelectItem value="instagram">Instagram</SelectItem>
@@ -70,33 +73,32 @@ export function AddCompetitorButton() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Handle / username</Label>
-              <Input
-                placeholder="@username"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-              />
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                Handle / username <span className="text-purple-500">*</span>
+              </label>
+              <Input placeholder="@username" value={handle} onChange={(e) => setHandle(e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-2">
-              <Label>Profile URL (optional)</Label>
-              <Input
-                placeholder="https://www.tiktok.com/@username"
-                value={profileUrl}
-                onChange={(e) => setProfileUrl(e.target.value)}
-              />
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                Profile URL
+                <span className="text-[10px] font-medium normal-case tracking-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground/60">optional</span>
+              </label>
+              <Input placeholder="https://www.tiktok.com/@username" value={profileUrl} onChange={(e) => setProfileUrl(e.target.value)} className={inputClass} />
             </div>
             <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea
-                placeholder="e.g. Similar niche, great hooks..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-              />
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                Notes
+                <span className="text-[10px] font-medium normal-case tracking-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground/60">optional</span>
+              </label>
+              <Textarea placeholder="e.g. Similar niche, great hooks..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
             </div>
-            <Button onClick={handleAdd} disabled={!platform || !handle.trim() || loading} className="w-full">
+            <button
+              onClick={handleAdd}
+              disabled={!platform || !handle.trim() || loading}
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               {loading ? 'Adding...' : 'Add competitor'}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

@@ -89,34 +89,42 @@ export function ImportCsvButton() {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <Upload size={16} className="mr-2" />
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl border border-border dark:border-white/10 text-foreground text-sm font-medium hover:bg-muted dark:hover:bg-white/5 transition-all duration-150"
+      >
+        <Upload size={14} />
         Import CSV
-      </Button>
+      </button>
 
       <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); else setOpen(true) }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle>Import post analytics</DialogTitle>
+            <DialogTitle className="text-foreground">Import post analytics</DialogTitle>
             <DialogDescription>
               Export your analytics CSV from TikTok, Instagram, or YouTube Studio and upload it here.
             </DialogDescription>
           </DialogHeader>
 
           {result ? (
-            <div className="flex flex-col items-center gap-3 py-6">
+            <div className="flex flex-col items-center gap-4 py-8">
               <CheckCircle className="text-green-500" size={48} />
-              <p className="text-lg font-semibold">
+              <p className="text-lg font-bold text-foreground">
                 {result.imported} posts imported!
               </p>
-              <Button onClick={handleClose}>Done</Button>
+              <button
+                onClick={handleClose}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all"
+              >
+                Done
+              </button>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Platform</Label>
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Platform</label>
                 <Select value={platform} onValueChange={(v) => { setPlatform(v); setShowHowTo(true) }}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg">
                     <SelectValue placeholder="Select platform" />
                   </SelectTrigger>
                   <SelectContent>
@@ -127,12 +135,11 @@ export function ImportCsvButton() {
                 </Select>
               </div>
 
-              {/* How-to guide — auto-expands when platform is selected */}
               {howTo && (
-                <div className="rounded-lg border bg-muted/40 overflow-hidden">
+                <div className="rounded-xl border border-border dark:border-white/8 bg-muted/40 dark:bg-[#1a1a2e] overflow-hidden">
                   <button
                     type="button"
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/60 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 dark:hover:bg-[#1e1e38] transition-colors"
                     onClick={() => setShowHowTo(!showHowTo)}
                   >
                     <span>How to get your CSV from {platform === 'youtube' ? 'YouTube' : platform === 'tiktok' ? 'TikTok' : 'Instagram'}</span>
@@ -140,11 +147,11 @@ export function ImportCsvButton() {
                   </button>
                   {showHowTo && (
                     <div className="px-4 pb-4">
-                      <p className="text-xs font-semibold text-primary mb-3">{howTo.title}</p>
+                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 mb-3">{howTo.title}</p>
                       <ol className="space-y-2">
                         {howTo.steps.map((step, i) => (
                           <li key={i} className="flex gap-3 text-xs text-muted-foreground">
-                            <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-[10px]">
+                            <span className="shrink-0 w-5 h-5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-[10px]">
                               {i + 1}
                             </span>
                             <span className="leading-relaxed">{step}</span>
@@ -157,16 +164,16 @@ export function ImportCsvButton() {
               )}
 
               <div className="space-y-2">
-                <Label>CSV File</Label>
+                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">CSV File</label>
                 <div
-                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  className="border-2 border-dashed border-border dark:border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-purple-500/40 hover:bg-purple-500/[0.02] transition-all duration-150"
                   onClick={() => fileRef.current?.click()}
                 >
                   {file ? (
-                    <p className="text-sm font-medium">{file.name}</p>
+                    <p className="text-sm font-medium text-foreground">{file.name}</p>
                   ) : (
                     <>
-                      <Upload size={24} className="mx-auto mb-2 text-muted-foreground" />
+                      <Upload size={20} className="mx-auto mb-2 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground">Click to select a CSV file</p>
                     </>
                   )}
@@ -184,13 +191,13 @@ export function ImportCsvButton() {
                 <p className="text-sm text-destructive">{error}</p>
               )}
 
-              <Button
+              <button
                 onClick={handleImport}
                 disabled={!file || !platform || loading}
-                className="w-full"
+                className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Importing...' : 'Import'}
-              </Button>
+              </button>
             </div>
           )}
         </DialogContent>
