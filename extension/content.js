@@ -304,6 +304,43 @@ function findCaption(obj, depth) {
   return null
 }
 
+// Recursively find stats (play_count, like_count, comment_count) in IG page data
+function findIgStats(obj, depth) {
+  if (!obj || typeof obj !== 'object' || depth > 6) return null
+  // Direct media stats
+  if (obj.play_count != null || obj.like_count != null) {
+    return { views: obj.play_count ?? obj.video_play_count ?? null, likes: obj.like_count ?? null, comments: obj.comment_count ?? null }
+  }
+  // edge_media_preview_like pattern (GraphQL)
+  if (obj.edge_media_preview_like?.count != null) {
+    return {
+      views: obj.video_view_count ?? null,
+      likes: obj.edge_media_preview_like.count,
+      comments: obj.edge_media_preview_comment?.count ?? obj.edge_media_to_parent_comment?.count ?? null,
+    }
+  }
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findIgStats(item, depth + 1)
+      if (found) return found
+    }
+  } else {
+    for (const key of ['data', 'graphql', 'result', 'media', 'items', 'shortcode_media', 'xdt_api__v1__media__shortcode__web_info']) {
+      if (obj[key]) {
+        const found = findIgStats(obj[key], depth + 1)
+        if (found) return found
+      }
+    }
+    if (Array.isArray(obj.items)) {
+      for (const item of obj.items) {
+        const found = findIgStats(item, depth + 1)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+
 function extractInstagram() {
   const url = window.location.href
   const isReel = url.includes('/reel/') || url.includes('/p/')
@@ -332,23 +369,63 @@ function extractInstagram() {
     }
   }
 
-  const viewsRaw = trySelectors([
+  let viewsRaw = trySelectors([
     'span[class*="view"]',
     '[class*="videoViewCount"]',
     'section span[class*="view"]',
     'span._aacl._aaco._aacu._aacx._aad7._aade',
   ])
 
-  const likesRaw = trySelectors([
+  let likesRaw = trySelectors([
     'a[href*="/liked_by/"] span',
     'section span.html-span',
     'button[type="button"] span._aacl',
   ])
 
-  const commentsRaw = trySelectors([
+  let commentsRaw = trySelectors([
     'a[href*="comments"] span',
     'span[class*="comment"]',
   ])
+
+  // Fallback: parse stats from og:description ("184K likes, 527 comments - username on...")
+  if (!likesRaw || !commentsRaw) {
+    const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+    if (ogDesc) {
+      if (!likesRaw) {
+        const lm = ogDesc.match(/([\d,.]+[KMB]?)\s*likes?/i)
+        if (lm) likesRaw = lm[1]
+      }
+      if (!commentsRaw) {
+        const cm = ogDesc.match(/([\d,.]+[KMB]?)\s*comments?/i)
+        if (cm) commentsRaw = cm[1]
+      }
+      if (!viewsRaw) {
+        const vm = ogDesc.match(/([\d,.]+[KMB]?)\s*views?/i)
+        if (vm) viewsRaw = vm[1]
+      }
+    }
+  }
+
+  // Also try embedded JSON for stats
+  if (!viewsRaw || !likesRaw) {
+    try {
+      const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+      for (const script of scripts) {
+        try {
+          const text = script.textContent?.trim()
+          if (!text || text.length < 50 || (text[0] !== '{' && text[0] !== '[')) continue
+          const data = JSON.parse(text)
+          const stats = findIgStats(data, 0)
+          if (stats) {
+            if (!viewsRaw && stats.views) viewsRaw = String(stats.views)
+            if (!likesRaw && stats.likes) likesRaw = String(stats.likes)
+            if (!commentsRaw && stats.comments) commentsRaw = String(stats.comments)
+            break
+          }
+        } catch {}
+      }
+    } catch {}
+  }
 
   // Handle extraction — try multiple methods
   // Method 1: Embedded page JSON data (most reliable)

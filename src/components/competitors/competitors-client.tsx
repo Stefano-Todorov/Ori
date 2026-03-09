@@ -5,10 +5,10 @@ import {
   ExternalLink, Plus, Trash2, ChevronDown, ChevronRight,
   Eye, Heart, MessageCircle, Pencil, Check, Video,
   Users, BarChart3, Trophy, Loader2, Sparkles, Lightbulb,
-  X, SortAsc, Calendar, TrendingUp,
+  X, SortAsc, Calendar,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
-import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes } from '@/app/actions'
+import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, createIdeaFromInspo } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
@@ -355,12 +355,32 @@ function EmptyPostsState({ handle, platform }: { handle: string; platform: Platf
 
 // ─── Post Card ────────────────────────────────────────
 
+function postTitle(post: Post): string {
+  const cap = post.caption?.trim()
+  if (!cap) return 'Untitled post'
+  // Use first sentence or first 80 chars as title
+  const firstLine = cap.split(/[.\n]/)[0].trim()
+  if (firstLine.length <= 80) return firstLine
+  return firstLine.slice(0, 77) + '...'
+}
+
 function PostCard({ post, handle }: { post: Post; handle: string }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [creatingIdea, setCreatingIdea] = useState(false)
+  const [ideaCreated, setIdeaCreated] = useState(false)
   const badge = performanceBadge(post.views)
   const er = engagementRate(post)
+
+  async function handleCreateIdea() {
+    setCreatingIdea(true)
+    const result = await createIdeaFromInspo(post.id)
+    setCreatingIdea(false)
+    if (result && !('error' in result)) {
+      setIdeaCreated(true)
+    }
+  }
 
   // Ideas modal state
   const [ideasOpen, setIdeasOpen] = useState(false)
@@ -449,13 +469,17 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
           className="w-full text-left p-4 flex items-start gap-3"
         >
           <div className="flex-1 min-w-0 space-y-1.5">
+            {/* Title */}
+            <p className="text-sm font-semibold text-foreground leading-snug">
+              {postTitle(post)}
+            </p>
             {post.hook_text && (
-              <p className="text-sm font-medium italic text-foreground leading-snug">
+              <p className="text-xs italic text-muted-foreground leading-snug">
                 &ldquo;{post.hook_text}&rdquo;
               </p>
             )}
-            {post.caption && (
-              <p className={`text-sm text-muted-foreground ${expanded ? '' : 'line-clamp-2'}`}>
+            {post.caption && !expanded && (
+              <p className="text-xs text-muted-foreground line-clamp-1">
                 {post.caption}
               </p>
             )}
@@ -505,13 +529,19 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
         {/* Expanded section */}
         {expanded && (
           <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
-            {/* Full stats grid */}
-            <div className="grid grid-cols-4 gap-3 pt-3">
+            {/* Full caption */}
+            {post.caption && (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap pt-3">
+                {post.caption}
+              </p>
+            )}
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-3">
               {[
                 { label: 'Views', value: post.views, icon: Eye },
                 { label: 'Likes', value: post.likes, icon: Heart },
                 { label: 'Comments', value: post.comments, icon: MessageCircle },
-                { label: 'Shares', value: post.shares, icon: TrendingUp },
               ].map(({ label, value, icon: Icon }) => (
                 <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
                   <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
@@ -560,6 +590,20 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   <Lightbulb size={11} />
                   Why it worked
                 </button>
+                {ideaCreated ? (
+                  <span className="inline-flex items-center gap-1 h-7 px-3 text-[10px] font-medium text-green-600 dark:text-green-400">
+                    <Check size={11} /> Idea created
+                  </span>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
+                    disabled={creatingIdea}
+                    className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+                  >
+                    {creatingIdea ? <Loader2 size={11} className="animate-spin" /> : <Plus size={11} />}
+                    Create idea
+                  </button>
+                )}
                 <div className="w-px h-4 bg-border dark:bg-white/10 mx-0.5" />
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeletePost() }}
