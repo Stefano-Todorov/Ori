@@ -38,11 +38,20 @@ export async function POST(req: NextRequest) {
       .limit(1)
 
     if (!existing || existing.length === 0) {
+      const profileUrl = platform === 'instagram'
+        ? `https://instagram.com/${handle}`
+        : platform === 'tiktok'
+        ? `https://tiktok.com/@${handle}`
+        : platform === 'youtube'
+        ? `https://youtube.com/@${handle}`
+        : null
+
       await supabase.from('competitors').insert({
         user_id: user.id,
         handle,
         platform,
         display_name: handle,
+        profile_url: profileUrl,
       })
     }
 
@@ -166,12 +175,21 @@ export async function POST(req: NextRequest) {
       .ilike('handle', handle)
 
     if (!existingCompetitors || existingCompetitors.length === 0) {
+      const profileUrl = platform === 'instagram'
+        ? `https://instagram.com/${handle}`
+        : platform === 'tiktok'
+        ? `https://tiktok.com/@${handle}`
+        : platform === 'youtube'
+        ? `https://youtube.com/@${handle}`
+        : null
+
       // Auto-create new competitor
       await supabase.from('competitors').insert({
         user_id: user.id,
         handle,
         platform,
         display_name: handle,
+        profile_url: profileUrl,
       })
     }
 

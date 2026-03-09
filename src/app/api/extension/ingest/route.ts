@@ -39,10 +39,20 @@ export async function POST(request: NextRequest) {
 
   // Upsert competitor record if applicable
   if (competitor_handle) {
+    const cleanHandle = competitor_handle.replace('@', '')
+    const profileUrl = platform === 'instagram'
+      ? `https://instagram.com/${cleanHandle}`
+      : platform === 'tiktok'
+      ? `https://tiktok.com/@${cleanHandle}`
+      : platform === 'youtube'
+      ? `https://youtube.com/@${cleanHandle}`
+      : null
+
     await supabase.from('competitors').upsert({
       user_id: user.id,
       platform,
-      handle: competitor_handle.replace('@', ''),
+      handle: cleanHandle,
+      profile_url: profileUrl,
       last_scraped_at: new Date().toISOString(),
     })
   }
