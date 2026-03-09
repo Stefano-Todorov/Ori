@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Loader2, Sparkles, ChevronDown, ChevronUp, Trash2, Bookmark, Copy, Check, Dices } from 'lucide-react'
@@ -34,15 +33,21 @@ interface Props {
 }
 
 const DIFFICULTY_COLORS = {
-  easy: 'bg-green-100 text-green-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  hard: 'bg-red-100 text-red-800',
+  easy: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  hard: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 }
 
 const DIFFICULTY_DESCRIPTIONS = {
   easy: 'Talk to camera, no editing',
   medium: 'Some cuts + text overlays',
   hard: 'Complex editing + B-roll',
+}
+
+const DIFFICULTY_SUBTITLE_COLORS = {
+  easy: 'text-green-600 dark:text-green-400',
+  medium: 'text-amber-600 dark:text-amber-400',
+  hard: 'text-red-600 dark:text-red-400',
 }
 
 const STATUS_NEXT: Record<string, 'draft' | 'used' | 'archived'> = {
@@ -52,9 +57,9 @@ const STATUS_NEXT: Record<string, 'draft' | 'used' | 'archived'> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-  used: 'bg-green-100 text-green-800 hover:bg-green-200',
-  archived: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+  draft: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400',
+  used: 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400',
+  archived: 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400',
 }
 
 const HOOK_ANGLES = [
@@ -98,6 +103,20 @@ function parseBody(body: string): { label: string; text: string }[] {
   return segments.filter((s) => s.label || s.text)
 }
 
+function FormLabel({ children, required, optional }: { children: React.ReactNode; required?: boolean; optional?: boolean }) {
+  return (
+    <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+      {children}
+      {required && <span className="text-purple-500">*</span>}
+      {optional && (
+        <span className="text-[10px] font-medium normal-case tracking-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground/60">
+          optional
+        </span>
+      )}
+    </label>
+  )
+}
+
 function MultiSelect({
   label,
   options,
@@ -114,18 +133,29 @@ function MultiSelect({
   }
 
   return (
-    <div className="space-y-2">
-      <Label>{label} <span className="text-xs text-muted-foreground font-normal">(select any)</span></Label>
-      <div className="flex flex-wrap gap-1.5">
+    <div className="space-y-2.5">
+      <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">
+        {label}
+        {selected.length > 0 ? (
+          <span className="text-purple-500 ml-1.5 normal-case tracking-normal">
+            — {selected.length} selected
+          </span>
+        ) : (
+          <span className="text-muted-foreground/50 ml-1.5 font-normal normal-case tracking-normal">
+            (select any)
+          </span>
+        )}
+      </label>
+      <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => toggle(opt)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
               selected.includes(opt)
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border text-muted-foreground hover:border-primary/50'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
             }`}
           >
             {opt}
@@ -220,35 +250,41 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles size={18} />
-            Generate a script
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-2">
-              <Label>Video topic / idea *</Label>
-              <Input
-                placeholder="e.g. 3 mistakes beginners make at the gym"
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && generate(false)}
-              />
-            </div>
+      {/* ─── Generator Card ─── */}
+      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-7 border-t-2 border-t-purple-600 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2.5 mb-1">
+            <Sparkles size={20} className="text-purple-500 animate-pulse" />
+            <h2 className="text-xl font-bold text-foreground">Generate a script</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">Fill in the details and let AI write your video script</p>
+        </div>
 
-            <div className="sm:col-span-2 space-y-2">
-              <Label>Specific angle (optional)</Label>
-              <Input
-                placeholder="e.g. controversial take, storytime"
-                value={angle}
-                onChange={(e) => setAngle(e.target.value)}
-              />
-            </div>
+        <div className="space-y-5">
+          {/* Input fields */}
+          <div className="space-y-2">
+            <FormLabel required>Video topic / idea</FormLabel>
+            <Input
+              placeholder="e.g. 3 mistakes beginners make at the gym"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && generate(false)}
+              className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            />
           </div>
 
+          <div className="space-y-2">
+            <FormLabel optional>Specific angle</FormLabel>
+            <Input
+              placeholder="e.g. controversial take, storytime"
+              value={angle}
+              onChange={(e) => setAngle(e.target.value)}
+              className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            />
+          </div>
+
+          {/* Hook & CTA styles */}
           <MultiSelect
             label="Hook styles"
             options={HOOK_ANGLES}
@@ -263,22 +299,28 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
             onChange={setCtaAngles}
           />
 
-          <div className="space-y-2">
-            <Label>Difficulty</Label>
-            <div className="grid grid-cols-3 gap-2">
+          {/* Difficulty */}
+          <div className="space-y-2.5">
+            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Difficulty</label>
+            <div className="grid grid-cols-3 gap-3">
               {(['easy', 'medium', 'hard'] as const).map((d) => (
                 <button
                   key={d}
                   type="button"
                   onClick={() => setDifficulty(d)}
-                  className={`py-2 px-3 rounded-md border-2 text-xs font-medium transition-all ${
+                  className={`relative py-3 px-3 rounded-xl text-left transition-all duration-200 ${
                     difficulty === d
-                      ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-border hover:border-primary/40'
+                      ? 'bg-purple-500/10 dark:bg-purple-500/15 border-2 border-purple-500 shadow-md shadow-purple-500/10'
+                      : 'bg-muted/50 dark:bg-[#1a1a2e] border border-border dark:border-white/6 hover:border-purple-500/40 hover:bg-muted dark:hover:bg-[#1e1e2e]'
                   }`}
                 >
-                  <div className="capitalize">{d}</div>
-                  <div className="text-muted-foreground font-normal hidden sm:block">
+                  {difficulty === d && (
+                    <span className="absolute top-2 right-2 text-purple-500 text-xs font-bold">&#10003;</span>
+                  )}
+                  <div className={`text-sm font-bold capitalize ${difficulty === d ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    {d}
+                  </div>
+                  <div className={`text-[11px] mt-0.5 hidden sm:block ${difficulty === d ? DIFFICULTY_SUBTITLE_COLORS[d] : 'text-muted-foreground/60'}`}>
                     {DIFFICULTY_DESCRIPTIONS[d]}
                   </div>
                 </button>
@@ -286,26 +328,34 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
             </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => generate(false)} disabled={!topic.trim() || loading} className="sm:w-auto">
-              {loading ? (
-                <><Loader2 size={16} className="mr-2 animate-spin" />Generating...</>
-              ) : (
-                <><Sparkles size={16} className="mr-2" />Generate script</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => generate(true)}
-              disabled={loading}
-              title="Let AI pick a random topic for your niche"
-            >
-              <Dices size={16} className="mr-2" />
-              Surprise me
-            </Button>
+          {/* Action buttons */}
+          <div className="space-y-3 pt-1">
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={() => generate(false)}
+                disabled={!topic.trim() || loading}
+                className="flex-1 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              >
+                {loading ? (
+                  <><Loader2 size={16} className="animate-spin" />Generating...</>
+                ) : (
+                  <><Sparkles size={16} />Generate script</>
+                )}
+              </button>
+              <button
+                onClick={() => generate(true)}
+                disabled={loading}
+                className="h-12 px-5 rounded-xl border border-border dark:border-white/12 text-foreground text-sm font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:bg-muted dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Let AI pick a random topic for your niche"
+              >
+                <Dices size={16} />
+                Surprise me
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground/60 text-center">Generation usually takes 5–10 seconds</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {result && (
         <div className="space-y-4">
