@@ -365,23 +365,35 @@ function extractInstagram() {
     }
   }
 
-  // Method 3: og:description meta tag ("Username on Instagram")
+  // Method 3: URL path — /reel/ and /p/ URLs have username in og:url or canonical
+  if (!handle) {
+    const canonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href') ??
+                      document.querySelector('meta[property="og:url"]')?.getAttribute('content')
+    if (canonical) {
+      // Instagram canonical URLs don't always have the username, but the page URL might
+      // Try extracting from actual page URL: instagram.com/username/reel/xxx
+      const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
+      if (urlMatch) handle = urlMatch[1]
+    }
+  }
+
+  // Method 4: og:description — only extract if it looks like a clean username (no spaces/pipes)
   if (!handle) {
     const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
     if (ogDesc) {
       const descMatch = ogDesc.match(/^[\d,.]+ likes?,\s*[\d,.]+ comments?\s*-\s*(.+?)\s+on Instagram/)
-      if (descMatch) handle = descMatch[1].replace(/\s/g, '').replace(/@/g, '')
+      if (descMatch) {
+        const candidate = descMatch[1].trim()
+        // Only use if it looks like a username (no spaces, pipes, or long names)
+        if (/^[a-zA-Z0-9._]{1,30}$/.test(candidate)) handle = candidate
+      }
     }
   }
 
-  // Method 4: og:title meta tag
+  // Method 5: URL path directly
   if (!handle) {
-    const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content')
-    if (ogTitle) {
-      // Format: "Username on Instagram: "caption"" or just "Username"
-      const titleMatch = ogTitle.match(/^(.+?)\s+on Instagram/) || ogTitle.match(/^@?([a-zA-Z0-9._]+)/)
-      if (titleMatch) handle = titleMatch[1].replace(/\s/g, '').replace(/@/g, '')
-    }
+    const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
+    if (urlMatch) handle = urlMatch[1]
   }
 
   // Method 5: Legacy DOM selectors

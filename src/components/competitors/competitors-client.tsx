@@ -77,31 +77,20 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Competitors</h1>
-          <p className="text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            Competitors
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400">
+              {competitors.length + orphanedHandles.length}
+            </span>
+          </h1>
+          <p className="text-muted-foreground mt-1">
             Track what&apos;s working in your niche
-            {totalPosts > 0 && (
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400">
-                {totalPosts} post{totalPosts !== 1 ? 's' : ''} tracked
-              </span>
-            )}
           </p>
         </div>
-        {/* Preserve existing add-competitor import from page */}
       </div>
 
       {/* Summary stat pills */}
       <div className="flex gap-3 flex-wrap">
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
-          <Users size={13} className="text-purple-500" />
-          <span className="text-xs font-bold text-foreground">{competitors.length + orphanedHandles.length}</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Competitors</span>
-        </div>
-        <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
-          <BarChart3 size={13} className="text-blue-500" />
-          <span className="text-xs font-bold text-foreground">{totalPosts}</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Posts Tracked</span>
-        </div>
         {totalPosts > 0 && (() => {
           const allPosts = Object.values(postsByHandle).flat()
           const best = allPosts.reduce((a, b) => (b.views > a.views ? b : a), allPosts[0])
