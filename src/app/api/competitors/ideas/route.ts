@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 
 const corsHeaders = {
@@ -11,19 +12,26 @@ export async function OPTIONS() {
   return NextResponse.json(null, { headers: corsHeaders })
 }
 
-export async function POST(request: NextRequest) {
+async function getUser(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (authHeader?.startsWith('Bearer ')) {
+    const supabase = createServiceClient()
+    const { data: { user }, error } = await supabase.auth.getUser(authHeader.slice(7))
+    if (!error && user) return { user, supabase }
+  }
+  // Fallback to cookie auth for browser calls
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (!error && user) return { user, supabase: createServiceClient() }
+  return null
+}
+
+export async function POST(request: NextRequest) {
+  const auth = await getUser(request)
+  if (!auth) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   }
-
-  const token = authHeader.slice(7)
-  const supabase = createServiceClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
-  }
+  const { user, supabase } = auth
 
   const body = await request.json()
   const { postId, handle, platform, caption, hookText, views, likes, count: requestedCount, imageBase64 } = body

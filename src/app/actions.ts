@@ -256,6 +256,18 @@ export async function addCompetitorPost(fields: {
   return { error: null }
 }
 
+export async function updateCompetitorNotes(id: string, notes: string) {
+  const supabase = await createClient()
+  await supabase.from('competitors').update({ notes: notes || null }).eq('id', id)
+  revalidatePath('/dashboard/competitors')
+}
+
+export async function updatePostNotes(id: string, notes: string) {
+  const supabase = await createClient()
+  await supabase.from('posts').update({ ai_notes: notes || null }).eq('id', id)
+  revalidatePath('/dashboard/competitors')
+}
+
 export async function disconnectAccount(platform: Platform) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
