@@ -89,21 +89,6 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
         </div>
       </div>
 
-      {/* Summary stat pills */}
-      <div className="flex gap-3 flex-wrap">
-        {totalPosts > 0 && (() => {
-          const allPosts = Object.values(postsByHandle).flat()
-          const best = allPosts.reduce((a, b) => (b.views > a.views ? b : a), allPosts[0])
-          return best && best.views > 0 ? (
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
-              <Trophy size={13} className="text-yellow-500" />
-              <span className="text-xs font-bold text-foreground">{formatNumber(best.views)}</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Top Post</span>
-            </div>
-          ) : null
-        })()}
-      </div>
-
       {/* Competitor cards */}
       {competitors.length === 0 && orphanedHandles.length === 0 && (
         <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
