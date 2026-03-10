@@ -477,6 +477,8 @@ function render() {
             ${p.views != null ? `<div>👁 <span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
             ${p.likes != null ? `<div>❤️ <span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
             ${p.comments != null ? `<div>💬 <span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
+            ${p.saves != null && p.saves > 0 ? `<div>🔖 <span class="stat-num">${fmt(p.saves)}</span> <span class="stat-label">saves</span></div>` : ''}
+            ${p.shares != null && p.shares > 0 ? `<div>📤 <span class="stat-num">${fmt(p.shares)}</span> <span class="stat-label">sends</span></div>` : ''}
           </div>
         ` : ''}
       </div>

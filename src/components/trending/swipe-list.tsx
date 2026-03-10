@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Trash2, ExternalLink, Eye, Heart, MessageCircle,
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
-  SortAsc, Check, Plus, ArrowRight,
+  SortAsc, Check, Plus, ArrowRight, Bookmark, Send,
 } from 'lucide-react'
 import { deleteSwipePost, updatePostNotes, updatePostTitle, createIdeaFromInspo } from '@/app/actions'
 import { useRouter } from 'next/navigation'
@@ -298,6 +298,18 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
                   <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
+              {post.platform === 'tiktok' && post.saves > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Bookmark size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.saves)}</span>
+                </span>
+              )}
+              {post.platform === 'tiktok' && post.shares > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Send size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.shares)}</span>
+                </span>
+              )}
               {er != null && (
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${er >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted dark:bg-white/5 text-foreground'}`}>
                   <span className="font-semibold">{er.toFixed(1)}%</span>
@@ -327,12 +339,19 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
             )}
 
             {/* Stats grid */}
-            <div className="grid grid-cols-3 gap-3">
-              {[
+            {(() => {
+              const stats = [
                 { label: 'Views', value: post.views, icon: Eye },
                 { label: 'Likes', value: post.likes, icon: Heart },
                 { label: 'Comments', value: post.comments, icon: MessageCircle },
-              ].map(({ label, value, icon: Icon }) => (
+              ]
+              if (post.platform === 'tiktok') {
+                stats.push({ label: 'Saves', value: post.saves, icon: Bookmark })
+                stats.push({ label: 'Sends', value: post.shares, icon: Send })
+              }
+              return (
+            <div className={`grid gap-3 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
+              {stats.map(({ label, value, icon: Icon }) => (
                 <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
                   <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
                   <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
@@ -340,6 +359,8 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
                 </div>
               ))}
             </div>
+              )
+            })()}
 
             {/* Notes */}
             <InlineNotes
