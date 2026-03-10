@@ -254,7 +254,10 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
           className="w-full text-left p-4 flex items-start gap-3"
         >
           <div className="flex-1 min-w-0 space-y-1">
-            {/* Title + date row */}
+            {/* Creator + Title + date row */}
+            {post.competitor_handle && (
+              <span className="text-[11px] font-medium text-muted-foreground">@{post.competitor_handle}</span>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               {editingTitle ? (
                 <input
