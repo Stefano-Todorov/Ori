@@ -153,7 +153,10 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
 
   // Stats summary
   const avgViews = posts.length > 0 ? posts.reduce((s, p) => s + p.views, 0) / posts.length : 0
-  const bestPost = posts.length > 0 ? posts.reduce((a, b) => (b.views > a.views ? b : a), posts[0]) : null
+  const avgComments = posts.length > 0 ? posts.reduce((s, p) => s + p.comments, 0) / posts.length : 0
+  const avgEng = posts.length > 0
+    ? posts.reduce((s, p) => s + (p.views > 0 ? ((p.likes + p.comments + p.shares) / p.views) * 100 : 0), 0) / posts.length
+    : 0
 
   async function handleDelete() {
     setDeleting(true)
@@ -222,12 +225,8 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
             <div className="flex items-center gap-4 text-xs text-muted-foreground pb-3 border-b border-border dark:border-white/6">
               <span><span className="font-bold text-foreground">{posts.length}</span> post{posts.length !== 1 ? 's' : ''} tracked</span>
               {avgViews > 0 && <span><span className="font-bold text-foreground">{formatNumber(Math.round(avgViews))}</span> avg views</span>}
-              {bestPost && bestPost.views > 0 && (
-                <span className="truncate max-w-[200px]">
-                  Best: <span className="font-bold text-foreground">{formatNumber(bestPost.views)}</span>
-                  {bestPost.caption && <span className="ml-1 italic">&ldquo;{bestPost.caption.slice(0, 30)}...&rdquo;</span>}
-                </span>
-              )}
+              {avgComments > 0 && <span><span className="font-bold text-foreground">{formatNumber(Math.round(avgComments))}</span> avg comments</span>}
+              {avgEng > 0 && <span><span className="font-bold text-foreground">{avgEng.toFixed(1)}%</span> avg eng.</span>}
             </div>
           )}
 
@@ -369,13 +368,30 @@ function cleanCaption(raw: string | null): string {
 function postTitle(post: Post): string {
   const cap = cleanCaption(post.caption)
   if (!cap) return 'Untitled post'
-  // Strip hashtags and emojis for a cleaner title
-  const stripped = cap.replace(/#[\w]+/g, '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '').trim()
-  // Take first meaningful sentence
+  // Strip hashtags, emojis, @mentions for a cleaner title
+  const stripped = cap
+    .replace(/#[\w]+/g, '')
+    .replace(/@[\w.]+/g, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '')
+    .trim()
+  // Take first sentence (split on . ! or newline)
   const firstSentence = stripped.split(/[!.\n]/)[0].trim()
-  if (!firstSentence) return cap.slice(0, 60)
-  if (firstSentence.length <= 80) return firstSentence
-  return firstSentence.slice(0, 77) + '...'
+  if (!firstSentence) return cap.slice(0, 50)
+  // If short enough, use as-is
+  if (firstSentence.length <= 50) return firstSentence
+  // Cut at a natural break — look for comma, "I ", " to ", " and ", " but " etc within first 50 chars
+  const cutZone = firstSentence.slice(0, 55)
+  const breakPoints = [', ', ' I ', ' to ', ' and ', ' but ', ' so ', ' - ', ' — ']
+  let bestCut = -1
+  for (const bp of breakPoints) {
+    const idx = cutZone.lastIndexOf(bp)
+    if (idx > 20 && idx > bestCut) bestCut = idx
+  }
+  if (bestCut > 0) return firstSentence.slice(0, bestCut).trim()
+  // No natural break, just truncate at word boundary
+  const truncated = firstSentence.slice(0, 50)
+  const lastSpace = truncated.lastIndexOf(' ')
+  return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
 }
 
 function PostCard({ post, handle }: { post: Post; handle: string }) {
@@ -494,28 +510,24 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
               </span>
             </div>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-3 text-xs">
+            {/* Stats pills */}
+            <div className="flex items-center gap-2 text-[11px]">
               {post.views > 0 && (
-                <span className="flex items-center gap-1">
-                  <Eye size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.views)}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Eye size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.views)}</span>
                 </span>
               )}
               {post.likes > 0 && (
-                <span className="flex items-center gap-1">
-                  <Heart size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.likes)}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Heart size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
               {er != null && (
-                <span className={`font-bold ${er >= 5 ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
-                  {er.toFixed(1)}% <span className="font-normal text-muted-foreground">eng.</span>
-                </span>
-              )}
-              {badge && (
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                  {badge.icon} {badge.label}
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${er >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted dark:bg-white/5 text-foreground'}`}>
+                  <span className="font-semibold">{er.toFixed(1)}%</span>
+                  <span className="font-normal text-muted-foreground">eng</span>
                 </span>
               )}
             </div>
