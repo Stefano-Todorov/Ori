@@ -78,6 +78,7 @@ create table if not exists posts (
   is_competitor boolean default false,
   competitor_handle text,
   is_trending boolean default false,
+  tags text[] default '{}',
   imported_at timestamptz default now(),
   created_at timestamptz default now()
 );
@@ -201,6 +202,7 @@ create table if not exists content_ideas (
   idea text not null,
   source text,
   niche text,
+  tags text[] default '{}',
   status text default 'new' check (status in ('new', 'in_progress', 'done', 'archived')),
   created_at timestamptz default now()
 );

@@ -13,13 +13,15 @@ export default async function IdeasPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
+  const allTags = [...new Set((ideas ?? []).flatMap(i => i.tags ?? []))].sort()
+
   return (
     <div className="p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Content Ideas</h1>
         <p className="text-muted-foreground mt-1">Capture and track ideas before they slip away</p>
       </div>
-      <IdeasBoard ideas={ideas ?? []} />
+      <IdeasBoard ideas={ideas ?? []} allTags={allTags} />
     </div>
   )
 }

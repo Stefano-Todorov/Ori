@@ -38,6 +38,7 @@ export async function addIdea(
     caption?: string
     difficulty?: 'easy' | 'medium' | 'hard'
     video_type?: string
+    tags?: string[]
   }
 ) {
   const supabase = await createClient()
@@ -54,6 +55,7 @@ export async function addIdea(
     caption: extra?.caption || null,
     difficulty: extra?.difficulty || null,
     video_type: extra?.video_type || null,
+    tags: extra?.tags || [],
   })
   revalidatePath('/dashboard/ideas')
 }
@@ -172,6 +174,7 @@ export async function updateIdea(
     caption?: string | null
     difficulty?: 'easy' | 'medium' | 'hard' | null
     video_type?: string | null
+    tags?: string[]
   }
 ) {
   const supabase = await createClient()
@@ -274,6 +277,18 @@ export async function updatePostTitle(id: string, title: string) {
   await supabase.from('posts').update({ title: title || null }).eq('id', id)
   revalidatePath('/dashboard/competitors')
   revalidatePath('/dashboard/inspo')
+}
+
+export async function updatePostTags(id: string, tags: string[]) {
+  const supabase = await createClient()
+  await supabase.from('posts').update({ tags }).eq('id', id)
+  revalidatePath('/dashboard/inspo')
+}
+
+export async function updateIdeaTags(id: string, tags: string[]) {
+  const supabase = await createClient()
+  await supabase.from('content_ideas').update({ tags }).eq('id', id)
+  revalidatePath('/dashboard/ideas')
 }
 
 export async function createIdeaFromInspo(postId: string) {

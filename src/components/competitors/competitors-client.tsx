@@ -563,6 +563,12 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
+              {post.comments > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <MessageCircle size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.comments)}</span>
+                </span>
+              )}
               {post.platform === 'tiktok' && post.saves > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Bookmark size={10} className="text-muted-foreground" />

@@ -43,6 +43,7 @@ export interface Post {
   is_competitor: boolean
   competitor_handle: string | null
   is_trending: boolean
+  tags: string[]
   imported_at: string
   created_at: string
 }
@@ -103,6 +104,7 @@ export interface ContentIdea {
   caption: string | null
   difficulty: Difficulty | null
   video_type: string | null
+  tags: string[]
   status: 'new' | 'in_progress' | 'done' | 'archived'
   created_at: string
 }

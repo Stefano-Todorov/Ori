@@ -6,10 +6,11 @@ import {
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Check, Plus, ArrowRight, Bookmark, Send,
 } from 'lucide-react'
-import { deleteSwipePost, updatePostNotes, updatePostTitle, createIdeaFromInspo } from '@/app/actions'
+import { deleteSwipePost, updatePostNotes, updatePostTitle, createIdeaFromInspo, updatePostTags } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
+import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 
 // ─── Helpers ───────────────────────────────────────────
 
@@ -74,17 +75,24 @@ type SortMode = 'date' | 'views' | 'likes'
 
 interface Props {
   posts: Post[]
+  allTags: string[]
 }
 
-export function InspoList({ posts: initialPosts }: Props) {
+export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Props) {
   const [posts, setPosts] = useState(initialPosts)
   const [sortMode, setSortMode] = useState<SortMode>('date')
+  const [tagFilter, setTagFilter] = useState('all')
 
-  const sorted = [...posts].sort((a, b) => {
-    if (sortMode === 'views') return b.views - a.views
-    if (sortMode === 'likes') return b.likes - a.likes
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  })
+  // Derive live allTags from current posts state (so new tags show immediately)
+  const allTags = [...new Set([...initialAllTags, ...posts.flatMap(p => p.tags ?? [])])].sort()
+
+  const sorted = [...posts]
+    .filter((p) => tagFilter === 'all' || (p.tags ?? []).includes(tagFilter))
+    .sort((a, b) => {
+      if (sortMode === 'views') return b.views - a.views
+      if (sortMode === 'likes') return b.likes - a.likes
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   async function handleDelete(id: string) {
     await deleteSwipePost(id)
@@ -123,8 +131,13 @@ export function InspoList({ posts: initialPosts }: Props) {
         </div>
       )}
 
+      <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
+
       {sorted.map((post) => (
-        <InspoCard key={post.id} post={post} onDelete={handleDelete} />
+        <InspoCard key={post.id} post={post} allTags={allTags} onDelete={handleDelete} onTagsChange={(id, tags) => {
+          setPosts(prev => prev.map(p => p.id === id ? { ...p, tags } : p))
+          updatePostTags(id, tags)
+        }} />
       ))}
     </div>
   )
@@ -132,7 +145,7 @@ export function InspoList({ posts: initialPosts }: Props) {
 
 // ─── Inspo Card ────────────────────────────────────────
 
-function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => void }) {
+function InspoCard({ post, allTags, onDelete, onTagsChange }: { post: Post; allTags: string[]; onDelete: (id: string) => void; onTagsChange: (id: string, tags: string[]) => void }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -308,6 +321,12 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
                   <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
+              {post.comments > 0 && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <MessageCircle size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.comments)}</span>
+                </span>
+              )}
               {post.platform === 'tiktok' && post.saves > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Bookmark size={10} className="text-muted-foreground" />
@@ -326,6 +345,12 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
                   <span className="font-normal text-muted-foreground">eng</span>
                 </span>
               )}
+            </div>
+
+            {/* Tags */}
+            <div className="flex items-center gap-1.5">
+              <TagPills tags={post.tags ?? []} />
+              <TagEditor tags={post.tags ?? []} allTags={allTags} onChange={(tags) => onTagsChange(post.id, tags)} />
             </div>
           </div>
 

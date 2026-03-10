@@ -11,12 +11,14 @@ import { DeleteButton } from '@/components/ui/delete-button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown } from 'lucide-react'
-import { addIdea, deleteIdea, updateIdeaStatus, updateIdea, bulkDeleteIdeas, bulkUpdateIdeaStatus, restoreIdea } from '@/app/actions'
+import { addIdea, deleteIdea, updateIdeaStatus, updateIdea, bulkDeleteIdeas, bulkUpdateIdeaStatus, restoreIdea, updateIdeaTags } from '@/app/actions'
+import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
 import type { ContentIdea } from '@/lib/types'
 
 interface Props {
   ideas: ContentIdea[]
+  allTags: string[]
 }
 
 type IdeaStatus = ContentIdea['status']
@@ -245,17 +247,21 @@ function Section({ label, text }: { label: string; text: string }) {
 function IdeaCard({
   item,
   selected,
+  allTags,
   onToggleSelect,
   onDelete,
   onStatusChange,
   onEdit,
+  onTagsChange,
 }: {
   item: ContentIdea
   selected: boolean
+  allTags: string[]
   onToggleSelect: () => void
   onDelete: () => Promise<void>
   onStatusChange: (status: IdeaStatus) => void
   onEdit: () => void
+  onTagsChange: (tags: string[]) => void
 }) {
   const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption || item.inspiration_url
 
@@ -296,6 +302,10 @@ function IdeaCard({
               <span className="text-xs text-muted-foreground">
                 {new Date(item.created_at).toLocaleDateString()}
               </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              <TagPills tags={item.tags ?? []} />
+              <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -384,11 +394,15 @@ const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
 
 // ─── Main board ───────────────────────────────────────────────────────────────
 
-export function IdeasBoard({ ideas: initialIdeas }: Props) {
+export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
   const [filter, setFilter] = useState<IdeaStatus | 'all'>('all')
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
+  const [tagFilter, setTagFilter] = useState('all')
+
+  // Derive live allTags from current ideas state
+  const allTags = [...new Set([...initialAllTags, ...ideas.flatMap(i => i.tags ?? [])])].sort()
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [recentlyDeleted, setRecentlyDeleted] = useState<ContentIdea[]>([])
   const [showDeleted, setShowDeleted] = useState(false)
@@ -430,6 +444,7 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
       caption: addForm.caption.trim() || null,
       difficulty: (addForm.difficulty || null) as ContentIdea['difficulty'],
       video_type: addForm.videoType || null,
+      tags: [],
       status: 'new',
       created_at: new Date().toISOString(),
     }, ...prev])
@@ -553,6 +568,7 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
     .filter((i) => filter === 'all' || i.status === filter)
     .filter((i) => sourceFilter === 'all' || getSourceType(i) === sourceFilter)
     .filter((i) => difficultyFilter === 'all' || i.difficulty === difficultyFilter)
+    .filter((i) => tagFilter === 'all' || (i.tags ?? []).includes(tagFilter))
 
   const hasSelection = selected.size > 0
   const allFilteredSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.id))
@@ -610,6 +626,8 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
             </SelectContent>
           </Select>
         </div>
+
+        <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
 
         {/* Select all + bulk actions bar */}
         <div className="flex items-center gap-3 flex-wrap">
@@ -671,10 +689,15 @@ export function IdeasBoard({ ideas: initialIdeas }: Props) {
               key={item.id}
               item={item}
               selected={selected.has(item.id)}
+              allTags={allTags}
               onToggleSelect={() => toggleSelect(item.id)}
               onDelete={() => handleDelete(item.id)}
               onStatusChange={(status) => handleStatusChange(item.id, status)}
               onEdit={() => openEdit(item)}
+              onTagsChange={(tags) => {
+                setIdeas(prev => prev.map(i => i.id === item.id ? { ...i, tags } : i))
+                updateIdeaTags(item.id, tags)
+              }}
             />
           ))
         )}

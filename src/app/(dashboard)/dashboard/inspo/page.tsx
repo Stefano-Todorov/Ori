@@ -17,6 +17,7 @@ export default async function InspoPage() {
 
   const posts = inspoPosts ?? []
   const platforms = [...new Set(posts.map(p => p.platform))]
+  const allTags = [...new Set(posts.flatMap(p => p.tags ?? []))].sort()
 
   return (
     <div className="p-8 space-y-6 max-w-4xl">
@@ -75,7 +76,7 @@ export default async function InspoPage() {
         </p>
       </div>
 
-      <InspoList posts={posts} />
+      <InspoList posts={posts} allTags={allTags} />
     </div>
   )
 }
