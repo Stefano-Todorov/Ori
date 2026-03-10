@@ -278,6 +278,16 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
                   <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </p>
               )}
+              {post.platform && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${
+                  post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
+                    : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
+                    : post.platform === 'youtube' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
+                    : 'bg-muted text-muted-foreground border-border'
+                }`}>
+                  {post.platform}
+                </span>
+              )}
               <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
                 <Calendar size={9} />
                 {timeAgo(post.created_at)}

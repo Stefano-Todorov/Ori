@@ -155,9 +155,6 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3 flex-wrap min-w-0">
-            <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border capitalize ${colors.pill}`}>
-              {c.platform}
-            </span>
             <span className="font-bold text-lg text-foreground">@{c.handle}</span>
             {c.display_name && <span className="text-muted-foreground text-sm">{c.display_name}</span>}
             {c.follower_count != null && c.follower_count > 0 && (
@@ -540,6 +537,11 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   {post.title || postTitle(post)}
                   <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </p>
+              )}
+              {post.platform && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${(PLATFORM_COLORS[post.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }).pill}`}>
+                  {post.platform}
+                </span>
               )}
               <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
                 <Calendar size={9} />
