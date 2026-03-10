@@ -45,6 +45,24 @@ function extractHashtags(text) {
 // ─── TikTok Video ─────────────────────────────────────────────────────────
 
 // Try to extract TikTok video stats from embedded JSON (SIGI_STATE or __UNIVERSAL_DATA_FOR_REHYDRATION__)
+// Parse a TikTok stats object — handles both `stats` (numbers) and `statsV2` (strings like "12.3K")
+function parseTtStats(stats) {
+  if (!stats) return null
+  const p = (v) => {
+    if (v == null) return null
+    if (typeof v === 'number') return v
+    // statsV2 uses strings like "485.8K", "12.3M", or plain "535"
+    return parseNumber(String(v))
+  }
+  return {
+    views: p(stats.playCount) ?? p(stats.play_count) ?? null,
+    likes: p(stats.diggCount) ?? p(stats.digg_count) ?? p(stats.likeCount) ?? p(stats.like_count) ?? null,
+    comments: p(stats.commentCount) ?? p(stats.comment_count) ?? null,
+    shares: p(stats.shareCount) ?? p(stats.share_count) ?? p(stats.repostCount) ?? null,
+    saves: p(stats.collectCount) ?? p(stats.collect_count) ?? null,
+  }
+}
+
 function extractTikTokStatsFromJson() {
   try {
     // Try SIGI_STATE first
@@ -55,15 +73,11 @@ function extractTikTokStatsFromJson() {
       if (itemModule) {
         const videoId = Object.keys(itemModule)[0]
         const item = itemModule[videoId]
-        if (item?.stats) {
-          console.log('[Orianna] TikTok SIGI_STATE stats:', item.stats)
-          return {
-            views: item.stats.playCount ?? null,
-            likes: item.stats.diggCount ?? null,
-            comments: item.stats.commentCount ?? null,
-            shares: item.stats.shareCount ?? null,
-            saves: item.stats.collectCount ?? null,
-          }
+        // Try statsV2 first (newer), then stats (older)
+        const result = parseTtStats(item?.statsV2) ?? parseTtStats(item?.stats)
+        if (result) {
+          console.log('[Orianna] TikTok SIGI_STATE stats:', item.statsV2 ?? item.stats)
+          return result
         }
       }
     }
@@ -72,22 +86,17 @@ function extractTikTokStatsFromJson() {
     const universalEl = document.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__')
     if (universalEl) {
       const data = JSON.parse(universalEl.textContent)
-      // Navigate to the video stats — structure: __DEFAULT_SCOPE__["webapp.video-detail"].itemInfo.itemStruct.stats
       const detail = data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']
-      const stats = detail?.itemInfo?.itemStruct?.stats
-      if (stats) {
-        console.log('[Orianna] TikTok UNIVERSAL stats:', stats)
-        return {
-          views: stats.playCount ?? null,
-          likes: stats.diggCount ?? null,
-          comments: stats.commentCount ?? null,
-          shares: stats.shareCount ?? null,
-          saves: stats.collectCount ?? null,
-        }
+      const itemStruct = detail?.itemInfo?.itemStruct
+      // Try statsV2 first, then stats
+      const result = parseTtStats(itemStruct?.statsV2) ?? parseTtStats(itemStruct?.stats)
+      if (result) {
+        console.log('[Orianna] TikTok UNIVERSAL stats:', itemStruct.statsV2 ?? itemStruct.stats)
+        return result
       }
     }
 
-    // Try all script tags with JSON
+    // Try all script tags with JSON — regex fallback for any stats pattern
     const scripts = document.querySelectorAll('script[type="application/json"], script#__NEXT_DATA__')
     for (const script of scripts) {
       try {
@@ -95,19 +104,21 @@ function extractTikTokStatsFromJson() {
         if (!text || text.length < 100 || text[0] !== '{') continue
         const data = JSON.parse(text)
         const str = JSON.stringify(data)
-        // Look for playCount in the JSON
-        const playMatch = str.match(/"playCount"\s*:\s*(\d+)/)
+        // Look for playCount in the JSON (can be number or quoted string)
+        const playMatch = str.match(/"playCount"\s*:\s*"?(\d+)"?/)
         if (playMatch) {
-          const diggMatch = str.match(/"diggCount"\s*:\s*(\d+)/)
-          const commentMatch = str.match(/"commentCount"\s*:\s*(\d+)/)
-          const shareMatch = str.match(/"shareCount"\s*:\s*(\d+)/)
-          const collectMatch = str.match(/"collectCount"\s*:\s*(\d+)/)
+          const diggMatch = str.match(/"diggCount"\s*:\s*"?(\d+)"?/)
+          const likeMatch = str.match(/"likeCount"\s*:\s*"?(\d+)"?/)
+          const commentMatch = str.match(/"commentCount"\s*:\s*"?(\d+)"?/)
+          const shareMatch = str.match(/"shareCount"\s*:\s*"?(\d+)"?/)
+          const repostMatch = str.match(/"repostCount"\s*:\s*"?(\d+)"?/)
+          const collectMatch = str.match(/"collectCount"\s*:\s*"?(\d+)"?/)
           console.log('[Orianna] TikTok JSON regex stats found')
           return {
             views: playMatch ? parseInt(playMatch[1]) : null,
-            likes: diggMatch ? parseInt(diggMatch[1]) : null,
+            likes: (diggMatch ? parseInt(diggMatch[1]) : null) ?? (likeMatch ? parseInt(likeMatch[1]) : null),
             comments: commentMatch ? parseInt(commentMatch[1]) : null,
-            shares: shareMatch ? parseInt(shareMatch[1]) : null,
+            shares: (shareMatch ? parseInt(shareMatch[1]) : null) ?? (repostMatch ? parseInt(repostMatch[1]) : null),
             saves: collectMatch ? parseInt(collectMatch[1]) : null,
           }
         }

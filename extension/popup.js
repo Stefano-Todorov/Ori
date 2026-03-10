@@ -472,15 +472,18 @@ function render() {
           ${mc ? '<span class="competitor-tag">Tracked</span>' : ''}
         </div>
         ${p.caption ? `<div class="detected-caption">${escHtml(p.caption).slice(0, 120)}${p.caption.length > 120 ? '...' : ''}</div>` : ''}
-        ${(p.views != null || p.likes != null) ? `
+        ${(p.views != null || p.likes != null) ? (() => {
+          const eng = p.views > 0 ? (((p.likes || 0) + (p.comments || 0) + (p.shares || 0)) / p.views * 100).toFixed(1) : null
+          return `
           <div class="stats-row">
             ${p.views != null ? `<div>👁 <span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
             ${p.likes != null ? `<div>❤️ <span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
             ${p.comments != null ? `<div>💬 <span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
-            ${p.saves != null && p.saves > 0 ? `<div>🔖 <span class="stat-num">${fmt(p.saves)}</span> <span class="stat-label">saves</span></div>` : ''}
-            ${p.shares != null && p.shares > 0 ? `<div>📤 <span class="stat-num">${fmt(p.shares)}</span> <span class="stat-label">sends</span></div>` : ''}
-          </div>
-        ` : ''}
+            ${p.shares != null ? `<div>📤 <span class="stat-num">${fmt(p.shares)}</span> <span class="stat-label">shares</span></div>` : ''}
+            ${p.saves != null ? `<div>🔖 <span class="stat-num">${fmt(p.saves)}</span> <span class="stat-label">saves</span></div>` : ''}
+            ${eng != null ? `<div>⚡ <span class="stat-num">${eng}%</span> <span class="stat-label">eng</span></div>` : ''}
+          </div>`
+        })() : ''}
       </div>
       <div class="actions">
         <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
