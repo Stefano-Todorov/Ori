@@ -30,20 +30,42 @@ export default async function InspoPage() {
         <AddSwipeButton />
       </div>
 
-      {posts.length > 0 && (
-        <div className="flex gap-3 flex-wrap">
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
-            <span className="text-xs font-bold text-foreground">{posts.length}</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Saved</span>
+      {posts.length > 0 && (() => {
+        const avgViews = posts.reduce((s, p) => s + p.views, 0) / posts.length
+        const avgLikes = posts.reduce((s, p) => s + p.likes, 0) / posts.length
+        const avgEng = posts.reduce((s, p) => s + (p.views > 0 ? ((p.likes + p.comments + p.shares) / p.views) * 100 : 0), 0) / posts.length
+        const fmt = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : Math.round(n).toString()
+        return (
+          <div className="flex gap-2 flex-wrap">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8 text-xs">
+              <span>📌</span>
+              <span className="font-bold text-foreground">{posts.length}</span>
+              <span className="text-muted-foreground">saved</span>
+            </span>
+            {avgViews > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8 text-xs">
+                <span>👁</span>
+                <span className="font-bold text-foreground">{fmt(Math.round(avgViews))}</span>
+                <span className="text-muted-foreground">avg views</span>
+              </span>
+            )}
+            {avgLikes > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8 text-xs">
+                <span>❤️</span>
+                <span className="font-bold text-foreground">{fmt(Math.round(avgLikes))}</span>
+                <span className="text-muted-foreground">avg likes</span>
+              </span>
+            )}
+            {avgEng > 0 && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8 text-xs">
+                <span>⚡</span>
+                <span className="font-bold text-foreground">{avgEng.toFixed(1)}%</span>
+                <span className="text-muted-foreground">avg eng.</span>
+              </span>
+            )}
           </div>
-          {platforms.map(p => (
-            <div key={p} className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/8">
-              <span className="text-xs font-bold text-foreground capitalize">{p}</span>
-              <span className="text-[10px] text-muted-foreground">{posts.filter(post => post.platform === p).length}</span>
-            </div>
-          ))}
-        </div>
-      )}
+        )
+      })()}
 
       <div className="bg-purple-500/[0.04] border border-purple-500/15 rounded-2xl p-5 text-sm">
         <p className="font-bold text-foreground mb-1.5">How Inspo works</p>

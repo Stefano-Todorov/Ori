@@ -207,11 +207,33 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
         <div className="px-5 pb-5 space-y-3">
           {/* Stats summary row */}
           {posts.length > 0 && (
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pb-3 border-b border-border dark:border-white/6">
-              <span><span className="font-bold text-foreground">{posts.length}</span> post{posts.length !== 1 ? 's' : ''} tracked</span>
-              {avgViews > 0 && <span><span className="font-bold text-foreground">{formatNumber(Math.round(avgViews))}</span> avg views</span>}
-              {avgComments > 0 && <span><span className="font-bold text-foreground">{formatNumber(Math.round(avgComments))}</span> avg comments</span>}
-              {avgEng > 0 && <span><span className="font-bold text-foreground">{avgEng.toFixed(1)}%</span> avg eng.</span>}
+            <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border dark:border-white/6">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                <span>📹</span>
+                <span className="font-bold text-foreground">{posts.length}</span>
+                <span className="text-muted-foreground">post{posts.length !== 1 ? 's' : ''}</span>
+              </span>
+              {avgViews > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                  <span>👁</span>
+                  <span className="font-bold text-foreground">{formatNumber(Math.round(avgViews))}</span>
+                  <span className="text-muted-foreground">avg views</span>
+                </span>
+              )}
+              {avgComments > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                  <span>💬</span>
+                  <span className="font-bold text-foreground">{formatNumber(Math.round(avgComments))}</span>
+                  <span className="text-muted-foreground">avg comments</span>
+                </span>
+              )}
+              {avgEng > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                  <span>⚡</span>
+                  <span className="font-bold text-foreground">{avgEng.toFixed(1)}%</span>
+                  <span className="text-muted-foreground">avg eng.</span>
+                </span>
+              )}
             </div>
           )}
 
