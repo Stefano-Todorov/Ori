@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Plus, Loader2, Link, ImageIcon, X } from 'lucide-react'
+import { Plus, Loader2, Check } from 'lucide-react'
 import { addCompetitorPost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import type { Platform } from '@/lib/types'
@@ -14,136 +13,63 @@ interface Props {
   platform: Platform
 }
 
-type Tab = 'url' | 'screenshot'
-
 export function AddPostButton({ handle, platform }: Props) {
   const router = useRouter()
-  const fileRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
-  const [tab, setTab] = useState<Tab>('screenshot')
   const [isPending, startTransition] = useTransition()
-
-  // URL fetch state
   const [url, setUrl] = useState('')
   const [fetching, setFetching] = useState(false)
-  const [fetchMsg, setFetchMsg] = useState<{ ok: boolean; text: string } | null>(null)
-
-  // Screenshot state
-  const [screenshot, setScreenshot] = useState<{ base64: string; mediaType: string; preview: string } | null>(null)
-  const [reading, setReading] = useState(false)
-  const [readMsg, setReadMsg] = useState<{ ok: boolean; text: string } | null>(null)
-
-  // Form fields
-  const [caption, setCaption] = useState('')
-  const [hookText, setHookText] = useState('')
-  const [views, setViews] = useState('')
-  const [likes, setLikes] = useState('')
-  const [comments, setComments] = useState('')
-  const [saveError, setSaveError] = useState<string | null>(null)
-
-  function resetForm() {
-    setUrl('')
-    setCaption('')
-    setHookText('')
-    setViews('')
-    setLikes('')
-    setComments('')
-    setFetchMsg(null)
-    setReadMsg(null)
-    setScreenshot(null)
-    setSaveError(null)
-    if (fileRef.current) fileRef.current.value = ''
-  }
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [extracted, setExtracted] = useState<Record<string, unknown> | null>(null)
 
   function handleClose() {
     setOpen(false)
-    resetForm()
+    setUrl('')
+    setMsg(null)
+    setExtracted(null)
   }
 
-  function applyExtracted(data: Record<string, unknown>) {
-    if (data.caption && typeof data.caption === 'string') setCaption(data.caption)
-    if (data.hook_text && typeof data.hook_text === 'string') setHookText(data.hook_text)
-    if (data.views != null) setViews(String(data.views))
-    if (data.likes != null) setLikes(String(data.likes))
-    if (data.comments != null) setComments(String(data.comments))
-  }
-
-  async function handleFetchUrl() {
+  async function handleFetchAndSave() {
     if (!url.trim()) return
     setFetching(true)
-    setFetchMsg(null)
+    setMsg(null)
+
     try {
+      // Fetch data from URL
       const res = await fetch(`/api/competitors/extract?url=${encodeURIComponent(url.trim())}`)
       const data = await res.json()
-      applyExtracted(data)
-      const gotSomething = data.caption || data.views != null
-      setFetchMsg({
-        ok: gotSomething,
-        text: gotSomething
-          ? '✓ Data extracted — review and edit below'
-          : 'Could not extract stats — fill in manually below',
+      setExtracted(data)
+
+      // Save immediately
+      startTransition(async () => {
+        const result = await addCompetitorPost({
+          competitor_handle: handle,
+          platform,
+          url: url.trim(),
+          caption: typeof data.caption === 'string' ? data.caption : undefined,
+          hook_text: typeof data.hook_text === 'string' ? data.hook_text : undefined,
+          views: data.views != null ? Number(data.views) : undefined,
+          likes: data.likes != null ? Number(data.likes) : undefined,
+          comments: data.comments != null ? Number(data.comments) : undefined,
+        })
+
+        if (result?.error) {
+          setMsg({ ok: false, text: result.error })
+          setFetching(false)
+          return
+        }
+
+        setMsg({ ok: true, text: 'Post saved!' })
+        setFetching(false)
+        setTimeout(() => {
+          handleClose()
+          router.refresh()
+        }, 800)
       })
     } catch {
-      setFetchMsg({ ok: false, text: 'Could not reach URL — fill in manually below' })
-    } finally {
+      setMsg({ ok: false, text: 'Could not fetch URL' })
       setFetching(false)
     }
-  }
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string
-      // dataUrl = "data:image/jpeg;base64,XXXX"
-      const [meta, base64] = dataUrl.split(',')
-      const mediaType = meta.match(/:(.*?);/)?.[1] ?? 'image/jpeg'
-      setScreenshot({ base64, mediaType, preview: dataUrl })
-      setReadMsg(null)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  async function handleReadScreenshot() {
-    if (!screenshot) return
-    setReading(true)
-    setReadMsg(null)
-    try {
-      const res = await fetch('/api/competitors/extract-vision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: screenshot.base64, mediaType: screenshot.mediaType }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      applyExtracted(data)
-      setReadMsg({ ok: true, text: '✓ Stats extracted — review and edit below' })
-    } catch (err) {
-      setReadMsg({ ok: false, text: err instanceof Error ? err.message : 'Failed to read screenshot' })
-    } finally {
-      setReading(false)
-    }
-  }
-
-  function handleSubmit() {
-    setSaveError(null)
-    startTransition(async () => {
-      const result = await addCompetitorPost({
-        competitor_handle: handle,
-        platform,
-        caption: caption || undefined,
-        hook_text: hookText || undefined,
-        url: url || undefined,
-        views: views ? Number(views) : undefined,
-        likes: likes ? Number(likes) : undefined,
-        comments: comments ? Number(comments) : undefined,
-      })
-      if (result?.error) { setSaveError(result.error); return }
-      handleClose()
-      router.refresh()
-    })
   }
 
   const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
@@ -158,120 +84,39 @@ export function AddPostButton({ handle, platform }: Props) {
         Add post
       </button>
       <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose() }}>
-        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
+        <DialogContent className="max-w-md bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
             <DialogTitle className="text-foreground">Add post from @{handle}</DialogTitle>
           </DialogHeader>
 
-          {/* Tabs */}
-          <div className="flex rounded-xl overflow-hidden border border-border dark:border-white/8">
-            <button
-              type="button"
-              onClick={() => setTab('screenshot')}
-              className={`flex-1 py-2.5 text-xs font-medium transition-all flex items-center justify-center gap-2 ${
-                tab === 'screenshot' ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white' : 'text-muted-foreground hover:bg-muted dark:hover:bg-white/5'
-              }`}
-            >
-              <ImageIcon size={13} />
-              Screenshot
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab('url')}
-              className={`flex-1 py-2.5 text-xs font-medium transition-all flex items-center justify-center gap-2 ${
-                tab === 'url' ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white' : 'text-muted-foreground hover:bg-muted dark:hover:bg-white/5'
-              }`}
-            >
-              <Link size={13} />
-              URL
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {tab === 'screenshot' && (
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Take a screenshot of the post on your phone or browser, then upload it. Claude will read the stats directly from the image.
-                </p>
-                {screenshot ? (
-                  <div className="relative">
-                    <img src={screenshot.preview} alt="Screenshot preview" className="w-full max-h-48 object-contain rounded-xl border border-border dark:border-white/8" />
-                    <button
-                      onClick={() => { setScreenshot(null); setReadMsg(null); if (fileRef.current) fileRef.current.value = '' }}
-                      className="absolute top-2 right-2 bg-background dark:bg-[#1a1a2e] rounded-full p-1.5 border border-border dark:border-white/10 shadow-sm hover:bg-muted transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-border dark:border-white/10 rounded-xl cursor-pointer hover:border-purple-500/40 hover:bg-purple-500/[0.02] transition-all duration-150">
-                    <ImageIcon size={20} className="text-muted-foreground mb-1" />
-                    <span className="text-sm text-muted-foreground">Click to upload screenshot</span>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
-                )}
-                {screenshot && (
-                  <button onClick={handleReadScreenshot} disabled={reading} className="w-full h-9 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                    {reading ? <><Loader2 size={13} className="animate-spin" />Reading...</> : '✦ Read stats with AI'}
-                  </button>
-                )}
-                {readMsg && (
-                  <p className={`text-xs ${readMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>{readMsg.text}</p>
-                )}
-              </div>
-            )}
-
-            {tab === 'url' && (
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Post URL</label>
-                <div className="flex gap-2">
-                  <Input placeholder={`https://www.${platform}.com/...`} value={url} onChange={(e) => { setUrl(e.target.value); setFetchMsg(null) }} onKeyDown={(e) => { if (e.key === 'Enter') handleFetchUrl() }} className={inputClass} />
-                  <button onClick={handleFetchUrl} disabled={!url.trim() || fetching} className="shrink-0 h-9 px-3.5 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all disabled:opacity-50">
-                    {fetching ? <Loader2 size={13} className="animate-spin" /> : 'Fetch'}
-                  </button>
-                </div>
-                {fetchMsg && (
-                  <p className={`text-xs ${fetchMsg.ok ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>{fetchMsg.text}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Works best for YouTube (full stats). TikTok/Instagram return caption only — use the Screenshot tab for stats.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3 pt-3 border-t border-border dark:border-white/6">
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Caption</label>
-                <Textarea placeholder="What the video is about..." value={caption} onChange={(e) => setCaption(e.target.value)} rows={2} className={inputClass} />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Hook (opening line)</label>
-                <Input placeholder="The first line that grabbed attention..." value={hookText} onChange={(e) => setHookText(e.target.value)} className={inputClass} />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Views</label>
-                  <Input type="number" placeholder="0" value={views} onChange={(e) => setViews(e.target.value)} min={0} className={inputClass} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Likes</label>
-                  <Input type="number" placeholder="0" value={likes} onChange={(e) => setLikes(e.target.value)} min={0} className={inputClass} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-[0.05em] font-semibold text-muted-foreground">Comments</label>
-                  <Input type="number" placeholder="0" value={comments} onChange={(e) => setComments(e.target.value)} min={0} className={inputClass} />
-                </div>
-              </div>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Paste the post URL and we&apos;ll fetch the stats automatically.
+            </p>
+            <div className="flex gap-2">
+              <Input
+                placeholder={`https://www.${platform}.com/...`}
+                value={url}
+                onChange={(e) => { setUrl(e.target.value); setMsg(null) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleFetchAndSave() }}
+                className={inputClass}
+                autoFocus
+              />
+              <button
+                onClick={handleFetchAndSave}
+                disabled={!url.trim() || fetching || isPending}
+                className="shrink-0 h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {fetching || isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                {fetching ? 'Fetching...' : isPending ? 'Saving...' : 'Add'}
+              </button>
             </div>
-
-            {saveError && <p className="text-sm text-destructive">{saveError}</p>}
-            <button
-              onClick={handleSubmit}
-              disabled={isPending || (!caption && !url && !screenshot)}
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPending ? 'Saving...' : 'Save post'}
-            </button>
+            {msg && (
+              <p className={`text-xs flex items-center gap-1 ${msg.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                {msg.ok && <Check size={12} />}
+                {msg.text}
+              </p>
+            )}
           </div>
         </DialogContent>
       </Dialog>
