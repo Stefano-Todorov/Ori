@@ -547,6 +547,30 @@ function extractInstagram() {
   }
 }
 
+// Fetch missing stats from IG API (play_count, like_count, comment_count)
+async function fetchIgStatsFromApi(shortcode) {
+  if (!shortcode) return null
+  try {
+    const mediaId = shortcodeToMediaId(shortcode)
+    const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+      headers: { 'X-IG-App-ID': '936619743392459' },
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const item = data?.items?.[0]
+    if (!item) return null
+    console.log('[Orianna] API stats:', { play_count: item.play_count, like_count: item.like_count, comment_count: item.comment_count })
+    return {
+      views: item.play_count ?? item.video_play_count ?? null,
+      likes: item.like_count ?? null,
+      comments: item.comment_count ?? null,
+    }
+  } catch (e) {
+    console.log('[Orianna] API stats fetch failed:', e)
+    return null
+  }
+}
+
 // Extract best video URL from an IG media node
 function getVideoUrlFromNode(node) {
   if (!node) return null
@@ -1097,8 +1121,20 @@ urlObserver.observe(document.body, { childList: true, subtree: true })
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'EXTRACT') {
-    const data = extractCurrentPage()
-    sendResponse({ data })
+    (async () => {
+      const data = extractCurrentPage()
+      // For Instagram posts/reels, fetch missing stats from API
+      if (data && data.platform === 'instagram' && data.shortcode && (data.views == null || data.likes == null)) {
+        const apiStats = await fetchIgStatsFromApi(data.shortcode)
+        if (apiStats) {
+          if (data.views == null && apiStats.views != null) data.views = apiStats.views
+          if (data.likes == null && apiStats.likes != null) data.likes = apiStats.likes
+          if (data.comments == null && apiStats.comments != null) data.comments = apiStats.comments
+        }
+      }
+      sendResponse({ data })
+    })()
+    return true // keep message channel open for async response
   }
 
   if (msg.type === 'GET_IG_VIDEO_URL') {
