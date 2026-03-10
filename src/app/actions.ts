@@ -318,13 +318,12 @@ export async function cleanupZeroStatsPosts() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { deleted: 0 }
+  // Delete posts with 0 views (broken saves — even if comments/likes have stale og:description values)
   const { data } = await supabase
     .from('posts')
     .select('id')
     .eq('user_id', user.id)
     .eq('views', 0)
-    .eq('likes', 0)
-    .eq('comments', 0)
   if (!data || data.length === 0) return { deleted: 0 }
   const ids = data.map(p => p.id)
   await supabase.from('posts').delete().in('id', ids)

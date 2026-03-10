@@ -387,29 +387,33 @@ function extractInstagram() {
     'span[class*="comment"]',
   ])
 
+  console.log('[Orianna] DOM selectors:', { viewsRaw, likesRaw, commentsRaw })
+
   // Fallback: parse stats from og:description ("184K likes, 527 comments - username on...")
-  if (!likesRaw || !commentsRaw) {
-    const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
-    if (ogDesc) {
-      if (!likesRaw) {
-        const lm = ogDesc.match(/([\d,.]+[KMB]?)\s*likes?/i)
-        if (lm) likesRaw = lm[1]
-      }
-      if (!commentsRaw) {
-        const cm = ogDesc.match(/([\d,.]+[KMB]?)\s*comments?/i)
-        if (cm) commentsRaw = cm[1]
-      }
-      if (!viewsRaw) {
-        const vm = ogDesc.match(/([\d,.]+[KMB]?)\s*views?/i)
-        if (vm) viewsRaw = vm[1]
-      }
+  const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+  console.log('[Orianna] og:description:', ogDesc)
+  if (ogDesc) {
+    if (!likesRaw) {
+      const lm = ogDesc.match(/([\d,.]+[KMB]?)\s*likes?/i)
+      if (lm) likesRaw = lm[1]
+    }
+    if (!commentsRaw) {
+      const cm = ogDesc.match(/([\d,.]+[KMB]?)\s*comments?/i)
+      if (cm) commentsRaw = cm[1]
+    }
+    if (!viewsRaw) {
+      const vm = ogDesc.match(/([\d,.]+[KMB]?)\s*views?/i)
+      if (vm) viewsRaw = vm[1]
     }
   }
+
+  console.log('[Orianna] After og:description:', { viewsRaw, likesRaw, commentsRaw })
 
   // Also try embedded JSON for stats
   if (!viewsRaw || !likesRaw) {
     try {
       const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+      console.log('[Orianna] Checking', scripts.length, 'scripts for JSON stats')
       for (const script of scripts) {
         try {
           const text = script.textContent?.trim()
@@ -417,6 +421,7 @@ function extractInstagram() {
           const data = JSON.parse(text)
           const stats = findIgStats(data, 0)
           if (stats) {
+            console.log('[Orianna] Found JSON stats:', stats)
             if (!viewsRaw && stats.views) viewsRaw = String(stats.views)
             if (!likesRaw && stats.likes) likesRaw = String(stats.likes)
             if (!commentsRaw && stats.comments) commentsRaw = String(stats.comments)
@@ -509,6 +514,8 @@ function extractInstagram() {
   // Extract shortcode for API-based video URL fetch
   const shortcodeMatch = url.match(/\/(reel|p)\/([^/?]+)/)
   const shortcode = shortcodeMatch?.[2] ?? null
+
+  console.log('[Orianna] IG extraction:', { viewsRaw, likesRaw, commentsRaw, handle, caption: caption?.slice(0, 50) })
 
   return {
     pageType: 'video',
