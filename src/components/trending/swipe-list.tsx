@@ -6,7 +6,7 @@ import {
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Check, Plus, ArrowRight,
 } from 'lucide-react'
-import { deleteSwipePost, updatePostNotes, createIdeaFromInspo } from '@/app/actions'
+import { deleteSwipePost, updatePostNotes, updatePostTitle, createIdeaFromInspo } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
@@ -136,6 +136,21 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleValue, setTitleValue] = useState(post.title ?? '')
+  const titleRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingTitle && titleRef.current) titleRef.current.focus()
+  }, [editingTitle])
+
+  async function saveTitle() {
+    const newTitle = titleValue.trim()
+    if (newTitle !== (post.title ?? '')) {
+      await updatePostTitle(post.id, newTitle)
+    }
+    setEditingTitle(false)
+  }
   const er = engagementRate(post)
 
   // Create idea state
@@ -241,9 +256,25 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
           <div className="flex-1 min-w-0 space-y-1">
             {/* Title + date row */}
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0">
-                {postTitle(post)}
-              </p>
+              {editingTitle ? (
+                <input
+                  ref={titleRef}
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
+                  onBlur={saveTitle}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleValue(post.title ?? ''); setEditingTitle(false) } }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 bg-muted dark:bg-[#1e1e2e] border border-purple-500/40 rounded px-2 py-0.5 focus:outline-none focus:ring-[2px] focus:ring-purple-500/20"
+                />
+              ) : (
+                <p
+                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 group/title cursor-text"
+                  onClick={(e) => { e.stopPropagation(); setTitleValue(post.title || postTitle(post)); setEditingTitle(true) }}
+                >
+                  {post.title || postTitle(post)}
+                  <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
+                </p>
+              )}
               <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
                 <Calendar size={9} />
                 {timeAgo(post.created_at)}

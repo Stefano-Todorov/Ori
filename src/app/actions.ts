@@ -269,6 +269,13 @@ export async function updatePostNotes(id: string, notes: string) {
   revalidatePath('/dashboard/inspo')
 }
 
+export async function updatePostTitle(id: string, title: string) {
+  const supabase = await createClient()
+  await supabase.from('posts').update({ title: title || null }).eq('id', id)
+  revalidatePath('/dashboard/competitors')
+  revalidatePath('/dashboard/inspo')
+}
+
 export async function createIdeaFromInspo(postId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
