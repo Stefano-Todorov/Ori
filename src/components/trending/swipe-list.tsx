@@ -373,11 +373,14 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
             })()}
 
             {/* Notes */}
-            <InlineNotes
-              initialValue={post.ai_notes ?? ''}
-              placeholder="Your notes on why this works..."
-              onSave={(val) => updatePostNotes(post.id, val)}
-            />
+            <div className="rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1.5">Notes</p>
+              <InlineNotes
+                initialValue={post.ai_notes ?? ''}
+                placeholder="Add your notes on why this works..."
+                onSave={(val) => updatePostNotes(post.id, val)}
+              />
+            </div>
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
@@ -551,7 +554,7 @@ function InlineNotes({
     >
       <Pencil size={10} className="opacity-50 group-hover:opacity-100 transition-opacity" />
       {value ? (
-        <span className="italic">{value}</span>
+        <span className="text-foreground/80">{value}</span>
       ) : (
         <span className="italic opacity-60">{placeholder}</span>
       )}

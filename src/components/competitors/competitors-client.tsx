@@ -302,7 +302,7 @@ function InlineNotes({
 
   if (editing) {
     return (
-      <div className="mt-2 flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <input
           ref={inputRef}
           value={value}
@@ -320,11 +320,11 @@ function InlineNotes({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
     >
       <Pencil size={10} className="opacity-50 group-hover:opacity-100 transition-opacity" />
       {value ? (
-        <span className="italic">{value}</span>
+        <span className="text-foreground/80">{value}</span>
       ) : (
         <span className="italic opacity-60">{placeholder}</span>
       )}
@@ -628,11 +628,14 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
             })()}
 
             {/* Post notes */}
-            <InlineNotes
-              initialValue={post.ai_notes ?? ''}
-              placeholder="Your notes on this post..."
-              onSave={(val) => updatePostNotes(post.id, val)}
-            />
+            <div className="rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1.5">Notes</p>
+              <InlineNotes
+                initialValue={post.ai_notes ?? ''}
+                placeholder="Add your notes on this post..."
+                onSave={(val) => updatePostNotes(post.id, val)}
+              />
+            </div>
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
