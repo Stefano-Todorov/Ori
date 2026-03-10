@@ -533,9 +533,9 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
             {/* Caption */}
             {post.caption && (
               <div className="pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Caption</p>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                  {cleanCaption(post.caption)}
+                <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1">Caption</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {cleanCaption(post.caption).replace(/\n{2,}/g, '\n').trim()}
                 </p>
               </div>
             )}
