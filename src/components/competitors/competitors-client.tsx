@@ -508,12 +508,6 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   <span className="font-bold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
-              {post.comments > 0 && (
-                <span className="flex items-center gap-1">
-                  <MessageCircle size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.comments)}</span>
-                </span>
-              )}
               {er != null && (
                 <span className={`font-bold ${er >= 5 ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
                   {er.toFixed(1)}% <span className="font-normal text-muted-foreground">eng.</span>
@@ -538,9 +532,12 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
           <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
             {/* Caption */}
             {post.caption && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap pt-3 leading-relaxed">
-                {cleanCaption(post.caption)}
-              </p>
+              <div className="pt-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Caption</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                  {cleanCaption(post.caption)}
+                </p>
+              </div>
             )}
 
             {/* Stats grid */}
