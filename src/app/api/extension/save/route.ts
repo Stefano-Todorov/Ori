@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       hook_text: hook_text || null,
       hashtags: hashtags ?? [],
       duration_seconds: duration || null,
-      ai_notes: audio ? `Sound/audio: ${audio}` : (notes || null),
+      ai_notes: notes || null,
       is_competitor: isTrackedCompetitor,
       competitor_handle: handle || null,
       is_trending: true,
@@ -162,10 +162,7 @@ export async function POST(req: NextRequest) {
     competitorHandle = handle
   }
 
-  const aiNotes = [
-    audio ? `Sound/audio: ${audio}` : null,
-    notes ? notes : null,
-  ].filter(Boolean).join('\n') || null
+  const aiNotes = notes || null
 
   const postRow = {
     user_id: user.id,

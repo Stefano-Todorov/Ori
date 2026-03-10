@@ -44,6 +44,81 @@ function extractHashtags(text) {
 
 // ─── TikTok Video ─────────────────────────────────────────────────────────
 
+// Try to extract TikTok video stats from embedded JSON (SIGI_STATE or __UNIVERSAL_DATA_FOR_REHYDRATION__)
+function extractTikTokStatsFromJson() {
+  try {
+    // Try SIGI_STATE first
+    const sigiEl = document.getElementById('SIGI_STATE')
+    if (sigiEl) {
+      const data = JSON.parse(sigiEl.textContent)
+      const itemModule = data?.ItemModule
+      if (itemModule) {
+        const videoId = Object.keys(itemModule)[0]
+        const item = itemModule[videoId]
+        if (item?.stats) {
+          console.log('[Orianna] TikTok SIGI_STATE stats:', item.stats)
+          return {
+            views: item.stats.playCount ?? null,
+            likes: item.stats.diggCount ?? null,
+            comments: item.stats.commentCount ?? null,
+            shares: item.stats.shareCount ?? null,
+            saves: item.stats.collectCount ?? null,
+          }
+        }
+      }
+    }
+
+    // Try __UNIVERSAL_DATA_FOR_REHYDRATION__
+    const universalEl = document.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__')
+    if (universalEl) {
+      const data = JSON.parse(universalEl.textContent)
+      // Navigate to the video stats — structure: __DEFAULT_SCOPE__["webapp.video-detail"].itemInfo.itemStruct.stats
+      const detail = data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']
+      const stats = detail?.itemInfo?.itemStruct?.stats
+      if (stats) {
+        console.log('[Orianna] TikTok UNIVERSAL stats:', stats)
+        return {
+          views: stats.playCount ?? null,
+          likes: stats.diggCount ?? null,
+          comments: stats.commentCount ?? null,
+          shares: stats.shareCount ?? null,
+          saves: stats.collectCount ?? null,
+        }
+      }
+    }
+
+    // Try all script tags with JSON
+    const scripts = document.querySelectorAll('script[type="application/json"], script#__NEXT_DATA__')
+    for (const script of scripts) {
+      try {
+        const text = script.textContent?.trim()
+        if (!text || text.length < 100 || text[0] !== '{') continue
+        const data = JSON.parse(text)
+        const str = JSON.stringify(data)
+        // Look for playCount in the JSON
+        const playMatch = str.match(/"playCount"\s*:\s*(\d+)/)
+        if (playMatch) {
+          const diggMatch = str.match(/"diggCount"\s*:\s*(\d+)/)
+          const commentMatch = str.match(/"commentCount"\s*:\s*(\d+)/)
+          const shareMatch = str.match(/"shareCount"\s*:\s*(\d+)/)
+          const collectMatch = str.match(/"collectCount"\s*:\s*(\d+)/)
+          console.log('[Orianna] TikTok JSON regex stats found')
+          return {
+            views: playMatch ? parseInt(playMatch[1]) : null,
+            likes: diggMatch ? parseInt(diggMatch[1]) : null,
+            comments: commentMatch ? parseInt(commentMatch[1]) : null,
+            shares: shareMatch ? parseInt(shareMatch[1]) : null,
+            saves: collectMatch ? parseInt(collectMatch[1]) : null,
+          }
+        }
+      } catch {}
+    }
+  } catch (e) {
+    console.log('[Orianna] TikTok JSON extraction error:', e)
+  }
+  return null
+}
+
 function extractTikTok() {
   const url = window.location.href
   if (!url.includes('/video/') && !url.includes('/photo/')) return null
@@ -55,6 +130,9 @@ function extractTikTok() {
     '[class*="DivVideoDescContainer"] span',
     'h1[data-e2e="video-title"]',
   ])
+
+  // Try JSON extraction first (most reliable for stats)
+  const jsonStats = extractTikTokStatsFromJson()
 
   const viewsRaw = trySelectors([
     '[data-e2e="video-views"]',
@@ -100,6 +178,15 @@ function extractTikTok() {
   const duration = videoEl ? Math.round(videoEl.duration) || null : null
   const videoSrc = videoEl?.src || videoEl?.querySelector('source')?.src || null
 
+  // Prefer JSON stats, fall back to DOM
+  const views = jsonStats?.views ?? parseNumber(viewsRaw)
+  const likes = jsonStats?.likes ?? parseNumber(likesRaw)
+  const comments = jsonStats?.comments ?? parseNumber(commentsRaw)
+  const shares = jsonStats?.shares ?? parseNumber(sharesRaw)
+  const saves = jsonStats?.saves ?? parseNumber(savesRaw)
+
+  console.log('[Orianna] TikTok final stats:', { views, likes, comments, shares, saves, jsonStats: !!jsonStats })
+
   return {
     pageType: 'video',
     platform: 'tiktok',
@@ -107,11 +194,11 @@ function extractTikTok() {
     handle,
     caption,
     hashtags: extractHashtags(caption),
-    views: parseNumber(viewsRaw),
-    likes: parseNumber(likesRaw),
-    comments: parseNumber(commentsRaw),
-    shares: parseNumber(sharesRaw),
-    saves: parseNumber(savesRaw),
+    views,
+    likes,
+    comments,
+    shares,
+    saves,
     audio,
     duration,
     videoSrc,
