@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  Trash2, ExternalLink, Eye, Heart, MessageCircle, TrendingUp,
+  Trash2, ExternalLink, Eye, Heart, MessageCircle,
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
-  SortAsc, Check, ArrowRight,
+  SortAsc, Check, Plus, ArrowRight,
 } from 'lucide-react'
 import { deleteSwipePost, updatePostNotes, createIdeaFromInspo } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
 
 // ─── Helpers ───────────────────────────────────────────
@@ -18,11 +19,9 @@ function formatNumber(n: number): string {
   return n.toString()
 }
 
-function performanceBadge(views: number) {
-  if (views >= 500_000) return { label: 'Viral', icon: '🔥', cls: 'bg-orange-500/15 border-orange-500/30 text-orange-600 dark:text-orange-400' }
-  if (views >= 100_000) return { label: 'Strong', icon: '⚡', cls: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400' }
-  if (views > 0) return { label: 'Growing', icon: '📈', cls: 'bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-400' }
-  return null
+function engagementRate(post: Post): number | null {
+  if (!post.views || post.views === 0) return null
+  return ((post.likes + post.comments + post.shares) / post.views) * 100
 }
 
 function timeAgo(dateStr: string) {
@@ -35,10 +34,38 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(days / 30)}mo ago`
 }
 
-const PLATFORM_PILL: Record<string, string> = {
-  tiktok: 'bg-black/80 dark:bg-white/10 text-white border-transparent',
-  instagram: 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400',
-  youtube: 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400',
+function cleanCaption(raw: string | null): string {
+  if (!raw) return ''
+  let text = raw.trim()
+  const metaMatch = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)[""\u201d]\s*\.?\s*$/)
+  if (metaMatch) return metaMatch[1].trim()
+  const metaMatch2 = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)/)
+  if (metaMatch2) return metaMatch2[1].replace(/[""\u201d]\s*\.?\s*$/, '').trim()
+  return text
+}
+
+function postTitle(post: Post): string {
+  const cap = cleanCaption(post.caption)
+  if (!cap) return 'Untitled post'
+  const stripped = cap
+    .replace(/#[\w]+/g, '')
+    .replace(/@[\w.]+/g, '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '')
+    .trim()
+  const firstSentence = stripped.split(/[!.\n]/)[0].trim()
+  if (!firstSentence) return cap.slice(0, 50)
+  if (firstSentence.length <= 50) return firstSentence
+  const cutZone = firstSentence.slice(0, 55)
+  const breakPoints = [', ', ' I ', ' to ', ' and ', ' but ', ' so ', ' - ', ' — ']
+  let bestCut = -1
+  for (const bp of breakPoints) {
+    const idx = cutZone.lastIndexOf(bp)
+    if (idx > 20 && idx > bestCut) bestCut = idx
+  }
+  if (bestCut > 0) return firstSentence.slice(0, bestCut).trim()
+  const truncated = firstSentence.slice(0, 50)
+  const lastSpace = truncated.lastIndexOf(' ')
+  return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
 }
 
 type SortMode = 'date' | 'views' | 'likes'
@@ -109,23 +136,59 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const badge = performanceBadge(post.views)
-  const hasStats = post.views > 0 || post.likes > 0 || post.comments > 0
-
-  // Analysis state
-  const [analysis, setAnalysis] = useState<string | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(false)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const er = engagementRate(post)
 
   // Create idea state
   const [ideaCreated, setIdeaCreated] = useState(false)
   const [creatingIdea, setCreatingIdea] = useState(false)
 
+  // Ideas modal state
+  const [ideasOpen, setIdeasOpen] = useState(false)
+  const [ideas, setIdeas] = useState<{ idea: string; hook_idea: string; caption: string; difficulty: string; video_type: string }[] | null>(null)
+  const [ideasLoading, setIdeasLoading] = useState(false)
+  const [ideasError, setIdeasError] = useState<string | null>(null)
+
+  // Analysis modal state
+  const [analysisOpen, setAnalysisOpen] = useState(false)
+  const [analysis, setAnalysis] = useState<string | null>(null)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+
+  async function handleGetIdeas() {
+    setIdeasOpen(true)
+    if (ideas) return
+    setIdeasLoading(true)
+    setIdeasError(null)
+    try {
+      const res = await fetch('/api/competitors/ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: post.id,
+          handle: post.competitor_handle || 'unknown',
+          platform: post.platform,
+          caption: post.caption,
+          hookText: post.hook_text,
+          views: post.views,
+          likes: post.likes,
+          url: post.url,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to generate ideas')
+      setIdeas(data.ideas)
+    } catch (err) {
+      setIdeasError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setIdeasLoading(false)
+    }
+  }
+
   async function handleAnalyze() {
-    if (analysis) { setExpanded(true); return }
+    setAnalysisOpen(true)
+    if (analysis) return
     setAnalysisLoading(true)
     setAnalysisError(null)
-    setExpanded(true)
     try {
       const res = await fetch('/api/competitors/analyze', {
         method: 'POST',
@@ -168,247 +231,205 @@ function InspoCard({ post, onDelete }: { post: Post; onDelete: (id: string) => v
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl overflow-hidden transition-all duration-150 hover:border-purple-500/20">
-      {/* Main clickable area */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full text-left p-5 flex items-start gap-3"
-      >
-        <div className="flex-1 min-w-0 space-y-2">
-          {/* Top row: platform + handle + badge */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full border capitalize ${PLATFORM_PILL[post.platform] ?? 'bg-muted text-muted-foreground border-border'}`}>
-              {post.platform}
-            </span>
-            {post.competitor_handle && (
-              <span className="text-xs font-medium text-muted-foreground">@{post.competitor_handle}</span>
-            )}
-            {badge && (
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.cls}`}>
-                {badge.icon} {badge.label}
+    <>
+      <div className="rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] overflow-hidden transition-all hover:border-purple-500/20">
+        {/* Header — clickable to expand */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full text-left p-4 flex items-start gap-3"
+        >
+          <div className="flex-1 min-w-0 space-y-1">
+            {/* Title + date row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0">
+                {postTitle(post)}
+              </p>
+              <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
+                <Calendar size={9} />
+                {timeAgo(post.created_at)}
               </span>
-            )}
-          </div>
+            </div>
 
-          {/* Hook text */}
-          {post.hook_text && (
-            <p className="text-sm font-medium italic text-foreground leading-snug">
-              &ldquo;{post.hook_text}&rdquo;
-            </p>
-          )}
-
-          {/* Caption */}
-          {post.caption && (
-            <p className={`text-sm text-muted-foreground ${expanded ? '' : 'line-clamp-2'}`}>
-              {post.caption}
-            </p>
-          )}
-
-          {/* Stats row */}
-          {hasStats && (
-            <div className="flex gap-4 text-xs pt-0.5">
+            {/* Stats pills */}
+            <div className="flex items-center gap-2 text-[11px]">
               {post.views > 0 && (
-                <span className="flex items-center gap-1">
-                  <Eye size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.views)}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Eye size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.views)}</span>
                 </span>
               )}
               {post.likes > 0 && (
-                <span className="flex items-center gap-1">
-                  <Heart size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.likes)}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                  <Heart size={10} className="text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
-              {post.comments > 0 && (
-                <span className="flex items-center gap-1">
-                  <MessageCircle size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.comments)}</span>
-                </span>
-              )}
-              {post.shares > 0 && (
-                <span className="flex items-center gap-1">
-                  <TrendingUp size={11} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.shares)}</span>
+              {er != null && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${er >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted dark:bg-white/5 text-foreground'}`}>
+                  <span className="font-semibold">{er.toFixed(1)}%</span>
+                  <span className="font-normal text-muted-foreground">eng</span>
                 </span>
               )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Right: date + chevron */}
-        <div className="flex items-center gap-2 shrink-0 pt-0.5">
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-            <Calendar size={9} />
-            {timeAgo(post.created_at)}
-          </span>
           <ChevronDown
             size={14}
-            className={`text-muted-foreground transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+            className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}`}
           />
-        </div>
-      </button>
+        </button>
 
-      {/* Expanded section */}
-      {expanded && (
-        <div className="px-5 pb-5 space-y-3 border-t border-border dark:border-white/6">
-          {/* Full stats grid */}
-          {hasStats && (
-            <div className="grid grid-cols-4 gap-3 pt-3">
+        {/* Expanded section */}
+        {expanded && (
+          <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
+            {/* Caption */}
+            {post.caption && (
+              <div className="pt-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1">Caption</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {cleanCaption(post.caption).replace(/\n{2,}/g, '\n').trim()}
+                </p>
+              </div>
+            )}
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-3 gap-3">
               {[
                 { label: 'Views', value: post.views, icon: Eye },
                 { label: 'Likes', value: post.likes, icon: Heart },
                 { label: 'Comments', value: post.comments, icon: MessageCircle },
-                { label: 'Shares', value: post.shares, icon: TrendingUp },
               ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="text-center p-2.5 rounded-lg bg-muted/30 dark:bg-[#1a1a2e] border border-border dark:border-white/6">
+                <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
                   <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
                   <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
                   <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
                 </div>
               ))}
             </div>
-          )}
 
-          {/* URL */}
-          {post.url && (
-            <p className="text-xs text-muted-foreground/60 truncate">{post.url}</p>
-          )}
+            {/* Notes */}
+            <InlineNotes
+              initialValue={post.ai_notes ?? ''}
+              placeholder="Your notes on why this works..."
+              onSave={(val) => updatePostNotes(post.id, val)}
+            />
 
-          {/* Inline notes */}
-          <InlineNotes
-            initialValue={post.ai_notes ?? ''}
-            placeholder="Your notes on why this works..."
-            onSave={(val) => updatePostNotes(post.id, val)}
-          />
-
-          {/* AI Analysis result */}
-          {analysisLoading && (
-            <div className="flex items-center gap-2 py-3">
-              <Loader2 size={14} className="animate-spin text-purple-500" />
-              <span className="text-xs text-muted-foreground">Analyzing what made this post perform...</span>
-            </div>
-          )}
-          {analysisError && (
-            <p className="text-xs text-destructive">{analysisError}</p>
-          )}
-          {analysis && (
-            <div className="space-y-1.5 p-3 rounded-xl bg-purple-500/[0.04] border border-purple-500/15">
-              <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide">Why it worked</p>
-              {analysis.split('\n').filter(Boolean).map((line, i) => {
-                const match = line.match(/^-\s*\*\*(.+?)\*\*:?\s*(.*)/)
-                if (match) {
-                  return (
-                    <div key={i} className="flex gap-2 text-xs">
-                      <span className="font-bold text-foreground shrink-0">{match[1]}:</span>
-                      <span className="text-muted-foreground">{match[2]}</span>
-                    </div>
-                  )
-                }
-                return <p key={i} className="text-xs text-muted-foreground">{line}</p>
-              })}
-            </div>
-          )}
-
-          {/* Idea created success */}
-          {ideaCreated && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-              <Check size={14} className="text-green-600 dark:text-green-400" />
-              <span className="text-xs font-medium text-green-600 dark:text-green-400">Idea created!</span>
+            {/* Actions */}
+            <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
               <button
-                onClick={() => router.push('/dashboard/ideas')}
-                className="text-xs font-medium text-purple-600 dark:text-purple-400 hover:underline ml-auto flex items-center gap-1"
+                onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-semibold shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all"
               >
-                View in Ideas <ArrowRight size={10} />
+                <Sparkles size={12} />
+                Get Ideas
               </button>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex items-center justify-between pt-2 border-t border-border dark:border-white/6">
-            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+              >
+                <Lightbulb size={12} />
+                Why it worked
+              </button>
+              {ideaCreated ? (
+                <span className="inline-flex items-center gap-1 h-8 px-3.5 text-xs font-medium text-green-600 dark:text-green-400">
+                  <Check size={12} /> Idea created
+                </span>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
+                  disabled={creatingIdea}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+                >
+                  {creatingIdea ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
+                  Create idea
+                </button>
+              )}
               {post.url && (
                 <a
                   href={post.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all ml-auto"
                 >
                   <ExternalLink size={11} />
-                  Open
+                  Go to
                 </a>
               )}
               <button
-                onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-                disabled={analysisLoading}
-                className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg border border-purple-500/30 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all disabled:opacity-50"
+                onClick={(e) => { e.stopPropagation(); handleDelete() }}
+                disabled={deleting}
+                className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
               >
-                <Lightbulb size={11} />
-                {analysis ? 'Analysis' : 'Why did this work?'}
+                <Trash2 size={14} />
               </button>
-              {!ideaCreated && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
-                  disabled={creatingIdea}
-                  className="inline-flex items-center gap-1.5 h-7 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-medium shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50"
-                >
-                  <Sparkles size={11} />
-                  {creatingIdea ? 'Creating...' : 'Create idea'}
-                </button>
-              )}
             </div>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDelete() }}
-              disabled={deleting}
-              className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
-            >
-              <Trash2 size={12} />
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Collapsed: quick actions */}
-      {!expanded && (
-        <div className="px-5 pb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {post.url && (
-              <a
-                href={post.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-purple-500 transition-colors"
-              >
-                <ExternalLink size={11} />
-              </a>
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded text-[10px] font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
-            >
-              <Lightbulb size={10} />
-              Analyze
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
-              disabled={creatingIdea || ideaCreated}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded text-[10px] font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-all disabled:opacity-50"
-            >
-              <Sparkles size={10} />
-              {ideaCreated ? 'Created' : 'Idea'}
-            </button>
-          </div>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDelete() }}
-            disabled={deleting}
-            className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
-          >
-            <Trash2 size={11} />
-          </button>
-        </div>
-      )}
-    </div>
+      {/* Ideas Dialog */}
+      <Dialog open={ideasOpen} onOpenChange={setIdeasOpen}>
+        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Ideas inspired by this post</DialogTitle>
+          </DialogHeader>
+          {ideasLoading && (
+            <div className="flex items-center gap-2 py-8 justify-center">
+              <Loader2 size={16} className="animate-spin text-purple-500" />
+              <span className="text-sm text-muted-foreground">Generating ideas...</span>
+            </div>
+          )}
+          {ideasError && <p className="text-sm text-destructive py-4">{ideasError}</p>}
+          {ideas && (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {ideas.map((idea, i) => (
+                <div key={i} className="p-3 rounded-xl bg-muted/30 dark:bg-[#1a1a2e] border border-border dark:border-white/6 space-y-1">
+                  <p className="text-sm font-medium text-foreground">{idea.idea}</p>
+                  {idea.hook_idea && <p className="text-xs text-muted-foreground italic">&ldquo;{idea.hook_idea}&rdquo;</p>}
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    {idea.video_type && <span className="px-1.5 py-0.5 rounded bg-muted dark:bg-white/5">{idea.video_type}</span>}
+                    {idea.difficulty && <span className="px-1.5 py-0.5 rounded bg-muted dark:bg-white/5">{idea.difficulty}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Analysis Dialog */}
+      <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Why it worked</DialogTitle>
+          </DialogHeader>
+          {analysisLoading && (
+            <div className="flex items-center gap-2 py-8 justify-center">
+              <Loader2 size={16} className="animate-spin text-purple-500" />
+              <span className="text-sm text-muted-foreground">Analyzing what made this post perform...</span>
+            </div>
+          )}
+          {analysisError && <p className="text-sm text-destructive py-4">{analysisError}</p>}
+          {analysis && (
+            <div className="space-y-1.5">
+              {analysis.split('\n').filter(Boolean).map((line, i) => {
+                const match = line.match(/^-\s*\*\*(.+?)\*\*:?\s*(.*)/)
+                if (match) {
+                  return (
+                    <div key={i} className="flex gap-2 text-sm">
+                      <span className="font-bold text-foreground shrink-0">{match[1]}:</span>
+                      <span className="text-muted-foreground">{match[2]}</span>
+                    </div>
+                  )
+                }
+                return <p key={i} className="text-sm text-muted-foreground">{line}</p>
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
