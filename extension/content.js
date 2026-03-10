@@ -387,7 +387,17 @@ function extractInstagram() {
     'span[class*="comment"]',
   ])
 
-  console.log('[Orianna] DOM selectors:', { viewsRaw, likesRaw, commentsRaw })
+  // Validate DOM results — reject garbage like '•', 'View all X comments', non-numeric text
+  function hasDigit(s) { return s && /\d/.test(s) }
+  if (viewsRaw && !hasDigit(viewsRaw)) viewsRaw = null
+  if (likesRaw && !hasDigit(likesRaw)) likesRaw = null
+  // For comments, try to extract number from text like "View all 527 comments"
+  if (commentsRaw && !parseNumber(commentsRaw)) {
+    const numMatch = commentsRaw.match(/([\d,.]+[KMB]?)/i)
+    commentsRaw = numMatch ? numMatch[1] : null
+  }
+
+  console.log('[Orianna] DOM selectors (cleaned):', { viewsRaw, likesRaw, commentsRaw })
 
   // Fallback: parse stats from og:description ("184K likes, 527 comments - username on...")
   const ogDesc = document.querySelector('meta[property="og:description"]')?.getAttribute('content')
