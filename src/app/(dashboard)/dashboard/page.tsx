@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Sparkles, Lightbulb, MessageSquare } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { FollowerChart } from '@/components/dashboard/follower-chart'
 import { AddFollowersForm } from '@/components/dashboard/add-followers-form'
 import { KanbanBoard } from '@/components/dashboard/kanban-board'
@@ -27,7 +27,6 @@ export default async function DashboardPage() {
     { data: productionIdeas },
     { data: scheduledPosts },
     { data: recordingDays },
-    { data: recentIdeas },
   ] = await Promise.all([
     supabase
       .from('follower_snapshots')
@@ -50,13 +49,6 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user.id)
       .order('recording_date', { ascending: true }),
-    supabase
-      .from('content_ideas')
-      .select('id, idea, difficulty, status')
-      .eq('user_id', user.id)
-      .eq('status', 'new')
-      .order('created_at', { ascending: false })
-      .limit(3),
   ])
 
   return (
@@ -79,54 +71,6 @@ export default async function DashboardPage() {
             <Sparkles size={14} />
             Ask Orianna
           </Link>
-        </div>
-      </div>
-
-      {/* ─── Quick Actions + Next to Film ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Next to film */}
-        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-5 space-y-3">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">Next to film</p>
-          {recentIdeas && recentIdeas.length > 0 ? (
-            <div className="space-y-1.5">
-              {recentIdeas.map((idea) => (
-                <Link key={idea.id} href="/dashboard/ideas">
-                  <div className="text-sm font-medium truncate text-foreground hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer py-1 px-2.5 -mx-2.5 rounded-lg hover:bg-purple-500/5">
-                    {idea.idea}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Link href="/dashboard/ideas" className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:underline">
-              Add your first idea &rarr;
-            </Link>
-          )}
-        </div>
-
-        {/* Quick actions */}
-        <div className="md:col-span-2 bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-5 space-y-3">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">Quick actions</p>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/dashboard/scripts"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all duration-150"
-            >
-              <Sparkles size={14} /> Generate Script
-            </Link>
-            <Link
-              href="/dashboard/ideas"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border dark:border-white/10 text-foreground text-sm font-medium hover:bg-muted dark:hover:bg-white/5 transition-all duration-150"
-            >
-              <Lightbulb size={14} className="text-amber-500" /> Add Idea
-            </Link>
-            <Link
-              href="/dashboard/coach"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-border dark:border-white/10 text-foreground text-sm font-medium hover:bg-muted dark:hover:bg-white/5 transition-all duration-150"
-            >
-              <MessageSquare size={14} className="text-teal-500" /> Ask Coach
-            </Link>
-          </div>
         </div>
       </div>
 

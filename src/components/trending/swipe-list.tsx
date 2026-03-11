@@ -255,6 +255,13 @@ function InspoCard({ post, allTags, onDelete, onTagsChange }: { post: Post; allT
           onClick={() => setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
+          {post.thumbnail_url && (
+            <img
+              src={post.thumbnail_url}
+              alt=""
+              className="w-16 h-20 rounded-lg object-cover shrink-0 bg-muted"
+            />
+          )}
           <div className="flex-1 min-w-0 space-y-1">
             {/* Creator + Title + date row */}
             {post.competitor_handle && (
