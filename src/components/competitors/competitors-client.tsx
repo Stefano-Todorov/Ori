@@ -5,10 +5,10 @@ import {
   ExternalLink, Plus, Trash2, ChevronDown, ChevronRight,
   Eye, Heart, MessageCircle, Pencil, Video,
   Users, BarChart3, Trophy, Loader2, Sparkles, Lightbulb,
-  X, SortAsc, Calendar, Bookmark, Send,
+  X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
-import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle } from '@/app/actions'
+import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
@@ -67,16 +67,23 @@ type SortMode = 'views' | 'likes' | 'date'
 
 // ─── Main Client Component ────────────────────────────
 
-interface Props {
+export interface CompetitorGroup {
+  groupId: string
   competitors: Competitor[]
-  postsByHandle: Record<string, Post[]>
+  posts: Post[]
+}
+
+interface Props {
+  groups: CompetitorGroup[]
+  allCompetitors: Competitor[]
   orphanedHandles: string[]
+  orphanedPostsByHandle: Record<string, Post[]>
   totalPosts: number
 }
 
-export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles, totalPosts }: Props) {
-  // Derive all tags from all competitor posts
-  const allPosts = Object.values(postsByHandle).flat()
+export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts }: Props) {
+  // Derive all tags from all posts across all groups
+  const allPosts = groups.flatMap(g => g.posts)
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
   return (
@@ -87,7 +94,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             Competitors
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400">
-              {competitors.length + orphanedHandles.length}
+              {groups.length + orphanedHandles.length}
             </span>
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -97,7 +104,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       </div>
 
       {/* Competitor cards */}
-      {competitors.length === 0 && orphanedHandles.length === 0 && (
+      {groups.length === 0 && orphanedHandles.length === 0 && (
         <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
           <p className="font-bold text-foreground">No competitors yet</p>
           <p className="text-sm text-muted-foreground">Add a competitor to start tracking their content and get AI-generated ideas from their top posts.</p>
@@ -105,10 +112,9 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       )}
 
       <div className="space-y-4">
-        {competitors.map((c) => {
-          const posts = postsByHandle[c.handle.toLowerCase()] ?? []
-          return <CompetitorCard key={c.id} competitor={c} posts={posts} allTags={allTags} />
-        })}
+        {groups.map((group) => (
+          <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} />
+        ))}
 
         {orphanedHandles.map(handle => (
           <div key={handle} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
@@ -117,7 +123,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-gray-400 text-gray-500">account removed</span>
             </div>
             <div className="space-y-2">
-              {postsByHandle[handle].map(post => (
+              {orphanedPostsByHandle[handle].map(post => (
                 <PostCard key={post.id} post={post} handle={handle} allTags={allTags} />
               ))}
             </div>
@@ -132,13 +138,22 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
 
 type PlatformFilter = 'all' | Platform
 
-function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competitor; posts: Post[]; allTags: string[] }) {
+function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorGroup; allCompetitors: Competitor[]; allTags: string[] }) {
   const router = useRouter()
+  const { competitors: comps, posts } = group
+  const primaryComp = comps[0]
   const [collapsed, setCollapsed] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('views')
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
-  const colors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border', border: 'border-l-gray-400' }
+  const [linkMenuOpen, setLinkMenuOpen] = useState(false)
+  const [linking, setLinking] = useState(false)
+
+  // Border color from primary competitor's platform
+  const colors = PLATFORM_COLORS[primaryComp.platform] ?? { pill: 'bg-muted text-muted-foreground border-border', border: 'border-l-gray-400' }
+
+  // Competitors available for linking (not already in this group)
+  const linkableCompetitors = allCompetitors.filter(c => c.group_id !== group.groupId)
 
   const platformsInPosts = [...new Set(posts.map(p => p.platform))]
   const filteredPosts = platformFilter === 'all' ? posts : posts.filter(p => p.platform === platformFilter)
@@ -149,16 +164,29 @@ function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competi
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
-  // Stats summary
+  // Stats summary (across all posts in group)
   const avgViews = posts.length > 0 ? posts.reduce((s, p) => s + p.views, 0) / posts.length : 0
   const avgComments = posts.length > 0 ? posts.reduce((s, p) => s + p.comments, 0) / posts.length : 0
   const avgEng = posts.length > 0
     ? posts.reduce((s, p) => s + (p.views > 0 ? ((p.likes + p.comments + p.shares) / p.views) * 100 : 0), 0) / posts.length
     : 0
 
-  async function handleDelete() {
-    setDeleting(true)
-    await deleteCompetitor(c.id)
+  async function handleDelete(compId: string) {
+    setDeleting(compId)
+    await deleteCompetitor(compId)
+    router.refresh()
+  }
+
+  async function handleLink(sourceId: string) {
+    setLinking(true)
+    await linkCompetitors(sourceId, primaryComp.id)
+    setLinkMenuOpen(false)
+    setLinking(false)
+    router.refresh()
+  }
+
+  async function handleUnlink(compId: string) {
+    await unlinkCompetitor(compId)
     router.refresh()
   }
 
@@ -167,30 +195,105 @@ function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competi
       {/* Header */}
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap min-w-0">
-            <span className="font-bold text-lg text-foreground">@{c.handle}</span>
-            {c.display_name && <span className="text-muted-foreground text-sm">{c.display_name}</span>}
-            {c.follower_count != null && c.follower_count > 0 && (
-              <span className="text-xs font-medium text-muted-foreground">
-                {formatNumber(c.follower_count)} followers
-              </span>
-            )}
+          <div className="flex-1 min-w-0 space-y-1.5">
+            {/* Handles with platform badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {comps.map((c) => {
+                const pColors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
+                return (
+                  <div key={c.id} className="inline-flex items-center gap-1.5">
+                    <span className="font-bold text-lg text-foreground">@{c.handle}</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${pColors.pill}`}>
+                      {c.platform}
+                    </span>
+                    {comps.length > 1 && (
+                      <button
+                        onClick={() => handleUnlink(c.id)}
+                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                        title="Unlink this account"
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                    {comps.indexOf(c) < comps.length - 1 && (
+                      <span className="text-muted-foreground/30 mx-0.5">·</span>
+                    )}
+                  </div>
+                )
+              })}
+              {comps.length > 1 && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 inline-flex items-center gap-1">
+                  <Link size={8} /> Linked
+                </span>
+              )}
+            </div>
+            {/* Display name / follower count from primary */}
+            <div className="flex items-center gap-3 flex-wrap">
+              {primaryComp.display_name && <span className="text-muted-foreground text-sm">{primaryComp.display_name}</span>}
+              {primaryComp.follower_count != null && primaryComp.follower_count > 0 && (
+                <span className="text-xs font-medium text-muted-foreground">
+                  {formatNumber(primaryComp.follower_count)} followers
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {c.profile_url && (
+            {/* Link accounts button */}
+            {linkableCompetitors.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setLinkMenuOpen(!linkMenuOpen)}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
+                  title="Link another account"
+                >
+                  <Link size={12} />
+                  Link
+                </button>
+                {linkMenuOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-20 w-56 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
+                    <div className="p-2 border-b border-border dark:border-white/6">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Link as same creator</p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto p-1">
+                      {linkableCompetitors.map(lc => {
+                        const lcColors = PLATFORM_COLORS[lc.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
+                        return (
+                          <button
+                            key={lc.id}
+                            onClick={() => handleLink(lc.id)}
+                            disabled={linking}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-muted dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                          >
+                            <span className="text-sm font-medium text-foreground">@{lc.handle}</span>
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${lcColors.pill}`}>
+                              {lc.platform}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Profile links */}
+            {comps.map(c => c.profile_url ? (
               <a
+                key={c.id}
                 href={c.profile_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
               >
-                Profile <ExternalLink size={10} />
+                {c.platform === 'tiktok' ? 'TT' : c.platform === 'instagram' ? 'IG' : 'YT'} <ExternalLink size={10} />
               </a>
-            )}
-            <AddPostButton handle={c.handle} platform={c.platform as Platform} allTags={allTags} />
+            ) : null)}
+            {/* Add post (uses primary handle/platform) */}
+            <AddPostButton handle={primaryComp.handle} platform={primaryComp.platform as Platform} allTags={allTags} />
+            {/* Delete (primary) */}
             <button
-              onClick={handleDelete}
-              disabled={deleting}
+              onClick={() => handleDelete(primaryComp.id)}
+              disabled={deleting !== null}
               className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
             >
               <Trash2 size={14} />
@@ -204,11 +307,11 @@ function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competi
           </div>
         </div>
 
-        {/* Inline notes */}
+        {/* Inline notes (from primary competitor) */}
         <InlineNotes
-          initialValue={c.notes ?? ''}
+          initialValue={primaryComp.notes ?? ''}
           placeholder="Add notes about this competitor..."
-          onSave={(val) => updateCompetitorNotes(c.id, val)}
+          onSave={(val) => updateCompetitorNotes(primaryComp.id, val)}
         />
       </div>
 
@@ -300,11 +403,11 @@ function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competi
 
           {/* Posts or empty state */}
           {posts.length === 0 ? (
-            <EmptyPostsState handle={c.handle} platform={c.platform as Platform} />
+            <EmptyPostsState handle={primaryComp.handle} platform={primaryComp.platform as Platform} />
           ) : (
             <div className="space-y-2">
               {sortedPosts.map(post => (
-                <PostCard key={post.id} post={post} handle={c.handle} allTags={allTags} />
+                <PostCard key={post.id} post={post} handle={post.competitor_handle ?? primaryComp.handle} allTags={allTags} />
               ))}
             </div>
           )}

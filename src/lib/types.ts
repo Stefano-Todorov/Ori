@@ -73,6 +73,7 @@ export interface ScriptVariant {
 export interface Competitor {
   id: string
   user_id: string
+  group_id: string
   platform: Platform
   handle: string
   display_name: string | null

@@ -81,11 +81,13 @@ async function init() {
     allTags = ctx.allTags ?? []
   } catch {}
 
-  // Auto-detect competitor match by handle (case-insensitive)
+  // Auto-detect competitor match by handle (case-insensitive, supports linked groups)
   let matchedCompetitor = null
   if (postData?.handle) {
     const h = postData.handle.toLowerCase()
-    matchedCompetitor = competitors.find(c => c.handle.toLowerCase() === h) ?? null
+    matchedCompetitor = competitors.find(c =>
+      c.handles ? c.handles.some((ch: string) => ch === h) : c.handle.toLowerCase() === h
+    ) ?? null
   }
 
   // Route to correct view based on page type

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AddCompetitorButton } from '@/components/posts/add-competitor-button'
 import { CompetitorsClient } from '@/components/competitors/competitors-client'
-import type { Post } from '@/lib/types'
+import type { Competitor, Post } from '@/lib/types'
 
 export default async function CompetitorsPage() {
   const supabase = await createClient()
@@ -23,18 +23,47 @@ export default async function CompetitorsPage() {
       .order('views', { ascending: false }),
   ])
 
-  const postsByHandle: Record<string, Post[]> = {}
-  for (const post of (competitorPosts ?? [])) {
-    const key = (post.competitor_handle ?? '__unknown__').toLowerCase()
-    if (!postsByHandle[key]) postsByHandle[key] = []
-    postsByHandle[key].push(post)
+  const allCompetitors: Competitor[] = competitors ?? []
+
+  // Group competitors by group_id
+  const groupMap = new Map<string, Competitor[]>()
+  for (const c of allCompetitors) {
+    const existing = groupMap.get(c.group_id) ?? []
+    existing.push(c)
+    groupMap.set(c.group_id, existing)
   }
 
-  const trackedHandles = new Set((competitors ?? []).map((c: { handle: string }) => c.handle.toLowerCase()))
-  const orphanedHandles = Object.keys(postsByHandle).filter(
-    h => h !== '__unknown__' && !trackedHandles.has(h)
-  )
+  // Build handle → group_id lookup
+  const handleToGroup = new Map<string, string>()
+  for (const c of allCompetitors) {
+    handleToGroup.set(c.handle.toLowerCase(), c.group_id)
+  }
 
+  // Group posts by group_id
+  const postsByGroup: Record<string, Post[]> = {}
+  const trackedHandles = new Set(allCompetitors.map(c => c.handle.toLowerCase()))
+  const orphanedPostsByHandle: Record<string, Post[]> = {}
+
+  for (const post of (competitorPosts ?? [])) {
+    const key = (post.competitor_handle ?? '__unknown__').toLowerCase()
+    const groupId = handleToGroup.get(key)
+    if (groupId) {
+      if (!postsByGroup[groupId]) postsByGroup[groupId] = []
+      postsByGroup[groupId].push(post)
+    } else if (key !== '__unknown__') {
+      if (!orphanedPostsByHandle[key]) orphanedPostsByHandle[key] = []
+      orphanedPostsByHandle[key].push(post)
+    }
+  }
+
+  // Build groups array for the client
+  const groups = Array.from(groupMap.entries()).map(([groupId, comps]) => ({
+    groupId,
+    competitors: comps,
+    posts: postsByGroup[groupId] ?? [],
+  }))
+
+  const orphanedHandles = Object.keys(orphanedPostsByHandle)
   const totalPosts = competitorPosts?.length ?? 0
 
   return (
@@ -44,9 +73,10 @@ export default async function CompetitorsPage() {
         <AddCompetitorButton />
       </div>
       <CompetitorsClient
-        competitors={competitors ?? []}
-        postsByHandle={postsByHandle}
+        groups={groups}
+        allCompetitors={allCompetitors}
         orphanedHandles={orphanedHandles}
+        orphanedPostsByHandle={orphanedPostsByHandle}
         totalPosts={totalPosts}
       />
     </div>

@@ -267,6 +267,54 @@ export async function addCompetitorPost(fields: {
   return { error: null }
 }
 
+export async function linkCompetitors(sourceId: string, targetId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: target } = await supabase
+    .from('competitors')
+    .select('group_id')
+    .eq('id', targetId)
+    .eq('user_id', user.id)
+    .single()
+  if (!target) return { error: 'Target not found' }
+
+  const { data: source } = await supabase
+    .from('competitors')
+    .select('group_id')
+    .eq('id', sourceId)
+    .eq('user_id', user.id)
+    .single()
+  if (!source) return { error: 'Source not found' }
+
+  // Move all members of source's group to target's group
+  await supabase
+    .from('competitors')
+    .update({ group_id: target.group_id })
+    .eq('user_id', user.id)
+    .eq('group_id', source.group_id)
+
+  revalidatePath('/dashboard/competitors')
+  return { error: null }
+}
+
+export async function unlinkCompetitor(competitorId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const newGroupId = crypto.randomUUID()
+  await supabase
+    .from('competitors')
+    .update({ group_id: newGroupId })
+    .eq('id', competitorId)
+    .eq('user_id', user.id)
+
+  revalidatePath('/dashboard/competitors')
+  return { error: null }
+}
+
 export async function updateCompetitorNotes(id: string, notes: string) {
   const supabase = await createClient()
   await supabase.from('competitors').update({ notes: notes || null }).eq('id', id)

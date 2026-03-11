@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   const [{ data: competitors }, { data: profile }, { data: competitorPosts }, { data: tagPosts }] = await Promise.all([
     supabase
       .from('competitors')
-      .select('id, handle, platform, display_name')
+      .select('id, handle, platform, display_name, group_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
@@ -48,17 +48,20 @@ export async function GET(req: NextRequest) {
       .not('tags', 'eq', '{}'),
   ])
 
-  // Group competitors by handle (cross-platform) with post counts
-  const handleMap = new Map<string, { handle: string; platforms: string[]; display_name: string; postCount: number }>()
+  // Group competitors by group_id (cross-platform account linking)
+  const groupMap = new Map<string, { handle: string; handles: string[]; platforms: string[]; display_name: string; postCount: number }>()
+  const handleToGroup = new Map<string, string>()
 
   for (const c of (competitors ?? [])) {
-    const key = c.handle.toLowerCase()
-    const existing = handleMap.get(key)
+    handleToGroup.set(c.handle.toLowerCase(), c.group_id)
+    const existing = groupMap.get(c.group_id)
     if (existing) {
+      if (!existing.handles.includes(c.handle.toLowerCase())) existing.handles.push(c.handle.toLowerCase())
       if (!existing.platforms.includes(c.platform)) existing.platforms.push(c.platform)
     } else {
-      handleMap.set(key, {
+      groupMap.set(c.group_id, {
         handle: c.handle,
+        handles: [c.handle.toLowerCase()],
         platforms: [c.platform],
         display_name: c.display_name || c.handle,
         postCount: 0,
@@ -66,19 +69,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Count posts per handle
+  // Count posts per group
   for (const post of (competitorPosts ?? [])) {
     if (!post.competitor_handle) continue
-    const key = post.competitor_handle.toLowerCase()
-    const entry = handleMap.get(key)
-    if (entry) entry.postCount++
+    const groupId = handleToGroup.get(post.competitor_handle.toLowerCase())
+    if (groupId) {
+      const entry = groupMap.get(groupId)
+      if (entry) entry.postCount++
+    }
   }
 
   // Collect unique tags from all posts
   const allTags = [...new Set((tagPosts ?? []).flatMap((p: { tags: string[] }) => p.tags ?? []))].sort()
 
   return NextResponse.json({
-    competitors: Array.from(handleMap.values()),
+    competitors: Array.from(groupMap.values()),
     profile: profile ?? {},
     allTags,
   }, { headers: corsHeaders })
