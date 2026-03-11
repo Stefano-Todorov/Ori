@@ -80,12 +80,12 @@ interface IdeaForm {
   saved: boolean
 }
 
-function emptyIdeaForm(url: string): IdeaForm {
+function emptyIdeaForm(url: string, tags: string[] = []): IdeaForm {
   return {
     id: crypto.randomUUID(),
     idea: '', inspirationUrl: url, hookIdea: '',
     scriptSnippet: '', cta: '', caption: '',
-    difficulty: '', videoType: '', tags: [], saving: false, saved: false,
+    difficulty: '', videoType: '', tags: [...tags], saving: false, saved: false,
   }
 }
 
@@ -98,7 +98,8 @@ interface CreateIdeaPanelProps {
 }
 
 export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps) {
-  const [forms, setForms] = useState<IdeaForm[]>([emptyIdeaForm(post.url || '')])
+  const postTags = post.tags ?? []
+  const [forms, setForms] = useState<IdeaForm[]>([emptyIdeaForm(post.url || '', postTags)])
 
   const formTags = forms.flatMap(f => f.tags)
   const combinedTags = [...new Set([...allTags, ...formTags])].sort()
@@ -108,7 +109,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
   }
 
   function addForm() {
-    setForms(prev => [...prev, emptyIdeaForm(post.url || '')])
+    setForms(prev => [...prev, emptyIdeaForm(post.url || '', postTags)])
   }
 
   function removeForm(id: string) {

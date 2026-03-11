@@ -28,7 +28,7 @@ export default async function InspoPage() {
             Save videos that inspire you. Study what works, then turn the best ones into your own ideas.
           </p>
         </div>
-        <AddSwipeButton />
+        <AddSwipeButton allTags={allTags} />
       </div>
 
       {posts.length > 0 && (() => {

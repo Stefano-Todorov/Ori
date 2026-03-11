@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
 import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
+import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+import { updatePostTags } from '@/app/actions'
 
 // ─── Helpers ───────────────────────────────────────────
 
@@ -73,6 +75,10 @@ interface Props {
 }
 
 export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles, totalPosts }: Props) {
+  // Derive all tags from all competitor posts
+  const allPosts = Object.values(postsByHandle).flat()
+  const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
+
   return (
     <div className="p-8 space-y-6 max-w-4xl">
       {/* Header */}
@@ -101,7 +107,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
       <div className="space-y-4">
         {competitors.map((c) => {
           const posts = postsByHandle[c.handle.toLowerCase()] ?? []
-          return <CompetitorCard key={c.id} competitor={c} posts={posts} />
+          return <CompetitorCard key={c.id} competitor={c} posts={posts} allTags={allTags} />
         })}
 
         {orphanedHandles.map(handle => (
@@ -112,7 +118,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
             </div>
             <div className="space-y-2">
               {postsByHandle[handle].map(post => (
-                <PostCard key={post.id} post={post} handle={handle} />
+                <PostCard key={post.id} post={post} handle={handle} allTags={allTags} />
               ))}
             </div>
           </div>
@@ -124,7 +130,7 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
 
 // ─── Competitor Card ──────────────────────────────────
 
-function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; posts: Post[] }) {
+function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competitor; posts: Post[]; allTags: string[] }) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -175,7 +181,7 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
                 Profile <ExternalLink size={10} />
               </a>
             )}
-            <AddPostButton handle={c.handle} platform={c.platform as Platform} />
+            <AddPostButton handle={c.handle} platform={c.platform as Platform} allTags={allTags} />
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -262,7 +268,7 @@ function CompetitorCard({ competitor: c, posts }: { competitor: Competitor; post
           ) : (
             <div className="space-y-2">
               {sortedPosts.map(post => (
-                <PostCard key={post.id} post={post} handle={c.handle} />
+                <PostCard key={post.id} post={post} handle={c.handle} allTags={allTags} />
               ))}
             </div>
           )}
@@ -399,11 +405,12 @@ function postTitle(post: Post): string {
   return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
 }
 
-function PostCard({ post, handle }: { post: Post; handle: string }) {
+function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTags: string[] }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [createIdeaOpen, setCreateIdeaOpen] = useState(false)
+  const [tags, setTags] = useState<string[]>(post.tags ?? [])
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(post.title ?? '')
   const titleRef = useRef<HTMLInputElement>(null)
@@ -578,6 +585,12 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                   <span className="font-normal text-muted-foreground">eng</span>
                 </span>
               )}
+            </div>
+
+            {/* Tags */}
+            <div className="flex items-center gap-1.5">
+              <TagPills tags={tags} />
+              <TagEditor tags={tags} allTags={allTags} onChange={(newTags) => { setTags(newTags); updatePostTags(post.id, newTags) }} />
             </div>
           </div>
 
@@ -774,7 +787,7 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
       <Dialog open={createIdeaOpen} onOpenChange={setCreateIdeaOpen}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden bg-background border-border rounded-2xl p-0 gap-0 shadow-[0_0_40px_rgba(124,58,237,0.1)]" showCloseButton={false}>
           <DialogTitle className="sr-only">Create idea from competitor post</DialogTitle>
-          <CreateIdeaPanel post={post} allTags={[]} onClose={() => setCreateIdeaOpen(false)} />
+          <CreateIdeaPanel post={post} allTags={allTags} onClose={() => setCreateIdeaOpen(false)} />
         </DialogContent>
       </Dialog>
     </>
