@@ -195,87 +195,94 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
       {/* Header */}
       <div className="p-5">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0 space-y-1.5">
-            {/* Handles with platform badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {comps.map((c) => {
-                const pColors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
-                return (
-                  <div key={c.id} className="inline-flex items-center gap-1.5">
-                    <span className="font-bold text-lg text-foreground">@{c.handle}</span>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${pColors.pill}`}>
-                      {c.platform}
-                    </span>
-                    {comps.length > 1 && (
-                      <button
-                        onClick={() => handleUnlink(c.id)}
-                        className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                        title="Unlink this account"
-                      >
-                        <X size={10} />
-                      </button>
-                    )}
-                    {comps.indexOf(c) < comps.length - 1 && (
-                      <span className="text-muted-foreground/30 mx-0.5">·</span>
-                    )}
-                  </div>
-                )
-              })}
-              {comps.length > 1 && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 inline-flex items-center gap-1">
-                  <Link size={8} /> Linked
-                </span>
-              )}
-            </div>
-            {/* Display name / follower count from primary */}
-            <div className="flex items-center gap-3 flex-wrap">
-              {primaryComp.display_name && <span className="text-muted-foreground text-sm">{primaryComp.display_name}</span>}
-              {primaryComp.follower_count != null && primaryComp.follower_count > 0 && (
-                <span className="text-xs font-medium text-muted-foreground">
-                  {formatNumber(primaryComp.follower_count)} followers
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-3 flex-wrap min-w-0">
+            <span className="font-bold text-lg text-foreground">@{primaryComp.handle}</span>
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${colors.pill}`}>
+              {primaryComp.platform}
+            </span>
+            {primaryComp.display_name && primaryComp.display_name !== primaryComp.handle && (
+              <span className="text-muted-foreground text-sm">{primaryComp.display_name}</span>
+            )}
+            {primaryComp.follower_count != null && primaryComp.follower_count > 0 && (
+              <span className="text-xs font-medium text-muted-foreground">
+                {formatNumber(primaryComp.follower_count)} followers
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {/* Link accounts button */}
-            {linkableCompetitors.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setLinkMenuOpen(!linkMenuOpen)}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
-                  title="Link another account"
-                >
-                  <Link size={12} />
-                  Link
-                </button>
-                {linkMenuOpen && (
-                  <div className="absolute right-0 top-full mt-1 z-20 w-56 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
-                    <div className="p-2 border-b border-border dark:border-white/6">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Link as same creator</p>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto p-1">
-                      {linkableCompetitors.map(lc => {
-                        const lcColors = PLATFORM_COLORS[lc.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
-                        return (
-                          <button
-                            key={lc.id}
-                            onClick={() => handleLink(lc.id)}
-                            disabled={linking}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-muted dark:hover:bg-white/5 transition-colors disabled:opacity-50"
-                          >
-                            <span className="text-sm font-medium text-foreground">@{lc.handle}</span>
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${lcColors.pill}`}>
-                              {lc.platform}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Link / manage linked accounts */}
+            <div className="relative">
+              <button
+                onClick={() => setLinkMenuOpen(!linkMenuOpen)}
+                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-all ${
+                  comps.length > 1
+                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20'
+                    : 'border-border dark:border-white/10 text-muted-foreground hover:text-purple-500 hover:border-purple-500/40'
+                }`}
+                title={comps.length > 1 ? 'Manage linked accounts' : 'Link another account'}
+              >
+                <Link size={12} />
+                {comps.length > 1 ? `${comps.length} Linked` : 'Link'}
+              </button>
+              {linkMenuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-20 w-64 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
+                  {/* Currently linked accounts */}
+                  {comps.length > 1 && (
+                    <>
+                      <div className="p-2 border-b border-border dark:border-white/6">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Linked accounts</p>
+                      </div>
+                      <div className="p-1">
+                        {comps.map(c => {
+                          const cColors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
+                          return (
+                            <div key={c.id} className="flex items-center gap-2 px-3 py-2 rounded-lg">
+                              <span className="text-sm font-medium text-foreground flex-1">@{c.handle}</span>
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${cColors.pill}`}>
+                                {c.platform}
+                              </span>
+                              <button
+                                onClick={() => handleUnlink(c.id)}
+                                className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                title="Unlink"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                  {/* Link new */}
+                  {linkableCompetitors.length > 0 && (
+                    <>
+                      <div className="p-2 border-b border-t border-border dark:border-white/6">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Link as same creator</p>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto p-1">
+                        {linkableCompetitors.map(lc => {
+                          const lcColors = PLATFORM_COLORS[lc.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
+                          return (
+                            <button
+                              key={lc.id}
+                              onClick={() => handleLink(lc.id)}
+                              disabled={linking}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-muted dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                            >
+                              <span className="text-sm font-medium text-foreground">@{lc.handle}</span>
+                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${lcColors.pill}`}>
+                                {lc.platform}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
             {/* Profile links */}
             {comps.map(c => c.profile_url ? (
               <a
@@ -288,9 +295,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
                 {c.platform === 'tiktok' ? 'TT' : c.platform === 'instagram' ? 'IG' : 'YT'} <ExternalLink size={10} />
               </a>
             ) : null)}
-            {/* Add post (uses primary handle/platform) */}
             <AddPostButton handle={primaryComp.handle} platform={primaryComp.platform as Platform} allTags={allTags} />
-            {/* Delete (primary) */}
             <button
               onClick={() => handleDelete(primaryComp.id)}
               disabled={deleting !== null}

@@ -55,6 +55,14 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // Auto-populate: mark any existing posts from this handle as competitor posts
+    await supabase
+      .from('posts')
+      .update({ is_competitor: true, competitor_handle: handle })
+      .eq('user_id', user.id)
+      .ilike('competitor_handle', handle)
+      .eq('is_competitor', false)
+
     return NextResponse.json({ ok: true }, { headers: corsHeaders })
   }
 

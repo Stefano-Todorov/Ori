@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { addCompetitor } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 
 export function AddCompetitorButton() {
@@ -17,31 +17,33 @@ export function AddCompetitorButton() {
   const [profileUrl, setProfileUrl] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   async function handleAdd() {
     if (!platform || !handle.trim()) return
     setLoading(true)
+    setError(null)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase.from('competitors').upsert({
-      user_id: user.id,
-      platform,
-      handle: handle.replace('@', '').trim(),
-      profile_url: profileUrl.trim() || null,
-      notes: notes || null,
+    const result = await addCompetitor({
+      handle: handle.trim(),
+      platform: platform as 'tiktok' | 'instagram' | 'youtube',
+      profile_url: profileUrl.trim() || undefined,
+      notes: notes || undefined,
     })
+
+    setLoading(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
 
     setOpen(false)
     setHandle('')
     setPlatform('')
     setProfileUrl('')
     setNotes('')
-    setLoading(false)
     router.refresh()
   }
 
@@ -92,6 +94,7 @@ export function AddCompetitorButton() {
               </label>
               <Textarea placeholder="e.g. Similar niche, great hooks..." value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputClass} />
             </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <button
               onClick={handleAdd}
               disabled={!platform || !handle.trim() || loading}

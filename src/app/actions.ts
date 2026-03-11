@@ -267,6 +267,51 @@ export async function addCompetitorPost(fields: {
   return { error: null }
 }
 
+export async function addCompetitor(fields: {
+  handle: string
+  platform: Platform
+  profile_url?: string
+  notes?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const cleanHandle = fields.handle.replace('@', '').trim()
+  if (!cleanHandle) return { error: 'Handle is required' }
+
+  // Check if already exists
+  const { data: existing } = await supabase
+    .from('competitors')
+    .select('id')
+    .eq('user_id', user.id)
+    .ilike('handle', cleanHandle)
+    .eq('platform', fields.platform)
+    .limit(1)
+
+  if (existing && existing.length > 0) return { error: 'Already tracking this competitor' }
+
+  await supabase.from('competitors').insert({
+    user_id: user.id,
+    handle: cleanHandle,
+    platform: fields.platform,
+    display_name: cleanHandle,
+    profile_url: fields.profile_url || null,
+    notes: fields.notes || null,
+  })
+
+  // Auto-populate: mark existing posts from this handle as competitor posts
+  await supabase
+    .from('posts')
+    .update({ is_competitor: true })
+    .eq('user_id', user.id)
+    .ilike('competitor_handle', cleanHandle)
+    .eq('is_competitor', false)
+
+  revalidatePath('/dashboard/competitors')
+  return { error: null }
+}
+
 export async function linkCompetitors(sourceId: string, targetId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
