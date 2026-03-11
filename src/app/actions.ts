@@ -18,8 +18,28 @@ export async function deleteScript(id: string) {
 
 export async function deleteCompetitor(id: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  // Get the handle before deleting so we can clean up posts
+  const { data: comp } = await supabase
+    .from('competitors')
+    .select('handle')
+    .eq('id', id)
+    .single()
+
   await supabase.from('competitors').delete().eq('id', id)
-  revalidatePath('/competitors')
+
+  // Unmark posts from this handle as competitor posts (keeps them as inspiration)
+  if (comp?.handle) {
+    await supabase
+      .from('posts')
+      .update({ is_competitor: false })
+      .eq('user_id', user.id)
+      .ilike('competitor_handle', comp.handle)
+  }
+
+  revalidatePath('/dashboard/competitors')
 }
 
 export async function updateScriptStatus(id: string, status: 'draft' | 'used' | 'archived') {
