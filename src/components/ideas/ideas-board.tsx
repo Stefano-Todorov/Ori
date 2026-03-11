@@ -220,15 +220,6 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
         </div>
       </div>
 
-      <div className="space-y-2">
-        <FormLabel>Source</FormLabel>
-        <Input
-          placeholder="e.g. saw on TikTok, from a comment..."
-          value={form.source}
-          onChange={(e) => set('source', e.target.value)}
-          className={fieldInputClass}
-        />
-      </div>
     </div>
   )
 }

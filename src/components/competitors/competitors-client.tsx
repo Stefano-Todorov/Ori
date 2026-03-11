@@ -3,15 +3,16 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   ExternalLink, Plus, Trash2, ChevronDown, ChevronRight,
-  Eye, Heart, MessageCircle, Pencil, Check, Video,
+  Eye, Heart, MessageCircle, Pencil, Video,
   Users, BarChart3, Trophy, Loader2, Sparkles, Lightbulb,
   X, SortAsc, Calendar, Bookmark, Send,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
-import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle, createIdeaFromInspo } from '@/app/actions'
+import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
+import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
 
 // ─── Helpers ───────────────────────────────────────────
 
@@ -402,8 +403,7 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [creatingIdea, setCreatingIdea] = useState(false)
-  const [ideaCreated, setIdeaCreated] = useState(false)
+  const [createIdeaOpen, setCreateIdeaOpen] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(post.title ?? '')
   const titleRef = useRef<HTMLInputElement>(null)
@@ -419,15 +419,6 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
       await updatePostTitle(post.id, newTitle)
     }
     setEditingTitle(false)
-  }
-
-  async function handleCreateIdea() {
-    setCreatingIdea(true)
-    const result = await createIdeaFromInspo(post.id)
-    setCreatingIdea(false)
-    if (result && !('error' in result)) {
-      setIdeaCreated(true)
-    }
   }
 
   // Ideas modal state
@@ -659,20 +650,13 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
                 <Lightbulb size={12} />
                 Why it worked
               </button>
-              {ideaCreated ? (
-                <span className="inline-flex items-center gap-1 h-8 px-3.5 text-xs font-medium text-green-600 dark:text-green-400">
-                  <Check size={12} /> Idea created
-                </span>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleCreateIdea() }}
-                  disabled={creatingIdea}
-                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
-                >
-                  {creatingIdea ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
-                  Create idea
-                </button>
-              )}
+              <button
+                onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+              >
+                <Plus size={12} />
+                Create idea
+              </button>
               {post.url && (
                 <a
                   href={post.url}
@@ -783,6 +767,14 @@ function PostCard({ post, handle }: { post: Post; handle: string }) {
               })}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Idea Panel */}
+      <Dialog open={createIdeaOpen} onOpenChange={setCreateIdeaOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden bg-background border-border rounded-2xl p-0 gap-0 shadow-[0_0_40px_rgba(124,58,237,0.1)]" showCloseButton={false}>
+          <DialogTitle className="sr-only">Create idea from competitor post</DialogTitle>
+          <CreateIdeaPanel post={post} allTags={[]} onClose={() => setCreateIdeaOpen(false)} />
         </DialogContent>
       </Dialog>
     </>
