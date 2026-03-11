@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
   }
 
-  const [{ data: competitors }, { data: profile }, { data: competitorPosts }] = await Promise.all([
+  const [{ data: competitors }, { data: profile }, { data: competitorPosts }, { data: tagPosts }] = await Promise.all([
     supabase
       .from('competitors')
       .select('id, handle, platform, display_name')
@@ -41,6 +41,11 @@ export async function GET(req: NextRequest) {
       .select('competitor_handle')
       .eq('user_id', user.id)
       .eq('is_competitor', true),
+    supabase
+      .from('posts')
+      .select('tags')
+      .eq('user_id', user.id)
+      .not('tags', 'eq', '{}'),
   ])
 
   // Group competitors by handle (cross-platform) with post counts
@@ -69,8 +74,12 @@ export async function GET(req: NextRequest) {
     if (entry) entry.postCount++
   }
 
+  // Collect unique tags from all posts
+  const allTags = [...new Set((tagPosts ?? []).flatMap((p: { tags: string[] }) => p.tags ?? []))].sort()
+
   return NextResponse.json({
     competitors: Array.from(handleMap.values()),
     profile: profile ?? {},
+    allTags,
   }, { headers: corsHeaders })
 }

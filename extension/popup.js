@@ -11,6 +11,8 @@ let state = {
   auth: null,
   postData: null,
   competitors: [],
+  allTags: [],
+  selectedTags: [],
   matchedCompetitor: null,
   view: 'loading',
   ideas: [],
@@ -20,6 +22,7 @@ let state = {
   errors: {},
   showCompetitorPrompt: false,
   showDuplicatePrompt: false,
+  showTagDropdown: false,
   dontAskCompetitor: false,
   sortedPosts: [],
   sortBy: 'views',
@@ -71,9 +74,11 @@ async function init() {
   }
 
   let competitors = []
+  let allTags = []
   try {
     const ctx = await chrome.runtime.sendMessage({ type: 'GET_CONTEXT' })
     competitors = ctx.competitors ?? []
+    allTags = ctx.allTags ?? []
   } catch {}
 
   // Auto-detect competitor match by handle (case-insensitive)
@@ -85,7 +90,7 @@ async function init() {
 
   // Route to correct view based on page type
   const view = postData?.pageType === 'profile' ? 'profile' : 'main'
-  setState({ view, postData, competitors, matchedCompetitor })
+  setState({ view, postData, competitors, matchedCompetitor, allTags })
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -112,9 +117,10 @@ async function handleLogout() {
 async function handleSaveInspiration(force) {
   if (!state.postData) return
   setState({ saving: 'inspiration', errors: {}, messages: {}, showDuplicatePrompt: false })
+  const tagsPayload = state.selectedTags.length > 0 ? { tags: state.selectedTags } : {}
   const result = await chrome.runtime.sendMessage({
     type: 'SAVE_POST',
-    payload: { type: 'inspiration', ...state.postData, ...(force ? { force } : {}) },
+    payload: { type: 'inspiration', ...state.postData, ...tagsPayload, ...(force ? { force } : {}) },
   })
   setState({ saving: null })
   if (result.error) {
@@ -122,7 +128,28 @@ async function handleSaveInspiration(force) {
     else setState({ errors: { inspiration: result.error } })
     return
   }
-  setState({ messages: { inspiration: force === 'replace' ? 'Replaced' : 'Saved' } })
+  setState({ messages: { inspiration: force === 'replace' ? 'Replaced' : 'Saved' }, selectedTags: [] })
+}
+
+function toggleTag(tag) {
+  const tags = state.selectedTags.includes(tag)
+    ? state.selectedTags.filter(t => t !== tag)
+    : [...state.selectedTags, tag]
+  setState({ selectedTags: tags })
+}
+
+function addNewTag() {
+  const input = document.getElementById('new-tag-input')
+  if (!input) return
+  const tag = input.value.trim().toLowerCase()
+  if (!tag) return
+  if (!state.selectedTags.includes(tag)) {
+    setState({ selectedTags: [...state.selectedTags, tag] })
+  }
+  if (!state.allTags.includes(tag)) {
+    setState({ allTags: [...state.allTags, tag].sort() })
+  }
+  input.value = ''
 }
 
 async function handleCompetitorYes() {
@@ -486,9 +513,34 @@ function render() {
         })() : ''}
       </div>
       <div class="actions">
-        <button class="btn btn-primary" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : '💾 Save as Inspiration'}
-        </button>
+        <div class="save-row">
+          <button class="btn btn-primary save-main-btn" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
+            ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : '💾 Save as Inspiration'}
+          </button>
+          <button class="tag-dropdown-btn" id="tag-dropdown-btn" title="Add tags">🏷️ ▾</button>
+        </div>
+        ${state.selectedTags.length > 0 ? `
+          <div class="selected-tags-row">
+            ${state.selectedTags.map(t => `<span class="tag-pill">${escHtml(t)} <span class="tag-remove" data-tag="${escHtml(t)}">×</span></span>`).join('')}
+          </div>
+        ` : ''}
+        ${state.showTagDropdown ? `
+          <div class="tag-dropdown-panel" id="tag-dropdown-panel">
+            ${state.allTags.length > 0 ? `
+              <div class="tag-list">
+                ${state.allTags.map(t => `
+                  <button class="tag-option ${state.selectedTags.includes(t) ? 'active' : ''}" data-tag="${escHtml(t)}">
+                    ${state.selectedTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+            <div class="tag-new-row">
+              <input id="new-tag-input" type="text" placeholder="New tag..." />
+              <button class="tag-add-btn" id="add-tag-btn">+</button>
+            </div>
+          </div>
+        ` : ''}
         ${state.showDuplicatePrompt ? `
           <div class="competitor-prompt">
             <div class="competitor-prompt-text">This post was already saved. What would you like to do?</div>
@@ -539,11 +591,20 @@ function render() {
 
   if (hasPost) {
     document.getElementById('inspiration-btn')?.addEventListener('click', () => handleSaveInspiration())
+    document.getElementById('tag-dropdown-btn')?.addEventListener('click', () => setState({ showTagDropdown: !state.showTagDropdown }))
     document.getElementById('download-btn')?.addEventListener('click', handleDownload)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
     document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
     document.getElementById('dup-replace-btn')?.addEventListener('click', () => handleSaveInspiration('replace'))
     document.getElementById('dup-keep-btn')?.addEventListener('click', () => handleSaveInspiration('keep'))
+    document.getElementById('add-tag-btn')?.addEventListener('click', addNewTag)
+    document.getElementById('new-tag-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') addNewTag() })
+    document.querySelectorAll('.tag-option').forEach(btn => {
+      btn.addEventListener('click', () => toggleTag(btn.dataset.tag))
+    })
+    document.querySelectorAll('.tag-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); toggleTag(btn.dataset.tag) })
+    })
   }
 }
 

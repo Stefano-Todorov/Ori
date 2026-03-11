@@ -300,6 +300,79 @@
       font-size: 11px; color: #3f3f46; text-align: center; padding: 6px 0 0;
       font-style: italic;
     }
+
+    /* Save row with tag dropdown */
+    .save-row {
+      display: flex; gap: 0;
+    }
+    .save-main-btn {
+      flex: 1; border-radius: 10px 0 0 10px !important;
+    }
+    .tag-dropdown-btn {
+      padding: 0 10px;
+      background: linear-gradient(135deg, #6d28d9, #9333ea);
+      color: #fff;
+      border: none;
+      border-left: 1px solid rgba(255,255,255,0.2);
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+      font-size: 12px;
+      transition: filter 0.15s;
+      display: flex; align-items: center; gap: 2px;
+    }
+    .tag-dropdown-btn:hover { filter: brightness(1.15); }
+
+    .selected-tags-row {
+      display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0;
+    }
+    .tag-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 20px;
+      background: rgba(124, 58, 237, 0.15); color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.25);
+    }
+    .tag-remove {
+      cursor: pointer; font-size: 12px; opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .tag-remove:hover { opacity: 1; }
+
+    .tag-dropdown-panel {
+      background: #1e1e2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .tag-list {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      max-height: 100px; overflow-y: auto;
+      margin-bottom: 8px;
+    }
+    .tag-option {
+      font-size: 11px; padding: 4px 10px;
+      border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04); color: #a1a1aa;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .tag-option:hover { background: rgba(124, 58, 237, 0.15); color: #c4b5fd; border-color: rgba(124, 58, 237, 0.3); }
+    .tag-option.active { background: rgba(124, 58, 237, 0.2); color: #a78bfa; border-color: rgba(124, 58, 237, 0.4); }
+
+    .tag-new-row {
+      display: flex; gap: 4px;
+    }
+    .tag-new-row input {
+      flex: 1; padding: 5px 8px; font-size: 11px;
+      border-radius: 6px;
+    }
+    .tag-add-btn {
+      padding: 4px 10px; font-size: 13px; font-weight: 700;
+      background: rgba(124, 58, 237, 0.15); color: #a78bfa;
+      border: 1px solid rgba(124, 58, 237, 0.25);
+      border-radius: 6px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tag-add-btn:hover { background: rgba(124, 58, 237, 0.25); }
   </style>
 </head>
 <body>

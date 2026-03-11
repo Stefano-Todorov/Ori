@@ -507,7 +507,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange }: { post: Post; allT
 
       {/* Create Idea Panel */}
       <Dialog open={createIdeaOpen} onOpenChange={setCreateIdeaOpen}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden bg-background border-border rounded-2xl p-0 gap-0 shadow-[0_0_40px_rgba(124,58,237,0.1)]" showCloseButton={false}>
+        <DialogContent className="w-[70vw] max-w-none h-[70vh] max-h-none overflow-hidden bg-background border-border rounded-2xl p-0 gap-0 shadow-[0_0_40px_rgba(124,58,237,0.1)]" showCloseButton={false}>
           <DialogTitle className="sr-only">Create idea from inspo</DialogTitle>
           <CreateIdeaPanel post={post} allTags={allTags} onClose={() => setCreateIdeaOpen(false)} />
         </DialogContent>

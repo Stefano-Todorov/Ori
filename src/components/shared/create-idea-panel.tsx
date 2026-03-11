@@ -145,7 +145,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
   const er = engagementRate(post)
 
   return (
-    <div className="flex h-[85vh]">
+    <div className="flex h-full">
       {/* Left — Original Post */}
       <div className="w-[45%] border-r border-border dark:border-white/6 overflow-y-auto p-6 space-y-4">
         <div>
