@@ -145,9 +145,9 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
   const er = engagementRate(post)
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full min-h-0">
       {/* Left — Original Post */}
-      <div className="w-[45%] border-r border-border dark:border-white/6 overflow-y-auto p-6 space-y-4">
+      <div className="w-[45%] border-r border-border dark:border-white/6 overflow-y-auto min-h-0 p-6 space-y-4">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Original Post</p>
           <h3 className="text-base font-bold text-foreground leading-snug">{post.title || postTitle(post)}</h3>
@@ -226,14 +226,19 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
 
         {/* Link */}
         {post.url && (
-          <a href={post.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-purple-500 hover:text-purple-400 transition-colors">
-            <ExternalLink size={11} /> View original post
+          <a
+            href={post.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 w-full h-9 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-500 dark:text-purple-400 text-xs font-semibold hover:bg-purple-500/20 hover:border-purple-500/50 transition-all duration-200"
+          >
+            <ExternalLink size={12} /> View original post
           </a>
         )}
       </div>
 
       {/* Right — Idea Forms */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border dark:border-white/6">
           <div>
             <h2 className="text-lg font-bold text-foreground">New ideas</h2>
