@@ -514,6 +514,14 @@ export async function updateProductionStatus(ideaId: string, status: 'new' | 're
   revalidatePath('/dashboard/schedule')
 }
 
+export async function bulkUpdateProductionStatus(ids: string[], status: 'new' | 'recording' | 'editing' | 'posted') {
+  if (!ids.length) return
+  const supabase = await createClient()
+  await supabase.from('content_ideas').update({ production_status: status }).in('id', ids)
+  revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard')
+}
+
 // ─── Recording Days ──────────────────────────────────────────────────────────
 
 export async function addRecordingDay(recording_date: string, notes?: string) {

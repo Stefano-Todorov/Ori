@@ -11,30 +11,30 @@ import { DeleteButton } from '@/components/ui/delete-button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown } from 'lucide-react'
-import { addIdea, deleteIdea, updateIdeaStatus, updateIdea, bulkDeleteIdeas, bulkUpdateIdeaStatus, restoreIdea, updateIdeaTags } from '@/app/actions'
+import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags } from '@/app/actions'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
-import type { ContentIdea } from '@/lib/types'
+import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 interface Props {
   ideas: ContentIdea[]
   allTags: string[]
 }
 
-type IdeaStatus = ContentIdea['status']
+type IdeaStatus = ProductionStatus
 
 const STATUS_COLORS: Record<IdeaStatus, string> = {
   new: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-  in_progress: 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200',
-  done: 'bg-green-100 text-green-700 hover:bg-green-200',
-  archived: 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+  recording: 'bg-amber-100 text-amber-700 hover:bg-amber-200',
+  editing: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
+  posted: 'bg-green-100 text-green-700 hover:bg-green-200',
 }
 
 const STATUS_LABEL: Record<IdeaStatus, string> = {
   new: 'New',
-  in_progress: 'In Progress',
-  done: 'Done',
-  archived: 'Archived',
+  recording: 'Recording',
+  editing: 'Editing',
+  posted: 'Posted',
 }
 
 const DIFFICULTY_COLORS = {
@@ -273,13 +273,6 @@ function IdeaCard({
               {item.difficulty && (
                 <Badge className={`text-xs ${DIFFICULTY_COLORS[item.difficulty]}`}>{item.difficulty}</Badge>
               )}
-              {item.production_status && item.production_status !== 'new' && (
-                <Badge className={`text-xs ${
-                  item.production_status === 'recording' ? 'bg-amber-100 text-amber-700' :
-                  item.production_status === 'editing' ? 'bg-blue-100 text-blue-700' :
-                  'bg-green-100 text-green-700'
-                }`}>{item.production_status}</Badge>
-              )}
               {item.video_type && (
                 <Badge variant="secondary" className="text-xs">{item.video_type}</Badge>
               )}
@@ -307,12 +300,12 @@ function IdeaCard({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Select value={item.status} onValueChange={(v) => onStatusChange(v as IdeaStatus)}>
-              <SelectTrigger className={`h-8 w-auto text-xs font-semibold border-0 rounded-full px-3 gap-1 ${STATUS_COLORS[item.status]}`}>
+            <Select value={item.production_status} onValueChange={(v) => onStatusChange(v as IdeaStatus)}>
+              <SelectTrigger className={`h-8 w-auto text-xs font-semibold border-0 rounded-full px-3 gap-1 ${STATUS_COLORS[item.production_status]}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+                {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
                   <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
                 ))}
               </SelectContent>
@@ -394,7 +387,7 @@ const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
 
 export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
-  const [filter, setFilter] = useState<IdeaStatus | 'all'>('all')
+  const [filter, setFilter] = useState<ProductionStatus | 'all'>('all')
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [tagFilter, setTagFilter] = useState('all')
@@ -488,8 +481,8 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   }
 
   async function handleStatusChange(id: string, status: IdeaStatus) {
-    await updateIdeaStatus(id, status)
-    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, status } : i))
+    await updateProductionStatus(id, status)
+    setIdeas((prev) => prev.map((i) => i.id === id ? { ...i, production_status: status } : i))
   }
 
   // ─── Bulk actions ─────────────────────────────────────────────────────────
@@ -527,8 +520,8 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   async function handleBulkStatus(status: IdeaStatus) {
     const ids = Array.from(selected)
     setBulkAction(true)
-    await bulkUpdateIdeaStatus(ids, status)
-    setIdeas((prev) => prev.map((i) => ids.includes(i.id) ? { ...i, status } : i))
+    await bulkUpdateProductionStatus(ids, status)
+    setIdeas((prev) => prev.map((i) => ids.includes(i.id) ? { ...i, production_status: status } : i))
     setSelected(new Set())
     setBulkAction(false)
   }
@@ -564,7 +557,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   // ─── Filtering ──────────────────────────────────────────────────────────────
 
   const filtered = ideas
-    .filter((i) => filter === 'all' || i.status === filter)
+    .filter((i) => filter === 'all' || i.production_status === filter)
     .filter((i) => sourceFilter === 'all' || getSourceType(i) === sourceFilter)
     .filter((i) => difficultyFilter === 'all' || i.difficulty === difficultyFilter)
     .filter((i) => tagFilter === 'all' || (i.tags ?? []).includes(tagFilter))
@@ -577,7 +570,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       <div className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex gap-2 flex-wrap">
-            {(['all', 'new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+            {(['all', 'new', 'recording', 'editing', 'posted'] as const).map((s) => (
               <Button
                 key={s}
                 variant={filter === s ? 'default' : 'outline'}
@@ -587,7 +580,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                 {s === 'all' ? 'All' : STATUS_LABEL[s]}
                 {s !== 'all' && (
                   <span className="ml-1.5 text-xs opacity-70">
-                    {ideas.filter((i) => i.status === s).length}
+                    {ideas.filter((i) => i.production_status === s).length}
                   </span>
                 )}
               </Button>
@@ -653,7 +646,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                   <ChevronDown size={12} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(['new', 'in_progress', 'done', 'archived'] as const).map((s) => (
+                  {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
                     <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
                   ))}
                 </SelectContent>
@@ -679,7 +672,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <CardContent className="py-12 text-center text-muted-foreground">
               {filter === 'all'
                 ? 'No ideas yet. Add your first one!'
-                : `No ${filter === 'in_progress' ? 'in progress' : filter} ideas.`}
+                : `No ${STATUS_LABEL[filter].toLowerCase()} ideas.`}
             </CardContent>
           </Card>
         ) : (
@@ -730,7 +723,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.idea}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.source ? `via ${item.source}` : 'My idea'} — {STATUS_LABEL[item.status]}
+                        {item.source ? `via ${item.source}` : 'My idea'} — {STATUS_LABEL[item.production_status]}
                       </p>
                     </div>
                     <Button
