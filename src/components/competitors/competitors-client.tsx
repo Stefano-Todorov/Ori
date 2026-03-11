@@ -143,7 +143,8 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
   const { competitors: comps, posts } = group
   const primaryComp = comps[0]
   const [collapsed, setCollapsed] = useState(false)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [sortMode, setSortMode] = useState<SortMode>('views')
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const [linkMenuOpen, setLinkMenuOpen] = useState(false)
@@ -171,9 +172,10 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
     ? posts.reduce((s, p) => s + (p.views > 0 ? ((p.likes + p.comments + p.shares) / p.views) * 100 : 0), 0) / posts.length
     : 0
 
-  async function handleDelete(compId: string) {
-    setDeleting(compId)
-    await deleteCompetitor(compId)
+  async function handleDelete(deletePosts: boolean) {
+    setDeleting(true)
+    setDeleteConfirmOpen(false)
+    await deleteCompetitor(primaryComp.id, deletePosts)
     router.refresh()
   }
 
@@ -297,8 +299,8 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
             ) : null)}
             <AddPostButton handle={primaryComp.handle} platform={primaryComp.platform as Platform} allTags={allTags} />
             <button
-              onClick={() => handleDelete(primaryComp.id)}
-              disabled={deleting !== null}
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={deleting}
               className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
             >
               <Trash2 size={14} />
@@ -418,6 +420,38 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
           )}
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-sm bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl shadow-[0_0_40px_rgba(124,58,237,0.1)]">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Delete @{primaryComp.handle}?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            What should happen to the {posts.length} tracked post{posts.length !== 1 ? 's' : ''}?
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              onClick={() => handleDelete(false)}
+              className="w-full h-10 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted transition-all"
+            >
+              Keep posts as inspiration
+            </button>
+            <button
+              onClick={() => handleDelete(true)}
+              className="w-full h-10 rounded-xl border border-red-500/30 bg-red-500/10 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-all"
+            >
+              Delete competitor + all posts
+            </button>
+            <button
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="w-full h-10 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

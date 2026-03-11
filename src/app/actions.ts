@@ -16,7 +16,7 @@ export async function deleteScript(id: string) {
   revalidatePath('/scripts')
 }
 
-export async function deleteCompetitor(id: string) {
+export async function deleteCompetitor(id: string, deletePosts: boolean = false) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
@@ -30,13 +30,22 @@ export async function deleteCompetitor(id: string) {
 
   await supabase.from('competitors').delete().eq('id', id)
 
-  // Unmark posts from this handle as competitor posts (keeps them as inspiration)
   if (comp?.handle) {
-    await supabase
-      .from('posts')
-      .update({ is_competitor: false })
-      .eq('user_id', user.id)
-      .ilike('competitor_handle', comp.handle)
+    if (deletePosts) {
+      // Delete all posts from this handle
+      await supabase
+        .from('posts')
+        .delete()
+        .eq('user_id', user.id)
+        .ilike('competitor_handle', comp.handle)
+    } else {
+      // Keep posts as inspiration
+      await supabase
+        .from('posts')
+        .update({ is_competitor: false })
+        .eq('user_id', user.id)
+        .ilike('competitor_handle', comp.handle)
+    }
   }
 
   revalidatePath('/dashboard/competitors')
