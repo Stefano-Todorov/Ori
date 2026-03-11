@@ -133,9 +133,9 @@ export default async function DashboardPage() {
       {/* ─── Follower Tracking ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2">
-          <FollowerChart snapshots={followerSnapshots ?? []} />
+          <FollowerChart snapshots={followerSnapshots ?? []} activePlatforms={profile?.platforms} />
         </div>
-        <AddFollowersForm />
+        <AddFollowersForm activePlatforms={profile?.platforms} />
       </div>
 
       {/* ─── Kanban Board ─── */}

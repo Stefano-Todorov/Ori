@@ -30,7 +30,6 @@ export function SettingsForm({ profile }: Props) {
   const [goals, setGoals] = useState(profile?.goals ?? '')
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [postingTarget, setPostingTarget] = useState(profile?.posting_target ?? 3)
-  const [telegramChatId, setTelegramChatId] = useState(profile?.telegram_chat_id ?? '')
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +51,6 @@ export function SettingsForm({ profile }: Props) {
       goals: goals || null,
       platforms,
       posting_target: postingTarget,
-      telegram_chat_id: telegramChatId || null,
     })
 
     if (result?.error) {
@@ -164,23 +162,6 @@ export function SettingsForm({ profile }: Props) {
               ))}
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Notifications */}
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
-        <p className="text-sm font-bold text-foreground">Notifications</p>
-        <div className="space-y-2">
-          <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Telegram Chat ID</label>
-          <Input
-            value={telegramChatId}
-            onChange={(e) => setTelegramChatId(e.target.value)}
-            placeholder="e.g. 123456789"
-            className={inputClass}
-          />
-          <p className="text-xs text-muted-foreground">
-            Start a chat with <strong>@OriannaBot</strong> on Telegram and send /start to get your Chat ID.
-          </p>
         </div>
       </div>
 

@@ -8,9 +8,10 @@ import type { FollowerSnapshot, Platform } from '@/lib/types'
 
 interface Props {
   snapshots: FollowerSnapshot[]
+  activePlatforms?: Platform[]
 }
 
-const PLATFORMS: { key: Platform | 'all'; label: string; color: string; darkColor?: string }[] = [
+const ALL_PLATFORMS: { key: Platform | 'all'; label: string; color: string; darkColor?: string }[] = [
   { key: 'all', label: 'All', color: '#7c3aed' },
   { key: 'tiktok', label: 'TikTok', color: '#000000', darkColor: '#ffffff' },
   { key: 'instagram', label: 'Instagram', color: '#E1306C' },
@@ -23,7 +24,10 @@ function formatNumber(n: number): string {
   return n.toString()
 }
 
-export function FollowerChart({ snapshots }: Props) {
+export function FollowerChart({ snapshots, activePlatforms }: Props) {
+  const PLATFORMS = activePlatforms?.length
+    ? ALL_PLATFORMS.filter(p => p.key === 'all' || activePlatforms.includes(p.key as Platform))
+    : ALL_PLATFORMS
   const [active, setActive] = useState<Set<Platform | 'all'>>(new Set(['all']))
 
   const toggle = (key: Platform | 'all') => {

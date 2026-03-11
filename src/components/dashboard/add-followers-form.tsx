@@ -6,16 +6,23 @@ import { addFollowerSnapshot } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import type { Platform } from '@/lib/types'
 
-const PLATFORMS: { key: Platform; label: string }[] = [
+const ALL_PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'tiktok', label: 'TikTok' },
   { key: 'instagram', label: 'Instagram' },
   { key: 'youtube', label: 'YouTube' },
 ]
 
-export function AddFollowersForm() {
+interface Props {
+  activePlatforms?: Platform[]
+}
+
+export function AddFollowersForm({ activePlatforms }: Props) {
+  const PLATFORMS = activePlatforms?.length
+    ? ALL_PLATFORMS.filter(p => activePlatforms.includes(p.key))
+    : ALL_PLATFORMS
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [platform, setPlatform] = useState<Platform>('tiktok')
+  const [platform, setPlatform] = useState<Platform>(PLATFORMS[0]?.key ?? 'tiktok')
   const [count, setCount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [error, setError] = useState<string | null>(null)
