@@ -130,14 +130,20 @@ export function CompetitorsClient({ competitors, postsByHandle, orphanedHandles,
 
 // ─── Competitor Card ──────────────────────────────────
 
+type PlatformFilter = 'all' | Platform
+
 function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competitor; posts: Post[]; allTags: string[] }) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [sortMode, setSortMode] = useState<SortMode>('views')
+  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const colors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border', border: 'border-l-gray-400' }
 
-  const sortedPosts = [...posts].sort((a, b) => {
+  const platformsInPosts = [...new Set(posts.map(p => p.platform))]
+  const filteredPosts = platformFilter === 'all' ? posts : posts.filter(p => p.platform === platformFilter)
+
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
     if (sortMode === 'views') return b.views - a.views
     if (sortMode === 'likes') return b.likes - a.likes
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -241,24 +247,54 @@ function CompetitorCard({ competitor: c, posts, allTags }: { competitor: Competi
             </div>
           )}
 
-          {/* Sort controls */}
+          {/* Sort & Filter controls */}
           {posts.length > 1 && (
-            <div className="flex items-center gap-1.5">
-              <SortAsc size={11} className="text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Sort:</span>
-              {(['views', 'likes', 'date'] as SortMode[]).map(mode => (
-                <button
-                  key={mode}
-                  onClick={() => setSortMode(mode)}
-                  className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
-                    sortMode === mode
-                      ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <SortAsc size={11} className="text-muted-foreground" />
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Sort:</span>
+                {(['views', 'likes', 'date'] as SortMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setSortMode(mode)}
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+                      sortMode === mode
+                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+              {platformsInPosts.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Platform:</span>
+                  <button
+                    onClick={() => setPlatformFilter('all')}
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
+                      platformFilter === 'all'
+                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {platformsInPosts.map(p => (
+                    <button
+                      key={p}
+                      onClick={() => setPlatformFilter(p)}
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+                        platformFilter === p
+                          ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -514,6 +550,18 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           onClick={() => setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
+          {/* Thumbnail */}
+          {post.thumbnail_url ? (
+            <img
+              src={post.thumbnail_url}
+              alt=""
+              className="w-14 h-14 rounded-lg object-cover bg-muted shrink-0"
+            />
+          ) : (
+            <div className="w-14 h-14 rounded-lg bg-muted dark:bg-white/5 shrink-0 flex items-center justify-center">
+              <Video size={18} className="text-muted-foreground/40" />
+            </div>
+          )}
           <div className="flex-1 min-w-0 space-y-1">
             {/* Title + date row */}
             <div className="flex items-center gap-2 flex-wrap">

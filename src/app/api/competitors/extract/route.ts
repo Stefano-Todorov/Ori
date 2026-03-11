@@ -9,6 +9,7 @@ export interface ExtractedPost {
   likes: number | null
   comments: number | null
   shares: number | null
+  thumbnail_url: string | null
 }
 
 function detectPlatform(url: string): 'youtube' | 'tiktok' | 'instagram' | null {
@@ -65,6 +66,7 @@ async function extractYouTube(url: string): Promise<ExtractedPost> {
           likes: item.statistics?.likeCount ? Number(item.statistics.likeCount) : null,
           comments: item.statistics?.commentCount ? Number(item.statistics.commentCount) : null,
           shares: null,
+          thumbnail_url: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
         }
       }
     }
@@ -83,11 +85,12 @@ async function extractYouTube(url: string): Promise<ExtractedPost> {
         likes: null,
         comments: null,
         shares: null,
+        thumbnail_url: data.thumbnail_url ?? null,
       }
     }
   }
 
-  return { platform: 'youtube', handle: null, caption: null, views: null, likes: null, comments: null, shares: null }
+  return { platform: 'youtube', handle: null, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 }
 
 async function extractTikTok(url: string): Promise<ExtractedPost> {
@@ -108,10 +111,11 @@ async function extractTikTok(url: string): Promise<ExtractedPost> {
       likes: null,
       comments: null,
       shares: null,
+      thumbnail_url: data.thumbnail_url ?? null,
     }
   }
 
-  return { platform: 'tiktok', handle, caption: null, views: null, likes: null, comments: null, shares: null }
+  return { platform: 'tiktok', handle, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 }
 
 async function extractInstagram(url: string): Promise<ExtractedPost> {
@@ -129,6 +133,7 @@ async function extractInstagram(url: string): Promise<ExtractedPost> {
     const html = await res.text()
     const titleMatch = html.match(/<meta property="og:title" content="([^"]+)"/)
     const descMatch = html.match(/<meta property="og:description" content="([^"]+)"/)
+    const imageMatch = html.match(/<meta property="og:image" content="([^"]+)"/)
     const caption = titleMatch?.[1] ?? descMatch?.[1] ?? null
 
     return {
@@ -139,10 +144,11 @@ async function extractInstagram(url: string): Promise<ExtractedPost> {
       likes: null,
       comments: null,
       shares: null,
+      thumbnail_url: imageMatch?.[1] ?? null,
     }
   }
 
-  return { platform: 'instagram', handle, caption: null, views: null, likes: null, comments: null, shares: null }
+  return { platform: 'instagram', handle, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 }
 
 function decodeHTMLEntities(text: string): string {
@@ -171,10 +177,10 @@ export async function GET(req: NextRequest) {
     if (platform === 'youtube') result = await extractYouTube(url)
     else if (platform === 'tiktok') result = await extractTikTok(url)
     else if (platform === 'instagram') result = await extractInstagram(url)
-    else result = { platform: null, handle: null, caption: null, views: null, likes: null, comments: null, shares: null }
+    else result = { platform: null, handle: null, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 
     return NextResponse.json(result)
   } catch {
-    return NextResponse.json({ platform, handle: null, caption: null, views: null, likes: null, comments: null, shares: null })
+    return NextResponse.json({ platform, handle: null, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null })
   }
 }

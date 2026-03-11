@@ -56,6 +56,7 @@ export function AddPostButton({ handle, platform, allTags = [] }: Props) {
           likes: data.likes != null ? Number(data.likes) : undefined,
           comments: data.comments != null ? Number(data.comments) : undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
+          thumbnail_url: typeof data.thumbnail_url === 'string' ? data.thumbnail_url : undefined,
         })
 
         if (result?.error) {

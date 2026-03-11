@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { type, platform, url, caption, views, likes, comments, shares, saves, hook_text, hashtags, duration, audio, notes, tags } = body
+  const { type, platform, url, caption, views, likes, comments, shares, saves, hook_text, hashtags, duration, audio, notes, tags, thumbnail } = body
   const handle = body.handle || body.competitorHandle
 
   // Add competitor only (no post) — from profile page
@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
       competitor_handle: handle || null,
       is_trending: true,
       tags: tags ?? [],
+      thumbnail_url: thumbnail || null,
     }
 
     const { error } = await supabase.from('posts').insert(postRow)
@@ -183,6 +184,7 @@ export async function POST(req: NextRequest) {
     competitor_handle: competitorHandle,
     is_trending: type === 'swipe',
     tags: tags ?? [],
+    thumbnail_url: thumbnail || null,
   }
 
   const { error } = await supabase.from('posts').insert(postRow)

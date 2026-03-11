@@ -66,6 +66,7 @@ export async function addSwipePost(fields: {
   caption?: string
   competitor_handle?: string
   tags?: string[]
+  thumbnail_url?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -79,6 +80,7 @@ export async function addSwipePost(fields: {
     is_trending: true,
     is_competitor: false,
     tags: fields.tags ?? [],
+    thumbnail_url: fields.thumbnail_url || null,
     views: 0,
     likes: 0,
     comments: 0,
@@ -236,6 +238,7 @@ export async function addCompetitorPost(fields: {
   shares?: number
   hook_text?: string
   tags?: string[]
+  thumbnail_url?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -254,6 +257,7 @@ export async function addCompetitorPost(fields: {
     saves: 0,
     hook_text: fields.hook_text || null,
     tags: fields.tags ?? [],
+    thumbnail_url: fields.thumbnail_url || null,
     is_competitor: true,
     is_trending: false,
   })

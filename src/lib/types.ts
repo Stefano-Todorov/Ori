@@ -39,6 +39,7 @@ export interface Post {
   difficulty: Difficulty | null
   edit_style: string | null
   thumbnail_description: string | null
+  thumbnail_url: string | null
   ai_notes: string | null
   is_competitor: boolean
   competitor_handle: string | null
