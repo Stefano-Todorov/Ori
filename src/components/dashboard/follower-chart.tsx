@@ -1,0 +1,114 @@
+'use client'
+
+import { useState } from 'react'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts'
+import type { FollowerSnapshot, Platform } from '@/lib/types'
+
+interface Props {
+  snapshots: FollowerSnapshot[]
+}
+
+const PLATFORMS: { key: Platform | 'all'; label: string; color: string; darkColor?: string }[] = [
+  { key: 'all', label: 'All', color: '#7c3aed' },
+  { key: 'tiktok', label: 'TikTok', color: '#000000', darkColor: '#ffffff' },
+  { key: 'instagram', label: 'Instagram', color: '#E1306C' },
+  { key: 'youtube', label: 'YouTube', color: '#FF0000' },
+]
+
+function formatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toString()
+}
+
+export function FollowerChart({ snapshots }: Props) {
+  const [active, setActive] = useState<Set<Platform | 'all'>>(new Set(['all']))
+
+  const toggle = (key: Platform | 'all') => {
+    setActive(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+        if (next.size === 0) next.add('all')
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
+  // Group by date
+  const byDate: Record<string, Record<string, number>> = {}
+  for (const s of snapshots) {
+    if (!byDate[s.recorded_at]) byDate[s.recorded_at] = {}
+    byDate[s.recorded_at][s.platform] = s.count
+  }
+
+  const data = Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, platforms]) => {
+      const all = Object.values(platforms).reduce((sum, v) => sum + v, 0)
+      return {
+        date: new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        all,
+        ...platforms,
+      }
+    })
+
+  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+
+  return (
+    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-foreground">Follower Growth</p>
+        <div className="flex gap-1.5">
+          {PLATFORMS.map(p => (
+            <button
+              key={p.key}
+              onClick={() => toggle(p.key)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-150 ${
+                active.has(p.key)
+                  ? 'text-white shadow-sm'
+                  : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:text-foreground'
+              }`}
+              style={active.has(p.key) ? { backgroundColor: (isDark && p.darkColor) ? p.darkColor : p.color, color: (isDark && p.darkColor) ? '#000' : '#fff' } : undefined}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {data.length < 2 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          Add at least 2 days of follower data to see the chart.
+        </p>
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+            <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} className="fill-muted-foreground" />
+            <Tooltip
+              formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''}
+              contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
+            />
+            {PLATFORMS.filter(p => active.has(p.key)).map(p => (
+              <Line
+                key={p.key}
+                type="monotone"
+                dataKey={p.key}
+                stroke={(isDark && p.darkColor) ? p.darkColor : p.color}
+                strokeWidth={2.5}
+                dot={false}
+                connectNulls
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  )
+}

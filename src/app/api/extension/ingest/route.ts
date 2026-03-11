@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     likes: p.likes,
     comments: p.comments,
     shares: p.shares,
-    engagement_rate: p.views > 0 ? parseFloat(((p.likes / p.views) * 100).toFixed(2)) : 0,
+    engagement_rate: p.views > 0 ? parseFloat((((p.likes + (p.comments ?? 0) + (p.shares ?? 0)) / p.views) * 100).toFixed(2)) : 0,
     posted_at: p.posted_at ?? null,
     is_competitor: !!competitor_handle,
     competitor_handle: competitor_handle?.replace('@', '') ?? null,

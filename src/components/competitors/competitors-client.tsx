@@ -29,11 +29,10 @@ function engagementRate(post: Post): number | null {
   return ((post.likes + post.comments + post.shares) / post.views) * 100
 }
 
-function performanceBadge(views: number) {
-  if (views >= 500_000) return { label: 'Viral', icon: '🔥', cls: 'bg-orange-500/15 border-orange-500/30 text-orange-600 dark:text-orange-400' }
-  if (views >= 100_000) return { label: 'Strong', icon: '⚡', cls: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400' }
-  if (views > 0) return { label: 'Growing', icon: '📈', cls: 'bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-400' }
-  return null
+function engagementColor(er: number): string {
+  if (er >= 10) return 'bg-green-500/15 border-green-500/25 text-green-600 dark:text-green-400'
+  if (er >= 5) return 'bg-amber-500/15 border-amber-500/25 text-amber-600 dark:text-amber-400'
+  return 'bg-muted dark:bg-white/5 border-border dark:border-white/6 text-muted-foreground'
 }
 
 function timeAgo(dateStr: string) {
@@ -48,19 +47,16 @@ function timeAgo(dateStr: string) {
   return `${months}mo ago`
 }
 
-const PLATFORM_COLORS: Record<string, { pill: string; border: string }> = {
-  tiktok: {
-    pill: 'bg-black/80 dark:bg-white/10 text-white border-transparent',
-    border: 'border-l-gray-500 dark:border-l-white/30',
-  },
-  instagram: {
-    pill: 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400',
-    border: 'border-l-pink-500',
-  },
-  youtube: {
-    pill: 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400',
-    border: 'border-l-red-500',
-  },
+const TAG_COLORS: Record<string, string> = {
+  routine: 'bg-blue-400/15 border-blue-400/30 text-blue-500 dark:text-blue-400',
+  training: 'bg-purple-400/15 border-purple-400/30 text-purple-500 dark:text-purple-400',
+  food: 'bg-green-400/15 border-green-400/30 text-green-500 dark:text-green-400',
+  fitness: 'bg-orange-400/15 border-orange-400/30 text-orange-500 dark:text-orange-400',
+  lifestyle: 'bg-pink-400/15 border-pink-400/30 text-pink-500 dark:text-pink-400',
+}
+
+function tagColor(tag: string): string {
+  return TAG_COLORS[tag.toLowerCase()] ?? 'bg-purple-400/15 border-purple-400/30 text-purple-500 dark:text-purple-400'
 }
 
 type SortMode = 'views' | 'likes' | 'date'
@@ -82,7 +78,6 @@ interface Props {
 }
 
 export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts }: Props) {
-  // Derive all tags from all posts across all groups
   const allPosts = groups.flatMap(g => g.posts)
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
@@ -150,10 +145,6 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
   const [linkMenuOpen, setLinkMenuOpen] = useState(false)
   const [linking, setLinking] = useState(false)
 
-  // Border color from primary competitor's platform
-  const colors = PLATFORM_COLORS[primaryComp.platform] ?? { pill: 'bg-muted text-muted-foreground border-border', border: 'border-l-gray-400' }
-
-  // Competitors available for linking (not already in this group)
   const linkableCompetitors = allCompetitors.filter(c => c.group_id !== group.groupId)
 
   const platformsInPosts = [...new Set(posts.map(p => p.platform))]
@@ -165,7 +156,6 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
-  // Stats summary (across all posts in group)
   const avgViews = posts.length > 0 ? posts.reduce((s, p) => s + p.views, 0) / posts.length : 0
   const avgComments = posts.length > 0 ? posts.reduce((s, p) => s + p.comments, 0) / posts.length : 0
   const avgEng = posts.length > 0
@@ -193,115 +183,136 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
   }
 
   return (
-    <div className={`bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl overflow-hidden border-l-[3px] ${colors.border}`}>
+    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap min-w-0">
-            <span className="font-bold text-lg text-foreground">@{primaryComp.handle}</span>
-            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${colors.pill}`}>
+        <div className="flex items-center gap-3">
+          {/* Username + platform pill */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <span className="font-bold text-xl text-foreground">@{primaryComp.handle}</span>
+            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border capitalize ${
+              primaryComp.platform === 'tiktok'
+                ? 'bg-black/80 dark:bg-white/10 text-white border-white/15'
+                : primaryComp.platform === 'instagram'
+                ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-500 dark:text-pink-400'
+                : 'bg-red-500/15 border-red-500/30 text-red-500 dark:text-red-400'
+            }`}>
               {primaryComp.platform}
             </span>
-            {primaryComp.display_name && primaryComp.display_name !== primaryComp.handle && (
-              <span className="text-muted-foreground text-sm">{primaryComp.display_name}</span>
-            )}
             {primaryComp.follower_count != null && primaryComp.follower_count > 0 && (
               <span className="text-xs font-medium text-muted-foreground">
                 {formatNumber(primaryComp.follower_count)} followers
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Link / manage linked accounts */}
+
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Link button */}
             <div className="relative">
               <button
                 onClick={() => setLinkMenuOpen(!linkMenuOpen)}
-                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-medium transition-all ${
+                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all ${
                   comps.length > 1
-                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20'
-                    : 'border-border dark:border-white/10 text-muted-foreground hover:text-purple-500 hover:border-purple-500/40'
+                    ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/20 hover:brightness-110'
+                    : 'border border-border dark:border-white/10 text-muted-foreground hover:text-purple-500 hover:border-purple-500/40'
                 }`}
-                title={comps.length > 1 ? 'Manage linked accounts' : 'Link another account'}
               >
                 <Link size={12} />
                 {comps.length > 1 ? `${comps.length} Linked` : 'Link'}
               </button>
               {linkMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 z-20 w-64 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-lg overflow-hidden">
-                  {/* Currently linked accounts */}
                   {comps.length > 1 && (
                     <>
                       <div className="p-2 border-b border-border dark:border-white/6">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Linked accounts</p>
                       </div>
                       <div className="p-1">
-                        {comps.map(c => {
-                          const cColors = PLATFORM_COLORS[c.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
-                          return (
-                            <div key={c.id} className="flex items-center gap-2 px-3 py-2 rounded-lg">
-                              <span className="text-sm font-medium text-foreground flex-1">@{c.handle}</span>
-                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${cColors.pill}`}>
-                                {c.platform}
-                              </span>
-                              <button
-                                onClick={() => handleUnlink(c.id)}
-                                className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                                title="Unlink"
-                              >
-                                <X size={10} />
-                              </button>
-                            </div>
-                          )
-                        })}
+                        {comps.map(c => (
+                          <div key={c.id} className="flex items-center gap-2 px-3 py-2 rounded-lg">
+                            <span className="text-sm font-medium text-foreground flex-1">@{c.handle}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border capitalize ${
+                              c.platform === 'tiktok'
+                                ? 'bg-black/80 dark:bg-white/10 text-white border-white/15'
+                                : c.platform === 'instagram'
+                                ? 'bg-pink-500/20 border-pink-500/30 text-pink-500 dark:text-pink-400'
+                                : 'bg-red-500/15 border-red-500/30 text-red-500 dark:text-red-400'
+                            }`}>
+                              {c.platform}
+                            </span>
+                            <button
+                              onClick={() => handleUnlink(c.id)}
+                              className="h-5 w-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                              title="Unlink"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     </>
                   )}
-                  {/* Link new */}
                   {linkableCompetitors.length > 0 && (
                     <>
                       <div className="p-2 border-b border-t border-border dark:border-white/6">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2">Link as same creator</p>
                       </div>
                       <div className="max-h-48 overflow-y-auto p-1">
-                        {linkableCompetitors.map(lc => {
-                          const lcColors = PLATFORM_COLORS[lc.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }
-                          return (
-                            <button
-                              key={lc.id}
-                              onClick={() => handleLink(lc.id)}
-                              disabled={linking}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-muted dark:hover:bg-white/5 transition-colors disabled:opacity-50"
-                            >
-                              <span className="text-sm font-medium text-foreground">@{lc.handle}</span>
-                              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border capitalize ${lcColors.pill}`}>
-                                {lc.platform}
-                              </span>
-                            </button>
-                          )
-                        })}
+                        {linkableCompetitors.map(lc => (
+                          <button
+                            key={lc.id}
+                            onClick={() => handleLink(lc.id)}
+                            disabled={linking}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left rounded-lg hover:bg-muted dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                          >
+                            <span className="text-sm font-medium text-foreground">@{lc.handle}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border capitalize ${
+                              lc.platform === 'tiktok'
+                                ? 'bg-black/80 dark:bg-white/10 text-white border-white/15'
+                                : lc.platform === 'instagram'
+                                ? 'bg-pink-500/20 border-pink-500/30 text-pink-500 dark:text-pink-400'
+                                : 'bg-red-500/15 border-red-500/30 text-red-500 dark:text-red-400'
+                            }`}>
+                              {lc.platform}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     </>
                   )}
                 </div>
               )}
             </div>
-            {/* Profile links */}
+
+            {/* Profile links — visually distinct per platform */}
             {comps.map(c => c.profile_url ? (
               <a
                 key={c.id}
                 href={c.profile_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-purple-500 hover:border-purple-500/40 transition-all"
+                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-xs font-semibold transition-all hover:brightness-125 ${
+                  c.platform === 'tiktok'
+                    ? 'border-white/15 text-white/80 hover:text-white bg-white/5'
+                    : c.platform === 'instagram'
+                    ? 'border-pink-500/30 text-pink-500 dark:text-pink-400 bg-pink-500/5 hover:bg-pink-500/10'
+                    : 'border-red-500/30 text-red-500 dark:text-red-400 bg-red-500/5 hover:bg-red-500/10'
+                }`}
               >
                 {c.platform === 'tiktok' ? 'TT' : c.platform === 'instagram' ? 'IG' : 'YT'} <ExternalLink size={10} />
               </a>
             ) : null)}
+
             <AddPostButton handle={primaryComp.handle} platform={primaryComp.platform as Platform} allTags={allTags} />
+
+            {/* Divider before trash + chevron */}
+            <div className="h-6 w-px bg-border dark:bg-white/8 mx-1" />
+
             <button
               onClick={() => setDeleteConfirmOpen(true)}
               disabled={deleting}
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground/60 hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
             >
               <Trash2 size={14} />
             </button>
@@ -309,49 +320,51 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
               onClick={() => setCollapsed(!collapsed)}
               className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
             >
-              {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              <ChevronDown size={16} className={`transition-transform duration-200 ${collapsed ? '-rotate-90' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* Inline notes (from primary competitor) */}
-        <InlineNotes
-          initialValue={primaryComp.notes ?? ''}
-          placeholder="Add notes about this competitor..."
-          onSave={(val) => updateCompetitorNotes(primaryComp.id, val)}
-        />
+        {/* Notes field */}
+        <div className="mt-3">
+          <InlineNotes
+            initialValue={primaryComp.notes ?? ''}
+            placeholder="Add notes about this competitor..."
+            onSave={(val) => updateCompetitorNotes(primaryComp.id, val)}
+          />
+        </div>
       </div>
 
       {/* Collapsible body */}
       {!collapsed && (
         <div className="px-5 pb-5 space-y-3">
-          {/* Stats summary row */}
+          {/* Stats summary bar */}
           {posts.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-border dark:border-white/6">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a2e] border border-white/6 text-xs" title="Total tracked posts">
                 <span>📹</span>
                 <span className="font-bold text-foreground">{posts.length}</span>
                 <span className="text-muted-foreground">post{posts.length !== 1 ? 's' : ''}</span>
               </span>
               {avgViews > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a2e] border border-white/6 text-xs" title="Average views across all tracked posts">
                   <span>👁</span>
                   <span className="font-bold text-foreground">{formatNumber(Math.round(avgViews))}</span>
                   <span className="text-muted-foreground">avg views</span>
                 </span>
               )}
               {avgComments > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a2e] border border-white/6 text-xs" title="Average comments per post">
                   <span>💬</span>
                   <span className="font-bold text-foreground">{formatNumber(Math.round(avgComments))}</span>
                   <span className="text-muted-foreground">avg comments</span>
                 </span>
               )}
               {avgEng > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted dark:bg-white/5 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/8 border border-amber-500/20 text-xs" title="Average engagement rate = (likes + comments + shares) / views">
                   <span>⚡</span>
-                  <span className="font-bold text-foreground">{avgEng.toFixed(1)}%</span>
-                  <span className="text-muted-foreground">avg eng.</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">{avgEng.toFixed(1)}%</span>
+                  <span className="text-amber-600/60 dark:text-amber-400/60">avg eng.</span>
                 </span>
               )}
             </div>
@@ -359,51 +372,57 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
 
           {/* Sort & Filter controls */}
           {posts.length > 1 && (
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap pb-3 border-b border-border dark:border-white/6">
               <div className="flex items-center gap-1.5">
-                <SortAsc size={11} className="text-muted-foreground" />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Sort:</span>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mr-1">Sort by</span>
                 {(['views', 'likes', 'date'] as SortMode[]).map(mode => (
                   <button
                     key={mode}
                     onClick={() => setSortMode(mode)}
-                    className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all capitalize ${
                       sortMode === mode
-                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'bg-purple-500/15 text-white border border-purple-500/30'
+                        : 'text-muted-foreground hover:text-foreground hover:underline'
                     }`}
                   >
-                    {mode}
+                    {mode === 'date' ? 'Date' : mode.charAt(0).toUpperCase() + mode.slice(1)}
                   </button>
                 ))}
               </div>
               {platformsInPosts.length > 1 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Platform:</span>
-                  <button
-                    onClick={() => setPlatformFilter('all')}
-                    className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
-                      platformFilter === 'all'
-                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {platformsInPosts.map(p => (
+                <>
+                  <div className="h-4 w-px bg-border dark:bg-white/8" />
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mr-1">Platform</span>
                     <button
-                      key={p}
-                      onClick={() => setPlatformFilter(p)}
-                      className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
-                        platformFilter === p
-                          ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      onClick={() => setPlatformFilter('all')}
+                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all ${
+                        platformFilter === 'all'
+                          ? 'bg-purple-500/15 text-white border border-purple-500/30'
+                          : 'text-muted-foreground hover:text-foreground hover:underline'
                       }`}
                     >
-                      {p}
+                      All
                     </button>
-                  ))}
-                </div>
+                    {platformsInPosts.map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setPlatformFilter(p)}
+                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all capitalize ${
+                          platformFilter === p
+                            ? p === 'instagram'
+                              ? 'bg-pink-500/15 text-pink-500 dark:text-pink-400 border border-pink-500/30'
+                              : p === 'tiktok'
+                              ? 'bg-white/10 text-white border border-white/20'
+                              : 'bg-red-500/15 text-red-500 border border-red-500/30'
+                            : 'text-muted-foreground hover:text-foreground hover:underline'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -495,7 +514,7 @@ function InlineNotes({
           onBlur={handleSave}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') { setValue(initialValue); setEditing(false) } }}
           placeholder={placeholder}
-          className="flex-1 text-xs bg-muted dark:bg-[#1e1e2e] border border-purple-500/40 rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+          className="flex-1 text-xs bg-transparent border border-purple-500/40 rounded-lg px-3 py-2 text-foreground focus:outline-none focus:ring-[3px] focus:ring-purple-500/20 transition-all"
         />
         {saving && <Loader2 size={12} className="animate-spin text-muted-foreground" />}
       </div>
@@ -505,13 +524,13 @@ function InlineNotes({
   return (
     <button
       onClick={() => setEditing(true)}
-      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors group"
+      className="w-full text-left flex items-center gap-2 text-xs rounded-lg px-3 py-2 bg-white/[0.03] dark:bg-white/[0.03] border border-dashed border-white/10 hover:border-solid hover:border-white/20 transition-all group"
     >
-      <Pencil size={10} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+      <Pencil size={11} className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
       {value ? (
         <span className="text-foreground/80">{value}</span>
       ) : (
-        <span className="italic opacity-60">{placeholder}</span>
+        <span className="italic text-muted-foreground/40">{placeholder}</span>
       )}
     </button>
   )
@@ -546,7 +565,6 @@ function EmptyPostsState({ handle, platform }: { handle: string; platform: Platf
 function cleanCaption(raw: string | null): string {
   if (!raw) return ''
   let text = raw.trim()
-  // Strip og:description metadata prefix: "123K likes, 456 comments - user on Date: "caption""
   const metaMatch = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)[""\u201d]\s*\.?\s*$/)
   if (metaMatch) return metaMatch[1].trim()
   const metaMatch2 = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)/)
@@ -557,18 +575,14 @@ function cleanCaption(raw: string | null): string {
 function postTitle(post: Post): string {
   const cap = cleanCaption(post.caption)
   if (!cap) return 'Untitled post'
-  // Strip hashtags, emojis, @mentions for a cleaner title
   const stripped = cap
     .replace(/#[\w]+/g, '')
     .replace(/@[\w.]+/g, '')
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F900}-\u{1F9FF}]/gu, '')
     .trim()
-  // Take first sentence (split on . ! or newline)
   const firstSentence = stripped.split(/[!.\n]/)[0].trim()
   if (!firstSentence) return cap.slice(0, 50)
-  // If short enough, use as-is
   if (firstSentence.length <= 50) return firstSentence
-  // Cut at a natural break — look for comma, "I ", " to ", " and ", " but " etc within first 50 chars
   const cutZone = firstSentence.slice(0, 55)
   const breakPoints = [', ', ' I ', ' to ', ' and ', ' but ', ' so ', ' - ', ' — ']
   let bestCut = -1
@@ -577,7 +591,6 @@ function postTitle(post: Post): string {
     if (idx > 20 && idx > bestCut) bestCut = idx
   }
   if (bestCut > 0) return firstSentence.slice(0, bestCut).trim()
-  // No natural break, just truncate at word boundary
   const truncated = firstSentence.slice(0, 50)
   const lastSpace = truncated.lastIndexOf(' ')
   return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
@@ -606,13 +619,11 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
     setEditingTitle(false)
   }
 
-  // Ideas modal state
   const [ideasOpen, setIdeasOpen] = useState(false)
   const [ideas, setIdeas] = useState<{ idea: string; hook_idea: string; caption: string; difficulty: string; video_type: string }[] | null>(null)
   const [ideasLoading, setIdeasLoading] = useState(false)
   const [ideasError, setIdeasError] = useState<string | null>(null)
 
-  // Analysis modal state
   const [analysisOpen, setAnalysisOpen] = useState(false)
   const [analysis, setAnalysis] = useState<string | null>(null)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -620,7 +631,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
 
   async function handleGetIdeas() {
     setIdeasOpen(true)
-    if (ideas) return // already loaded
+    if (ideas) return
     setIdeasLoading(true)
     setIdeasError(null)
     try {
@@ -684,29 +695,32 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
     router.refresh()
   }
 
+  const displayTitle = post.title || postTitle(post)
+  const fullTitle = post.title || cleanCaption(post.caption) || 'Untitled post'
+
   return (
     <>
-      <div className="rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] overflow-hidden transition-all hover:border-purple-500/20">
+      <div className="rounded-xl border border-border dark:border-white/6 bg-[#1a1a2e] p-3.5 transition-all hover:border-white/12">
         {/* Header — clickable to expand */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full text-left p-4 flex items-start gap-3"
+          className="w-full text-left flex items-start gap-3"
         >
           {/* Thumbnail */}
           {post.thumbnail_url ? (
             <img
               src={post.thumbnail_url}
               alt=""
-              className="w-14 h-14 rounded-lg object-cover bg-muted shrink-0"
+              className="w-16 h-16 rounded-lg object-cover bg-muted shrink-0"
             />
           ) : (
-            <div className="w-14 h-14 rounded-lg bg-muted dark:bg-white/5 shrink-0 flex items-center justify-center">
-              <Video size={18} className="text-muted-foreground/40" />
+            <div className="w-16 h-16 rounded-lg bg-[#252535] shrink-0 flex items-center justify-center">
+              <Video size={20} className="text-purple-500/40" />
             </div>
           )}
-          <div className="flex-1 min-w-0 space-y-1">
-            {/* Title + date row */}
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            {/* Title row */}
+            <div className="flex items-center gap-2">
               {editingTitle ? (
                 <input
                   ref={titleRef}
@@ -715,72 +729,94 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
                   onBlur={saveTitle}
                   onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleValue(post.title ?? ''); setEditingTitle(false) } }}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 bg-muted dark:bg-[#1e1e2e] border border-purple-500/40 rounded px-2 py-0.5 focus:outline-none focus:ring-[2px] focus:ring-purple-500/20"
+                  className="text-sm font-bold text-foreground leading-snug flex-1 min-w-0 bg-transparent border border-purple-500/40 rounded px-2 py-0.5 focus:outline-none focus:ring-[2px] focus:ring-purple-500/20"
                 />
               ) : (
                 <p
-                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 group/title cursor-text"
+                  className="text-sm font-bold text-foreground leading-snug flex-1 min-w-0 truncate group/title cursor-text"
+                  title={fullTitle}
                   onClick={(e) => { e.stopPropagation(); setTitleValue(post.title || postTitle(post)); setEditingTitle(true) }}
                 >
-                  {post.title || postTitle(post)}
+                  {displayTitle}
                   <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </p>
               )}
-              {post.platform && (
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${(PLATFORM_COLORS[post.platform] ?? { pill: 'bg-muted text-muted-foreground border-border' }).pill}`}>
-                  {post.platform}
+              {/* Platform + date badges */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {post.platform && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
+                    post.platform === 'instagram'
+                      ? 'bg-pink-500/15 border-pink-500/30 text-pink-500 dark:text-pink-400'
+                      : post.platform === 'tiktok'
+                      ? 'bg-white/10 border-white/15 text-white/80'
+                      : 'bg-red-500/15 border-red-500/30 text-red-500 dark:text-red-400'
+                  }`}>
+                    {post.platform === 'instagram' ? 'Instagram' : post.platform === 'tiktok' ? 'Tiktok' : 'YouTube'}
+                  </span>
+                )}
+                <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
+                  <Calendar size={9} />
+                  {timeAgo(post.created_at)}
                 </span>
-              )}
-              <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
-                <Calendar size={9} />
-                {timeAgo(post.created_at)}
-              </span>
+              </div>
             </div>
 
-            {/* Stats pills */}
-            <div className="flex items-center gap-2 text-[11px]">
+            {/* Stats — line 1: views, likes, comments, (saves, shares for TikTok) */}
+            <div className="flex items-center gap-2 text-[11px] flex-wrap">
               {post.views > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                <span className="inline-flex items-center gap-1">
                   <Eye size={10} className="text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{formatNumber(post.views)}</span>
+                  <span className="font-bold text-foreground">{formatNumber(post.views)}</span>
                 </span>
               )}
               {post.likes > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                <span className="inline-flex items-center gap-1">
                   <Heart size={10} className="text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
+                  <span className="font-bold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
               {post.comments > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                <span className="inline-flex items-center gap-1">
                   <MessageCircle size={10} className="text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{formatNumber(post.comments)}</span>
+                  <span className="font-bold text-foreground">{formatNumber(post.comments)}</span>
                 </span>
               )}
               {post.platform === 'tiktok' && post.saves > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                <span className="inline-flex items-center gap-1">
                   <Bookmark size={10} className="text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{formatNumber(post.saves)}</span>
+                  <span className="font-bold text-foreground">{formatNumber(post.saves)}</span>
                 </span>
               )}
               {post.platform === 'tiktok' && post.shares > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
+                <span className="inline-flex items-center gap-1">
                   <Send size={10} className="text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{formatNumber(post.shares)}</span>
-                </span>
-              )}
-              {er != null && (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${er >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted dark:bg-white/5 text-foreground'}`}>
-                  <span className="font-semibold">{er.toFixed(1)}%</span>
-                  <span className="font-normal text-muted-foreground">eng</span>
+                  <span className="font-bold text-foreground">{formatNumber(post.shares)}</span>
                 </span>
               )}
             </div>
 
+            {/* Stats — line 2: engagement badge */}
+            {er != null && (
+              <div>
+                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${engagementColor(er)}`}>
+                  {er.toFixed(1)}% eng
+                </span>
+              </div>
+            )}
+
             {/* Tags */}
-            <div className="flex items-center gap-1.5">
-              <TagPills tags={tags} />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {tags.map(t => (
+                <span key={t} className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${tagColor(t)}`}>
+                  {t}
+                </span>
+              ))}
               <TagEditor tags={tags} allTags={allTags} onChange={(newTags) => { setTags(newTags); updatePostTags(post.id, newTags) }} />
+              {post.ai_notes && (
+                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground">
+                  <MessageCircle size={9} /> 1
+                </span>
+              )}
             </div>
           </div>
 
@@ -791,11 +827,14 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
         </button>
 
         {/* Expanded section */}
-        {expanded && (
-          <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
+        <div className={`overflow-hidden transition-all duration-200 ${expanded ? 'max-h-[2000px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+          <div className="space-y-3 border-t border-border dark:border-white/6 pt-3">
+            {/* Full title */}
+            <p className="text-sm font-medium text-foreground">{fullTitle}</p>
+
             {/* Caption */}
             {post.caption && (
-              <div className="pt-3">
+              <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1">Caption</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {cleanCaption(post.caption).replace(/\n{2,}/g, '\n').trim()}
@@ -815,15 +854,15 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
                 stats.push({ label: 'Sends', value: post.shares, icon: Send })
               }
               return (
-            <div className={`grid gap-3 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
-              {stats.map(({ label, value, icon: Icon }) => (
-                <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
-                  <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
-                  <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
-                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                <div className={`grid gap-3 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
+                  {stats.map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
+                      <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
+                      <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
+                      <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
               )
             })()}
 
@@ -848,7 +887,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-purple-500/40 text-xs font-medium text-purple-500 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
               >
                 <Lightbulb size={12} />
                 Why it worked
@@ -868,7 +907,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
                   className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all ml-auto"
                 >
                   <ExternalLink size={12} />
-                  Go to
+                  Open post
                 </a>
               )}
               <button
@@ -880,7 +919,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Ideas Modal */}
@@ -904,7 +943,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           {ideas && (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
               {ideas.map((idea, i) => (
-                <div key={i} className="p-4 rounded-xl bg-muted/30 dark:bg-[#1a1a2e] border border-border dark:border-white/6 space-y-2">
+                <div key={i} className="p-4 rounded-xl bg-[#1a1a2e] border border-white/6 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium text-foreground">{idea.idea}</p>
                     {idea.difficulty && (
@@ -956,11 +995,10 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           {analysis && (
             <div className="space-y-2 py-2">
               {analysis.split('\n').filter(Boolean).map((line, i) => {
-                // Parse "- **Keyword**: explanation" format
                 const match = line.match(/^-\s*\*\*(.+?)\*\*:?\s*(.*)/)
                 if (match) {
                   return (
-                    <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/30 dark:bg-[#1a1a2e] border border-border dark:border-white/6">
+                    <div key={i} className="flex gap-3 p-3 rounded-lg bg-[#1a1a2e] border border-white/6">
                       <span className="text-sm font-bold text-purple-600 dark:text-purple-400 shrink-0">{match[1]}</span>
                       <span className="text-sm text-muted-foreground">{match[2]}</span>
                     </div>

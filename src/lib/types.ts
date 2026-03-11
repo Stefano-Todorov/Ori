@@ -1,6 +1,7 @@
 export type Platform = 'tiktok' | 'instagram' | 'youtube'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type PostStatus = 'draft' | 'used' | 'archived'
+export type ProductionStatus = 'new' | 'recording' | 'editing' | 'posted'
 
 export interface Profile {
   id: string
@@ -108,39 +109,51 @@ export interface ContentIdea {
   video_type: string | null
   tags: string[]
   status: 'new' | 'in_progress' | 'done' | 'archived'
+  production_status: ProductionStatus
   created_at: string
+}
+
+export interface FollowerSnapshot {
+  id: string
+  user_id: string
+  platform: Platform
+  count: number
+  recorded_at: string
+  created_at: string
+}
+
+export interface ScheduledPost {
+  id: string
+  user_id: string
+  content_idea_id: string | null
+  platform: Platform | null
+  title: string | null
+  scheduled_date: string
+  notes: string | null
+  created_at: string
+}
+
+export interface RecordingDay {
+  id: string
+  user_id: string
+  recording_date: string
+  notes: string | null
+  created_at: string
+}
+
+export interface RecordingDayIdea {
+  id: string
+  recording_day_id: string
+  content_idea_id: string
 }
 
 export interface SocialAccount {
   id: string
   user_id: string
   platform: Platform
-  username: string
+  username: string | null
+  display_name: string | null
   access_token: string | null
   refresh_token: string | null
-  token_expires_at: string | null
-  platform_user_id: string | null
-  display_name: string | null
-  avatar_url: string | null
-  scopes: string[] | null
-  connected_at: string
-  updated_at: string | null
-}
-
-export interface ScheduledPost {
-  id: string
-  user_id: string
-  platform: Platform
-  social_account_id: string | null
-  script_id: string | null
-  caption: string
-  hashtags: string[]
-  video_storage_path: string | null
-  video_public_url: string | null
-  scheduled_at: string
-  status: 'pending' | 'processing' | 'published' | 'failed' | 'cancelled'
-  platform_post_id: string | null
-  error_message: string | null
   created_at: string
-  updated_at: string
 }

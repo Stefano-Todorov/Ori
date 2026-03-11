@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
     const views = parseNumber(normalized.views as string)
     const likes = parseNumber(normalized.likes as string)
     const comments = parseNumber(normalized.comments as string)
-    const engagementRate = views > 0 ? parseFloat(((likes / views) * 100).toFixed(2)) : 0
+    const shares = parseNumber(normalized.shares as string)
+    const engagementRate = views > 0 ? parseFloat((((likes + comments + shares) / views) * 100).toFixed(2)) : 0
 
     const hashtags = normalized.hashtags
       ? (normalized.hashtags as string).split(/[\s,#]+/).filter(Boolean)
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
       views,
       likes,
       comments,
-      shares: parseNumber(normalized.shares as string),
+      shares,
       saves: parseNumber(normalized.saves as string),
       engagement_rate: engagementRate,
       posted_at: parseDate(normalized.posted_at as string),

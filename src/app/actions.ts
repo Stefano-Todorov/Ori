@@ -215,15 +215,12 @@ export async function updateIdea(
   revalidatePath('/dashboard/ideas')
 }
 
-export async function createScheduledPost(fields: {
-  platform: Platform
-  social_account_id: string
-  caption: string
-  hashtags: string[]
-  video_storage_path: string
-  video_public_url?: string
-  scheduled_at: string
-  script_id?: string
+export async function schedulePost(fields: {
+  content_idea_id?: string
+  platform?: Platform
+  title?: string
+  scheduled_date: string
+  notes?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -231,29 +228,24 @@ export async function createScheduledPost(fields: {
 
   const { error } = await supabase.from('scheduled_posts').insert({
     user_id: user.id,
-    platform: fields.platform,
-    social_account_id: fields.social_account_id,
-    caption: fields.caption,
-    hashtags: fields.hashtags,
-    video_storage_path: fields.video_storage_path,
-    video_public_url: fields.video_public_url ?? null,
-    scheduled_at: fields.scheduled_at,
-    script_id: fields.script_id ?? null,
-    status: 'pending',
+    content_idea_id: fields.content_idea_id ?? null,
+    platform: fields.platform ?? null,
+    title: fields.title ?? null,
+    scheduled_date: fields.scheduled_date,
+    notes: fields.notes ?? null,
   })
 
   if (error) return { error: error.message }
   revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard')
   return { error: null }
 }
 
-export async function cancelScheduledPost(id: string) {
+export async function deleteScheduledPost(id: string) {
   const supabase = await createClient()
-  await supabase
-    .from('scheduled_posts')
-    .update({ status: 'cancelled' })
-    .eq('id', id)
+  await supabase.from('scheduled_posts').delete().eq('id', id)
   revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard')
 }
 
 export async function addCompetitorPost(fields: {
@@ -483,4 +475,89 @@ export async function cleanupZeroStatsPosts() {
   revalidatePath('/dashboard/competitors')
   revalidatePath('/dashboard/inspo')
   return { deleted: ids.length }
+}
+
+// ─── Follower Tracking ───────────────────────────────────────────────────────
+
+export async function addFollowerSnapshot(platform: Platform, count: number, recorded_at?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const date = recorded_at || new Date().toISOString().split('T')[0]
+
+  const { error } = await supabase.from('follower_snapshots').upsert({
+    user_id: user.id,
+    platform,
+    count,
+    recorded_at: date,
+  }, { onConflict: 'user_id,platform,recorded_at' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard')
+  return { error: null }
+}
+
+export async function deleteFollowerSnapshot(id: string) {
+  const supabase = await createClient()
+  await supabase.from('follower_snapshots').delete().eq('id', id)
+  revalidatePath('/dashboard')
+}
+
+// ─── Production Status ───────────────────────────────────────────────────────
+
+export async function updateProductionStatus(ideaId: string, status: 'new' | 'recording' | 'editing' | 'posted') {
+  const supabase = await createClient()
+  await supabase.from('content_ideas').update({ production_status: status }).eq('id', ideaId)
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard/schedule')
+}
+
+// ─── Recording Days ──────────────────────────────────────────────────────────
+
+export async function addRecordingDay(recording_date: string, notes?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase.from('recording_days').upsert({
+    user_id: user.id,
+    recording_date,
+    notes: notes ?? null,
+  }, { onConflict: 'user_id,recording_date' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard')
+  return { error: null }
+}
+
+export async function deleteRecordingDay(id: string) {
+  const supabase = await createClient()
+  await supabase.from('recording_days').delete().eq('id', id)
+  revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard')
+}
+
+export async function addIdeaToRecordingDay(recordingDayId: string, contentIdeaId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.from('recording_day_ideas').upsert({
+    recording_day_id: recordingDayId,
+    content_idea_id: contentIdeaId,
+  }, { onConflict: 'recording_day_id,content_idea_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/schedule')
+  return { error: null }
+}
+
+export async function removeIdeaFromRecordingDay(recordingDayId: string, contentIdeaId: string) {
+  const supabase = await createClient()
+  await supabase
+    .from('recording_day_ideas')
+    .delete()
+    .eq('recording_day_id', recordingDayId)
+    .eq('content_idea_id', contentIdeaId)
+  revalidatePath('/dashboard/schedule')
 }

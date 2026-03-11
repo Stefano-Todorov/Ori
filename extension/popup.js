@@ -393,14 +393,14 @@ function render() {
     app.innerHTML = `
       <div class="header">
         <span class="logo">Orianna</span>
-        <div style="display:flex;align-items:center;gap:8px">
+        <div class="header-right">
           <span class="user-email">${state.auth?.email ?? ''}</span>
           <button class="logout-btn" id="logout-btn">Sign out</button>
         </div>
       </div>
 
       <div class="profile-header">
-        <span class="platform-badge">${p.platform}</span>
+        <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
         <span class="detected-handle">@${p.handle}</span>
         ${mc ? `<span class="competitor-tag">Tracked</span>` : ''}
         ${mc ? `<span style="font-size:10px;color:#3f3f46;margin-left:auto">${mc.postCount} tracked</span>` : ''}
@@ -487,7 +487,7 @@ function render() {
   app.innerHTML = `
     <div class="header">
       <span class="logo">Orianna</span>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="header-right">
         <span class="user-email">${state.auth?.email ?? ''}</span>
         <button class="logout-btn" id="logout-btn">Sign out</button>
       </div>
@@ -496,11 +496,11 @@ function render() {
     ${hasPost ? `
       <div class="detected">
         <div class="detected-row">
-          <span class="platform-badge">${p.platform}</span>
+          <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
           <span class="detected-handle">@${p.handle || 'unknown'}</span>
           ${mc ? '<span class="competitor-tag">Tracked</span>' : ''}
         </div>
-        ${p.caption ? `<div class="detected-caption">${escHtml(p.caption).slice(0, 120)}${p.caption.length > 120 ? '...' : ''}</div>` : ''}
+        ${p.caption ? `<div class="detected-caption">${escHtml(p.caption)}</div>` : ''}
         ${(p.views != null || p.likes != null) ? (() => {
           const eng = p.views > 0 ? (((p.likes || 0) + (p.comments || 0) + (p.shares || 0)) / p.views * 100).toFixed(1) : null
           return `
@@ -510,7 +510,7 @@ function render() {
             ${p.comments != null ? `<div>💬 <span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
             ${p.shares != null ? `<div>📤 <span class="stat-num">${fmt(p.shares)}</span> <span class="stat-label">shares</span></div>` : ''}
             ${p.saves != null ? `<div>🔖 <span class="stat-num">${fmt(p.saves)}</span> <span class="stat-label">saves</span></div>` : ''}
-            ${eng != null ? `<div>⚡ <span class="stat-num">${eng}%</span> <span class="stat-label">eng</span></div>` : ''}
+            ${eng != null ? `<div>⚡ <span class="stat-num stat-eng">${eng}%</span> <span class="stat-label">eng</span></div>` : ''}
           </div>`
         })() : ''}
       </div>
@@ -555,21 +555,21 @@ function render() {
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Inspo</a></div>` : ''}
         ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
-        <button class="btn btn-outline" id="download-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download Video'}
+        <button class="btn btn-secondary" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Get Video Idea'}
         </button>
-        ${state.messages.download ? `<div class="success-msg">${state.messages.download}</div>` : ''}
-        ${state.errors.download ? `<div class="error-msg">${state.errors.download}</div>` : ''}
+        ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
 
         <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}
         </button>
         ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
 
-        <button class="btn btn-ai" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Get Video Idea'}
+        <button class="btn btn-ghost" id="download-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download Video'}
         </button>
-        ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
+        ${state.messages.download ? `<div class="success-msg">${state.messages.download}</div>` : ''}
+        ${state.errors.download ? `<div class="error-msg">${state.errors.download}</div>` : ''}
       </div>
 
       ${state.analysis ? `

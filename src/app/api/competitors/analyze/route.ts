@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     .eq('user_id', user.id)
     .single()
 
-  const engagement = views && likes ? ((likes / views) * 100).toFixed(1) : null
+  const engagement = views ? (((likes + (comments ?? 0)) / views) * 100).toFixed(1) : null
 
   const prompt = `You are an expert short-form video analyst. Analyze why this video performed well based on the available data.${imageBase64 ? ' A thumbnail/screenshot of the video is attached — use visual cues (text overlays, framing, expressions, setting) in your analysis.' : ''}
 

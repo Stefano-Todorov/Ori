@@ -63,6 +63,24 @@ function parseTtStats(stats) {
   }
 }
 
+// Recursively find a TikTok item by video ID in a JSON object
+function findTtItemById(obj, videoId, depth) {
+  if (!obj || typeof obj !== 'object' || depth > 8) return null
+  // Direct match: object with matching id and stats
+  if ((String(obj.id) === videoId || String(obj.video_id) === videoId) && (obj.stats || obj.statsV2)) {
+    return obj
+  }
+  // ItemModule keyed by video ID
+  if (obj.ItemModule && obj.ItemModule[videoId]) return obj.ItemModule[videoId]
+  // Recurse
+  const entries = Array.isArray(obj) ? obj : Object.values(obj)
+  for (const val of entries) {
+    const found = findTtItemById(val, videoId, depth + 1)
+    if (found) return found
+  }
+  return null
+}
+
 function extractTikTokStatsFromJson() {
   try {
     // Try SIGI_STATE first
@@ -96,30 +114,23 @@ function extractTikTokStatsFromJson() {
       }
     }
 
-    // Try all script tags with JSON — regex fallback for any stats pattern
+    // Try all script tags with JSON — structured fallback
+    // Extract video ID from URL to match the correct item (avoid matching suggested videos)
+    const videoIdMatch = window.location.href.match(/\/video\/(\d+)/)
+    const currentVideoId = videoIdMatch?.[1]
     const scripts = document.querySelectorAll('script[type="application/json"], script#__NEXT_DATA__')
     for (const script of scripts) {
       try {
         const text = script.textContent?.trim()
         if (!text || text.length < 100 || text[0] !== '{') continue
         const data = JSON.parse(text)
-        const str = JSON.stringify(data)
-        // Look for playCount in the JSON (can be number or quoted string)
-        const playMatch = str.match(/"playCount"\s*:\s*"?(\d+)"?/)
-        if (playMatch) {
-          const diggMatch = str.match(/"diggCount"\s*:\s*"?(\d+)"?/)
-          const likeMatch = str.match(/"likeCount"\s*:\s*"?(\d+)"?/)
-          const commentMatch = str.match(/"commentCount"\s*:\s*"?(\d+)"?/)
-          const shareMatch = str.match(/"shareCount"\s*:\s*"?(\d+)"?/)
-          const repostMatch = str.match(/"repostCount"\s*:\s*"?(\d+)"?/)
-          const collectMatch = str.match(/"collectCount"\s*:\s*"?(\d+)"?/)
-          console.log('[Orianna] TikTok JSON regex stats found')
-          return {
-            views: playMatch ? parseInt(playMatch[1]) : null,
-            likes: (diggMatch ? parseInt(diggMatch[1]) : null) ?? (likeMatch ? parseInt(likeMatch[1]) : null),
-            comments: commentMatch ? parseInt(commentMatch[1]) : null,
-            shares: (shareMatch ? parseInt(shareMatch[1]) : null) ?? (repostMatch ? parseInt(repostMatch[1]) : null),
-            saves: collectMatch ? parseInt(collectMatch[1]) : null,
+        // Walk the JSON looking for an item matching the current video ID
+        const found = currentVideoId ? findTtItemById(data, currentVideoId, 0) : null
+        if (found) {
+          const result = parseTtStats(found.statsV2) ?? parseTtStats(found.stats)
+          if (result) {
+            console.log('[Orianna] TikTok JSON fallback: matched video ID', currentVideoId)
+            return result
           }
         }
       } catch {}
@@ -1221,13 +1232,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'EXTRACT') {
     (async () => {
       const data = extractCurrentPage()
-      // For Instagram posts/reels, fetch missing stats from API
-      if (data && data.platform === 'instagram' && data.shortcode && (data.views == null || data.likes == null)) {
+      // For Instagram posts/reels, ALWAYS call API for stats.
+      // DOM selectors & og:description can return stale data from the previous post
+      // during SPA navigation (Instagram doesn't do a full page reload).
+      // The API uses the shortcode from the current URL, so it's always correct.
+      if (data && data.platform === 'instagram' && data.shortcode) {
         const apiStats = await fetchIgStatsFromApi(data.shortcode)
         if (apiStats) {
-          if (data.views == null && apiStats.views != null) data.views = apiStats.views
-          if (data.likes == null && apiStats.likes != null) data.likes = apiStats.likes
-          if (data.comments == null && apiStats.comments != null) data.comments = apiStats.comments
+          // API values override DOM values (DOM may be stale from previous page)
+          if (apiStats.views != null) data.views = apiStats.views
+          if (apiStats.likes != null) data.likes = apiStats.likes
+          if (apiStats.comments != null) data.comments = apiStats.comments
         }
       }
       sendResponse({ data })

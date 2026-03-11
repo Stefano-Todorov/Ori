@@ -273,6 +273,13 @@ function IdeaCard({
               {item.difficulty && (
                 <Badge className={`text-xs ${DIFFICULTY_COLORS[item.difficulty]}`}>{item.difficulty}</Badge>
               )}
+              {item.production_status && item.production_status !== 'new' && (
+                <Badge className={`text-xs ${
+                  item.production_status === 'recording' ? 'bg-amber-100 text-amber-700' :
+                  item.production_status === 'editing' ? 'bg-blue-100 text-blue-700' :
+                  'bg-green-100 text-green-700'
+                }`}>{item.production_status}</Badge>
+              )}
               {item.video_type && (
                 <Badge variant="secondary" className="text-xs">{item.video_type}</Badge>
               )}
@@ -437,6 +444,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       video_type: addForm.videoType || null,
       tags: [],
       status: 'new',
+      production_status: 'new',
       created_at: new Date().toISOString(),
     }, ...prev])
     setAddForm(emptyForm())
