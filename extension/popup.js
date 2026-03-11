@@ -86,7 +86,7 @@ async function init() {
   if (postData?.handle) {
     const h = postData.handle.toLowerCase()
     matchedCompetitor = competitors.find(c =>
-      c.handles ? c.handles.some((ch: string) => ch === h) : c.handle.toLowerCase() === h
+      c.handles ? c.handles.some(ch => ch === h) : c.handle.toLowerCase() === h
     ) ?? null
   }
 
