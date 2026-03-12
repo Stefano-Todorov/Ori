@@ -27,6 +27,10 @@ let state = {
   sortedPosts: [],
   sortBy: 'views',
   sortCount: 25,
+  bookmarkPosts: [],
+  loadingBookmarks: false,
+  importProgress: null,
+  importError: null,
 }
 
 function setState(patch) {
@@ -91,7 +95,30 @@ async function init() {
   }
 
   // Route to correct view based on page type
-  const view = postData?.pageType === 'profile' ? 'profile' : 'main'
+  const view = postData?.pageType === 'profile' ? 'profile'
+             : postData?.pageType === 'bookmarks' ? 'bookmarks'
+             : 'main'
+
+  if (view === 'bookmarks') {
+    // Show bookmarks view immediately with basic post data, then enrich
+    const basicPosts = (postData.posts ?? []).map(p => ({ ...p, checked: true, views: p.views ?? null, likes: null, comments: null }))
+    setState({ view, postData, competitors, matchedCompetitor, allTags, bookmarkPosts: basicPosts, loadingBookmarks: true })
+    // Fetch enriched data with metrics/thumbnails
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      const result = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_BOOKMARKS' })
+      if (result?.posts?.length > 0) {
+        const enriched = result.posts.map(p => ({ ...p, checked: true }))
+        setState({ bookmarkPosts: enriched, loadingBookmarks: false })
+      } else {
+        setState({ loadingBookmarks: false })
+      }
+    } catch {
+      setState({ loadingBookmarks: false })
+    }
+    return
+  }
+
   setState({ view, postData, competitors, matchedCompetitor, allTags })
 }
 
@@ -232,6 +259,39 @@ async function handleGetIdeas() {
   else setState({ view: 'ideas', ideas: result.ideas ?? [] })
 }
 
+function toggleBookmarkPost(index) {
+  const posts = [...state.bookmarkPosts]
+  posts[index] = { ...posts[index], checked: !posts[index].checked }
+  setState({ bookmarkPosts: posts })
+}
+
+function selectAllBookmarks() {
+  setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: true })) })
+}
+
+function deselectAllBookmarks() {
+  setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: false })) })
+}
+
+async function handleBulkImport() {
+  const selected = state.bookmarkPosts.filter(p => p.checked)
+  if (selected.length === 0) return
+  setState({ saving: 'bulk-import', importError: null, importProgress: null })
+
+  const result = await chrome.runtime.sendMessage({
+    type: 'BULK_IMPORT',
+    platform: state.postData.platform,
+    posts: selected,
+  })
+
+  setState({ saving: null })
+  if (result.error) {
+    setState({ importError: result.error })
+  } else {
+    setState({ importProgress: { imported: result.ingested ?? 0, skipped: result.skipped ?? 0, total: selected.length } })
+  }
+}
+
 async function handleSort() {
   const sortBy = document.getElementById('sort-by')?.value ?? 'views'
   const sortCount = parseInt(document.getElementById('sort-count')?.value ?? '25')
@@ -357,6 +417,91 @@ function render() {
       </div>
     `
     document.getElementById('back-btn').addEventListener('click', () => setState({ view: 'main' }))
+    return
+  }
+
+  // ─── Bookmarks View ───────────────────────────────────────────────────
+
+  if (state.view === 'bookmarks') {
+    const posts = state.bookmarkPosts
+    const checkedCount = posts.filter(p => p.checked).length
+    const platformLabel = state.postData?.platform === 'instagram' ? 'Saved Posts' : 'Favorites'
+    const platformClass = (state.postData?.platform || '').toLowerCase()
+
+    const listHtml = posts.length > 0
+      ? posts.map((p, i) => {
+          const thumbHtml = p.thumbnail
+            ? `<img class="bookmark-thumb" src="${escHtml(p.thumbnail)}" />`
+            : `<div class="bookmark-thumb bookmark-thumb-placeholder ${platformClass}"></div>`
+          const label = p.caption
+            ? escHtml(p.caption.slice(0, 60)) + (p.caption.length > 60 ? '...' : '')
+            : p.handle
+            ? `@${escHtml(p.handle)}`
+            : escHtml(p.url.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '').slice(0, 40))
+          const viewsBadge = p.views ? `<span class="bookmark-views">${fmt(p.views)}</span>` : ''
+          return `
+            <label class="bookmark-item ${p.checked ? '' : 'unchecked'}" data-index="${i}">
+              <input type="checkbox" ${p.checked ? 'checked' : ''} data-index="${i}" />
+              ${thumbHtml}
+              <span class="bookmark-label">${label}</span>
+              ${viewsBadge}
+            </label>
+          `
+        }).join('')
+      : ''
+
+    app.innerHTML = `
+      <div class="header">
+        <span class="logo">Orianna</span>
+        <div class="header-right">
+          <span class="user-email">${state.auth?.email ?? ''}</span>
+          <button class="logout-btn" id="logout-btn">Sign out</button>
+        </div>
+      </div>
+
+      <div class="bookmark-header">
+        <span class="platform-badge ${platformClass}">${state.postData?.platform ?? ''}</span>
+        <span class="bookmark-title">${platformLabel}</span>
+      </div>
+
+      ${state.loadingBookmarks ? `
+        <div class="bookmark-loading">
+          <span class="spinner"></span> Loading posts...
+        </div>
+      ` : posts.length === 0 ? `
+        <div class="no-post">No saved posts found. Scroll the page to load more, then reopen the extension.</div>
+      ` : `
+        <div class="bookmark-controls">
+          <button class="btn-text" id="select-all-btn">Select all</button>
+          <button class="btn-text" id="deselect-all-btn">Deselect all</button>
+          <span class="bookmark-count">${checkedCount} of ${posts.length} selected</span>
+        </div>
+
+        <div class="bookmark-list">${listHtml}</div>
+
+        <div class="bookmark-footer">
+          <button class="btn btn-primary" id="import-btn" ${state.saving === 'bulk-import' || checkedCount === 0 ? 'disabled' : ''}>
+            ${state.saving === 'bulk-import' ? '<span class="spinner"></span> Importing...' : `Import ${checkedCount} as Inspo`}
+          </button>
+          ${state.importProgress ? `
+            <div class="success-msg">
+              Imported ${state.importProgress.imported}${state.importProgress.skipped > 0 ? `, skipped ${state.importProgress.skipped} duplicates` : ''}
+              — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Inspo</a>
+            </div>
+          ` : ''}
+          ${state.importError ? `<div class="error-msg">${state.importError}</div>` : ''}
+          <div class="bookmark-hint">Scroll the page to load more, then reopen extension</div>
+        </div>
+      `}
+    `
+
+    document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+    document.getElementById('select-all-btn')?.addEventListener('click', selectAllBookmarks)
+    document.getElementById('deselect-all-btn')?.addEventListener('click', deselectAllBookmarks)
+    document.getElementById('import-btn')?.addEventListener('click', handleBulkImport)
+    document.querySelectorAll('.bookmark-item input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => toggleBookmarkPost(parseInt(cb.dataset.index)))
+    })
     return
   }
 

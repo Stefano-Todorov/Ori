@@ -190,6 +190,25 @@ async function handleMessage(msg) {
       return { analysis: analyzeResult.analysis ?? '' }
     }
 
+    case 'BULK_IMPORT': {
+      const { platform, posts } = msg
+      if (!posts || posts.length === 0) return { ingested: 0, skipped: 0 }
+      return apiPost('/api/extension/ingest', {
+        platform,
+        is_trending: true,
+        posts: posts.map(p => ({
+          url: p.url,
+          caption: p.caption ?? null,
+          views: p.views ?? 0,
+          likes: p.likes ?? 0,
+          comments: p.comments ?? 0,
+          shares: p.shares ?? 0,
+          hashtags: [],
+          thumbnail: p.thumbnail ?? null,
+        })),
+      })
+    }
+
     case 'DOWNLOAD_VIDEO': {
       const { url, handle, platform } = msg
       if (!url) throw new Error('No video URL available')

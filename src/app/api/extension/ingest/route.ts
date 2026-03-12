@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
 
 const PostSchema = z.object({
@@ -11,6 +12,7 @@ const PostSchema = z.object({
   shares: z.number().default(0),
   hashtags: z.array(z.string()).default([]),
   posted_at: z.string().optional(),
+  thumbnail: z.string().optional(),
 })
 
 const IngestSchema = z.object({
@@ -20,22 +22,69 @@ const IngestSchema = z.object({
   posts: z.array(PostSchema),
 })
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { headers: corsHeaders })
+}
+
 export async function POST(request: NextRequest) {
-  // Support both cookie-based auth (webapp) and API key auth (extension)
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Support both cookie-based auth (webapp) and Bearer token auth (extension)
+  let user = null
+  let supabase
+
+  const authHeader = request.headers.get('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    supabase = createServiceClient()
+    const { data, error } = await supabase.auth.getUser(token)
+    if (!error && data.user) user = data.user
+  }
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    supabase = await createClient()
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  }
+
+  if (!user || !supabase) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   }
 
   const body = await request.json()
   const parsed = IngestSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400, headers: corsHeaders })
   }
 
-  const { platform, competitor_handle, is_trending, posts } = parsed.data
+  const { platform, competitor_handle, is_trending, posts: rawPosts } = parsed.data
+
+  // Deduplicate: filter out posts whose URLs already exist for this user
+  let posts = rawPosts
+  let skipped = 0
+  const incomingUrls = rawPosts.map(p => p.url).filter(Boolean) as string[]
+  if (incomingUrls.length > 0) {
+    const existingUrls = new Set<string>()
+    // Chunk into batches of 100 to avoid query size limits
+    for (let i = 0; i < incomingUrls.length; i += 100) {
+      const chunk = incomingUrls.slice(i, i + 100)
+      const { data: existing } = await supabase
+        .from('posts')
+        .select('url')
+        .eq('user_id', user.id)
+        .in('url', chunk)
+      if (existing) existing.forEach(p => { if (p.url) existingUrls.add(p.url) })
+    }
+    posts = rawPosts.filter(p => !p.url || !existingUrls.has(p.url))
+    skipped = rawPosts.length - posts.length
+  }
+
+  if (posts.length === 0) {
+    return NextResponse.json({ ingested: 0, skipped }, { headers: corsHeaders })
+  }
 
   // Upsert competitor record if applicable
   if (competitor_handle) {
@@ -72,10 +121,11 @@ export async function POST(request: NextRequest) {
     is_competitor: !!competitor_handle,
     competitor_handle: competitor_handle?.replace('@', '') ?? null,
     is_trending,
+    thumbnail_url: p.thumbnail ?? null,
   }))
 
   const { error } = await supabase.from('posts').insert(postRecords)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
 
-  return NextResponse.json({ ingested: postRecords.length })
+  return NextResponse.json({ ingested: postRecords.length, skipped }, { headers: corsHeaders })
 }

@@ -309,6 +309,56 @@ function extractTikTokProfile() {
   }
 }
 
+// ─── TikTok Bookmarks (Favorites) ────────────────────────────────────────
+
+function extractTikTokBookmarks() {
+  const container = document.querySelector('[data-e2e="favorites-item-list"]')
+  if (!container) return null
+
+  const seen = new Set()
+  const posts = []
+
+  const items = [...container.children].filter(child =>
+    child.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+  )
+
+  items.forEach(item => {
+    const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+    const href = link?.href
+    if (!href || seen.has(href)) return
+    seen.add(href)
+
+    const videoId = href.match(/\/video\/(\d+)/)?.[1] || href.match(/\/photo\/(\d+)/)?.[1] || null
+
+    // Grab thumbnail
+    let thumbnail = null
+    const imgs = item.querySelectorAll('img')
+    for (const img of imgs) {
+      const src = img.src || img.getAttribute('data-src') || ''
+      if (src && !src.startsWith('data:') && src.length > 50) { thumbnail = src; break }
+    }
+    if (!thumbnail) {
+      const video = item.querySelector('video')
+      if (video) thumbnail = video.getAttribute('poster') || null
+    }
+
+    // View count from overlay
+    const views = getViewsFromItem(item)
+
+    posts.push({ url: href, thumbnail, videoId, views })
+  })
+
+  if (posts.length === 0) return null
+
+  return {
+    pageType: 'bookmarks',
+    platform: 'tiktok',
+    url: window.location.href,
+    handle: null,
+    posts,
+  }
+}
+
 // ─── Instagram Video ──────────────────────────────────────────────────────
 
 // Extract Instagram handle from embedded page JSON data
@@ -788,6 +838,46 @@ async function fetchInstagramVideoUrl(shortcode) {
   return null
 }
 
+// ─── Instagram Bookmarks (Saved) ─────────────────────────────────────────
+
+function extractInstagramBookmarks() {
+  const url = window.location.href
+  if (!url.match(/instagram\.com\/[^/]+\/saved/)) return null
+
+  const links = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
+  const seen = new Set()
+  const posts = []
+
+  links.forEach(link => {
+    const href = link.href.split('?')[0]
+    if (seen.has(href)) return
+    seen.add(href)
+
+    const shortcodeMatch = href.match(/\/(reel|p)\/([^/?]+)/)
+    const shortcode = shortcodeMatch?.[2] ?? null
+
+    // Grab thumbnail from img inside the link or its parent
+    let thumbnail = null
+    const img = link.querySelector('img') || link.closest('div')?.querySelector('img')
+    if (img) {
+      const src = img.src || img.getAttribute('data-src') || ''
+      if (src && !src.startsWith('data:') && src.length > 50) thumbnail = src
+    }
+
+    posts.push({ url: href, thumbnail, shortcode })
+  })
+
+  if (posts.length === 0) return null
+
+  return {
+    pageType: 'bookmarks',
+    platform: 'instagram',
+    url,
+    handle: null,
+    posts,
+  }
+}
+
 // ─── Instagram Profile ────────────────────────────────────────────────────
 
 function extractInstagramProfile() {
@@ -828,10 +918,10 @@ function extractCurrentPage() {
   const host = window.location.hostname
 
   if (host.includes('tiktok.com')) {
-    return extractTikTok() || extractTikTokProfile()
+    return extractTikTok() || extractTikTokBookmarks() || extractTikTokProfile()
   }
   if (host.includes('instagram.com')) {
-    return extractInstagram() || extractInstagramProfile()
+    return extractInstagram() || extractInstagramBookmarks() || extractInstagramProfile()
   }
   return null
 }
@@ -1254,6 +1344,66 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     (async () => {
       const videoUrl = await fetchInstagramVideoUrl(msg.shortcode)
       sendResponse({ videoUrl })
+    })()
+    return true
+  }
+
+  if (msg.type === 'EXTRACT_BOOKMARKS') {
+    (async () => {
+      const data = extractCurrentPage()
+      if (!data || data.pageType !== 'bookmarks') {
+        sendResponse({ posts: [], platform: null })
+        return
+      }
+
+      const enriched = []
+
+      if (data.platform === 'tiktok') {
+        await fetchTikTokMetrics()
+        for (const post of data.posts) {
+          const cached = post.videoId ? ttMetricsCache.get(post.videoId) : null
+          enriched.push({
+            url: post.url,
+            thumbnail: cached?.thumb || post.thumbnail || null,
+            views: cached?.views ?? post.views ?? 0,
+            likes: cached?.likes ?? 0,
+            comments: cached?.comments ?? 0,
+            shares: 0,
+            handle: null,
+            caption: null,
+          })
+        }
+      } else if (data.platform === 'instagram') {
+        // Build fake link elements for fetchInstagramMetrics
+        // We need actual <a> elements from the page — re-query them
+        const links = [...document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')]
+        const seen = new Set()
+        const uniqueLinks = links.filter(a => {
+          const href = a.href.split('?')[0]
+          if (seen.has(href)) return false
+          seen.add(href)
+          return true
+        })
+        const igMetrics = await fetchInstagramMetrics(uniqueLinks)
+
+        for (const post of data.posts) {
+          // Find matching link element and its cached metrics
+          const cached = post.shortcode ? igMetricsCache.get(post.shortcode) : null
+          enriched.push({
+            url: post.url,
+            thumbnail: cached?.thumb || post.thumbnail || null,
+            views: cached?.views ?? 0,
+            likes: cached?.likes ?? 0,
+            comments: cached?.comments ?? 0,
+            shares: 0,
+            handle: null,
+            caption: null,
+            shortcode: post.shortcode,
+          })
+        }
+      }
+
+      sendResponse({ posts: enriched, platform: data.platform })
     })()
     return true
   }
