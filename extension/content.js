@@ -1066,11 +1066,13 @@ function extractMediaNodes(obj, results = []) {
 function cacheMediaNode(node) {
   const sc = node.shortcode ?? node.code
   if (!sc || igMetricsCache.has(sc)) return
+  const captionText = node.caption?.text ?? node.edge_media_to_caption?.edges?.[0]?.node?.text ?? null
   igMetricsCache.set(sc, {
     views: node.video_view_count ?? node.play_count ?? null,
     likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
     comments: node.comment_count ?? node.edge_media_to_comment?.count ?? null,
     thumb: node.display_url ?? node.thumbnail_src ?? node.image_versions2?.candidates?.[0]?.url ?? null,
+    caption: captionText,
   })
 }
 
@@ -1374,20 +1376,37 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           })
         }
       } else if (data.platform === 'instagram') {
-        // Build fake link elements for fetchInstagramMetrics
-        // We need actual <a> elements from the page — re-query them
-        const links = [...document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')]
-        const seen = new Set()
-        const uniqueLinks = links.filter(a => {
-          const href = a.href.split('?')[0]
-          if (seen.has(href)) return false
-          seen.add(href)
-          return true
-        })
-        const igMetrics = await fetchInstagramMetrics(uniqueLinks)
+        // For saved/bookmarks page, fetch each post individually via IG API
+        // (the profile-based fetchInstagramMetrics doesn't work here)
+        const igHeaders = { 'X-IG-App-ID': '936619743392459' }
+        const postsWithShortcodes = data.posts.filter(p => p.shortcode)
+
+        // Batch fetch in groups of 5 with small delay to avoid rate limiting
+        const BATCH_SIZE = 5
+        for (let i = 0; i < postsWithShortcodes.length; i += BATCH_SIZE) {
+          const batch = postsWithShortcodes.slice(i, i + BATCH_SIZE)
+          await Promise.all(batch.map(async (post) => {
+            if (igMetricsCache.has(post.shortcode)) return
+            try {
+              const res = await fetchWithRetry(
+                `https://www.instagram.com/api/v1/media/${post.shortcode}/info/`,
+                { headers: igHeaders },
+                0
+              )
+              if (res) {
+                const apiData = await res.json()
+                const nodes = extractMediaNodes(apiData)
+                nodes.forEach(cacheMediaNode)
+              }
+            } catch {}
+          }))
+          if (i + BATCH_SIZE < postsWithShortcodes.length) {
+            await new Promise(r => setTimeout(r, 300))
+          }
+        }
+        console.log('[Orianna] IG bookmarks: cached', igMetricsCache.size, 'posts')
 
         for (const post of data.posts) {
-          // Find matching link element and its cached metrics
           const cached = post.shortcode ? igMetricsCache.get(post.shortcode) : null
           enriched.push({
             url: post.url,
@@ -1397,7 +1416,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             comments: cached?.comments ?? 0,
             shares: 0,
             handle: null,
-            caption: null,
+            caption: cached?.caption || null,
             shortcode: post.shortcode,
           })
         }
