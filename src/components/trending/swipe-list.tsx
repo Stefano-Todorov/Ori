@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Trash2, ExternalLink, Eye, Heart, MessageCircle,
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
-  SortAsc, Plus, Bookmark, Send,
+  SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
 } from 'lucide-react'
 import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags } from '@/app/actions'
 import { useRouter } from 'next/navigation'
@@ -145,6 +145,14 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
   const [sortMode, setSortMode] = useState<SortMode>('date')
   const [tagFilter, setTagFilter] = useState('all')
   const [knownTags, setKnownTags] = useState<string[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkTagOpen, setBulkTagOpen] = useState(false)
+  const [bulkNewTag, setBulkNewTag] = useState('')
+  const bulkTagRef = useRef<HTMLDivElement>(null)
+  const bulkTagInputRef = useRef<HTMLInputElement>(null)
+
+  const selectMode = selected.size > 0
 
   // On mount, merge server tags + persisted tags into knownTags and persist
   useEffect(() => {
@@ -154,17 +162,28 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
     persistTags(merged)
   }, [initialAllTags])
 
+  // Close bulk tag dropdown on outside click
+  useEffect(() => {
+    if (!bulkTagOpen) return
+    function handle(e: MouseEvent) {
+      if (bulkTagRef.current && !bulkTagRef.current.contains(e.target as Node)) setBulkTagOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [bulkTagOpen])
+
+  useEffect(() => {
+    if (bulkTagOpen && bulkTagInputRef.current) bulkTagInputRef.current.focus()
+  }, [bulkTagOpen])
+
   // Derive allTags from knownTags + any tags on current posts (catches newly added tags)
   const allTags = [...new Set([...knownTags, ...posts.flatMap(p => p.tags ?? [])])].sort()
 
   function updateTagsAndPersist(postId: string, tags: string[]) {
-    // Update post state
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, tags } : p))
-    // Persist any new tags to localStorage
     const updated = [...new Set([...knownTags, ...tags])].sort()
     setKnownTags(updated)
     persistTags(updated)
-    // Save to DB
     updatePostTags(postId, tags)
   }
 
@@ -179,6 +198,49 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
   async function handleDelete(id: string) {
     await deleteSwipePost(id)
     setPosts((prev) => prev.filter((p) => p.id !== id))
+    setSelected(prev => { const next = new Set(prev); next.delete(id); return next })
+  }
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    if (selected.size === sorted.length) setSelected(new Set())
+    else setSelected(new Set(sorted.map(p => p.id)))
+  }
+
+  async function handleBulkDelete() {
+    if (!confirm(`Delete ${selected.size} inspo${selected.size > 1 ? 's' : ''}?`)) return
+    setBulkDeleting(true)
+    await Promise.all([...selected].map(id => deleteSwipePost(id)))
+    setPosts(prev => prev.filter(p => !selected.has(p.id)))
+    setSelected(new Set())
+    setBulkDeleting(false)
+  }
+
+  function handleBulkAddTag(tag: string) {
+    const trimmed = tag.trim().toLowerCase()
+    if (!trimmed) return
+    const ids = [...selected]
+    setPosts(prev => prev.map(p => {
+      if (!ids.includes(p.id)) return p
+      const existing = p.tags ?? []
+      if (existing.includes(trimmed)) return p
+      const newTags = [...existing, trimmed]
+      updatePostTags(p.id, newTags)
+      return { ...p, tags: newTags }
+    }))
+    const updated = [...new Set([...knownTags, trimmed])].sort()
+    setKnownTags(updated)
+    persistTags(updated)
+    setBulkNewTag('')
+    setBulkTagOpen(false)
   }
 
   if (posts.length === 0) {
@@ -192,7 +254,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
 
   return (
     <div className="space-y-3">
-      {/* Sort controls */}
+      {/* Sort + select controls */}
       {posts.length > 1 && (
         <div className="flex items-center gap-1.5">
           <SortAsc size={11} className="text-muted-foreground" />
@@ -210,23 +272,119 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
               {mode}
             </button>
           ))}
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={selectAll}
+              className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
+                selectMode
+                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              {selected.size === sorted.length ? 'Deselect all' : selectMode ? `${selected.size} selected` : 'Select'}
+            </button>
+          </div>
         </div>
       )}
 
       <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
 
       {sorted.map((post) => (
-        <InspoCard key={post.id} post={post} allTags={allTags} onDelete={handleDelete} onTagsChange={updateTagsAndPersist} onNotesChange={(id, notes) => {
-          setPosts(prev => prev.map(p => p.id === id ? { ...p, ai_notes: notes } : p))
-        }} />
+        <InspoCard
+          key={post.id}
+          post={post}
+          allTags={allTags}
+          onDelete={handleDelete}
+          onTagsChange={updateTagsAndPersist}
+          onNotesChange={(id, notes) => {
+            setPosts(prev => prev.map(p => p.id === id ? { ...p, ai_notes: notes } : p))
+          }}
+          selectMode={selectMode}
+          isSelected={selected.has(post.id)}
+          onToggleSelect={() => toggleSelect(post.id)}
+        />
       ))}
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 shadow-xl shadow-black/20">
+          <span className="text-xs font-semibold text-foreground mr-1">{selected.size} selected</span>
+
+          {/* Bulk tag */}
+          <div className="relative" ref={bulkTagRef}>
+            <button
+              onClick={() => setBulkTagOpen(!bulkTagOpen)}
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+            >
+              <Tag size={12} />
+              Add tag
+            </button>
+            {bulkTagOpen && (
+              <div className="absolute bottom-full left-0 mb-2 w-48 bg-card dark:bg-[#16161e] border border-border dark:border-white/10 rounded-lg shadow-lg p-2 space-y-2">
+                {allTags.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto space-y-0.5">
+                    {allTags.map(t => (
+                      <button
+                        key={t}
+                        onClick={() => handleBulkAddTag(t)}
+                        className="flex items-center gap-1.5 w-full text-left px-2 py-1 rounded text-xs text-foreground hover:bg-muted transition-colors"
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-1">
+                  <input
+                    ref={bulkTagInputRef}
+                    type="text"
+                    placeholder="New tag..."
+                    value={bulkNewTag}
+                    onChange={(e) => setBulkNewTag(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleBulkAddTag(bulkNewTag) } }}
+                    className="flex-1 text-xs bg-muted dark:bg-[#1e1e2e] border border-border rounded px-2 py-1 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500"
+                  />
+                  <button
+                    onClick={() => handleBulkAddTag(bulkNewTag)}
+                    disabled={!bulkNewTag.trim()}
+                    className="px-1.5 py-1 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25 disabled:opacity-30 transition-colors text-xs"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bulk delete */}
+          <button
+            onClick={handleBulkDelete}
+            disabled={bulkDeleting}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-red-500/15 text-red-500 text-xs font-medium hover:bg-red-500/25 transition-all disabled:opacity-50"
+          >
+            <Trash2 size={12} />
+            {bulkDeleting ? 'Deleting...' : 'Delete'}
+          </button>
+
+          {/* Cancel */}
+          <button
+            onClick={() => setSelected(new Set())}
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 // ─── Inspo Card ────────────────────────────────────────
 
-function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange }: { post: Post; allTags: string[]; onDelete: (id: string) => void; onTagsChange: (id: string, tags: string[]) => void; onNotesChange: (id: string, notes: string) => void }) {
+function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selectMode, isSelected, onToggleSelect }: {
+  post: Post; allTags: string[]; onDelete: (id: string) => void; onTagsChange: (id: string, tags: string[]) => void; onNotesChange: (id: string, notes: string) => void
+  selectMode: boolean; isSelected: boolean; onToggleSelect: () => void
+}) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -329,12 +487,24 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange }: { p
 
   return (
     <>
-      <div className="rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] overflow-hidden transition-all hover:border-purple-500/20">
+      <div className={`rounded-xl border overflow-hidden transition-all ${
+        isSelected
+          ? 'border-purple-500/50 bg-purple-500/[0.03] dark:bg-purple-500/[0.06]'
+          : 'border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] hover:border-purple-500/20'
+      }`}>
         {/* Header — clickable to expand */}
         <button
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => selectMode ? onToggleSelect() : setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
+          {selectMode && (
+            <span className="shrink-0 mt-1" onClick={(e) => { e.stopPropagation(); onToggleSelect() }}>
+              {isSelected
+                ? <CheckSquare size={16} className="text-purple-500" />
+                : <Square size={16} className="text-muted-foreground/40" />
+              }
+            </span>
+          )}
           <Thumbnail post={post} />
           <div className="flex-1 min-w-0 space-y-1">
             {/* Creator + Title + date row */}
