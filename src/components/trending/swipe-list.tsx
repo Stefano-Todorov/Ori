@@ -146,6 +146,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   const [archivedPosts] = useState(initialArchived)
   const [showArchived, setShowArchived] = useState(false)
   const [sortMode, setSortMode] = useState<SortMode>('date')
+  const [platformFilter, setPlatformFilter] = useState<string>('all')
   const [tagFilter, setTagFilter] = useState('all')
   const [knownTags, setKnownTags] = useState<string[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -192,6 +193,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   }
 
   const sorted = [...activePosts]
+    .filter((p) => platformFilter === 'all' || p.platform === platformFilter)
     .filter((p) => tagFilter === 'all' || (p.tags ?? []).includes(tagFilter))
     .sort((a, b) => {
       if (sortMode === 'views') return b.views - a.views
@@ -309,6 +311,30 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
           </div>
         </div>
       )}
+
+      {/* Platform filter */}
+      {(() => {
+        const platforms = [...new Set(activePosts.map(p => p.platform).filter(Boolean))].sort()
+        if (platforms.length <= 1) return null
+        return (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Platform:</span>
+            {['all', ...platforms].map(p => (
+              <button
+                key={p}
+                onClick={() => { setPlatformFilter(p); setSelected(new Set()) }}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+                  platformFilter === p
+                    ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
 
       <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
 
