@@ -24,6 +24,8 @@ let state = {
   showDuplicatePrompt: false,
   showTagDropdown: false,
   dontAskCompetitor: false,
+  showCreateInspo: false,
+  createInspoItems: [''],
   sortedPosts: [],
   sortBy: 'views',
   sortCount: 25,
@@ -259,18 +261,56 @@ async function handleGetIdeas() {
   else setState({ view: 'ideas', ideas: result.ideas ?? [] })
 }
 
+async function handleCreateInspo() {
+  const items = state.createInspoItems.filter(t => t.trim())
+  if (items.length === 0) return
+  setState({ saving: 'create-inspo', errors: {}, messages: {} })
+  const result = await chrome.runtime.sendMessage({
+    type: 'CREATE_IDEAS',
+    ideas: items.map(idea => ({
+      idea: idea.trim(),
+      url: state.postData.url,
+      thumbnail: state.postData.thumbnail,
+      handle: state.postData.handle,
+      platform: state.postData.platform,
+    })),
+  })
+  setState({ saving: null })
+  if (result.error) {
+    setState({ errors: { createInspo: result.error } })
+  } else {
+    setState({
+      messages: { createInspo: `${items.length} idea${items.length > 1 ? 's' : ''} saved` },
+      createInspoItems: [''],
+      showCreateInspo: false,
+    })
+  }
+}
+
 function toggleBookmarkPost(index) {
   const posts = [...state.bookmarkPosts]
   posts[index] = { ...posts[index], checked: !posts[index].checked }
+  const list = document.querySelector('.bookmark-list')
+  const scrollTop = list ? list.scrollTop : 0
   setState({ bookmarkPosts: posts })
+  const newList = document.querySelector('.bookmark-list')
+  if (newList) newList.scrollTop = scrollTop
 }
 
 function selectAllBookmarks() {
+  const list = document.querySelector('.bookmark-list')
+  const scrollTop = list ? list.scrollTop : 0
   setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: true })) })
+  const newList = document.querySelector('.bookmark-list')
+  if (newList) newList.scrollTop = scrollTop
 }
 
 function deselectAllBookmarks() {
+  const list = document.querySelector('.bookmark-list')
+  const scrollTop = list ? list.scrollTop : 0
   setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: false })) })
+  const newList = document.querySelector('.bookmark-list')
+  if (newList) newList.scrollTop = scrollTop
 }
 
 async function handleBulkImport() {
@@ -705,6 +745,31 @@ function render() {
         </button>
         ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
 
+        <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
+        </button>
+        ${state.showCreateInspo ? `
+          <div class="create-inspo-panel">
+            ${state.createInspoItems.map((item, i) => `
+              <div class="create-inspo-row">
+                <input class="create-inspo-input" data-index="${i}"
+                  type="text" placeholder="What is the video about?"
+                  value="${escHtml(item)}" />
+                ${state.createInspoItems.length > 1 ? `<button class="create-inspo-remove" data-index="${i}">&times;</button>` : ''}
+              </div>
+            `).join('')}
+            <div class="create-inspo-actions">
+              <button class="btn-text" id="add-another-btn">+ Add another</button>
+              <button class="btn-prompt-yes" id="save-inspo-btn"
+                ${state.saving === 'create-inspo' ? 'disabled' : ''}>
+                ${state.saving === 'create-inspo' ? '<span class="spinner"></span>' : 'Save'}
+              </button>
+            </div>
+          </div>
+        ` : ''}
+        ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
+        ${state.errors.createInspo ? `<div class="error-msg">${state.errors.createInspo}</div>` : ''}
+
         <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}
         </button>
@@ -751,6 +816,27 @@ function render() {
     })
     document.querySelectorAll('.tag-remove').forEach(btn => {
       btn.addEventListener('click', (e) => { e.stopPropagation(); toggleTag(btn.dataset.tag) })
+    })
+    // Create from Inspo
+    document.getElementById('create-inspo-btn')?.addEventListener('click', () => {
+      setState({ showCreateInspo: !state.showCreateInspo })
+    })
+    document.getElementById('add-another-btn')?.addEventListener('click', () => {
+      setState({ createInspoItems: [...state.createInspoItems, ''] })
+    })
+    document.getElementById('save-inspo-btn')?.addEventListener('click', handleCreateInspo)
+    document.querySelectorAll('.create-inspo-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const items = [...state.createInspoItems]
+        items[parseInt(e.target.dataset.index)] = e.target.value
+        state.createInspoItems = items
+      })
+    })
+    document.querySelectorAll('.create-inspo-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const items = state.createInspoItems.filter((_, i) => i !== parseInt(btn.dataset.index))
+        setState({ createInspoItems: items.length ? items : [''] })
+      })
     })
   }
 }
