@@ -136,7 +136,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
                 ))}
               </div>
 
-              <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+              <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
                 {snapshots
                   .filter(s => historyPlatform === 'all' || s.platform === historyPlatform)
                   .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))
