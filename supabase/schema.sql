@@ -79,6 +79,7 @@ create table if not exists posts (
   competitor_handle text,
   is_trending boolean default false,
   tags text[] default '{}',
+  status text default 'draft' check (status in ('draft', 'used', 'archived')),
   imported_at timestamptz default now(),
   created_at timestamptz default now()
 );
