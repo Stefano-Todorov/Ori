@@ -521,8 +521,8 @@ function render() {
         <div class="no-post">No saved posts found. Scroll the page to load more, then reopen the extension.</div>
       ` : `
         <div class="bookmark-controls">
-          <button class="btn-text" id="select-all-btn">Select all</button>
-          <button class="btn-text" id="deselect-all-btn">Deselect all</button>
+          <button class="btn-bookmark-action" id="select-all-btn">Select all</button>
+          <button class="btn-bookmark-action" id="deselect-all-btn">Deselect all</button>
           <span class="bookmark-count">${checkedCount} of ${posts.length} selected</span>
           <select id="bookmark-limit" class="bookmark-limit-select">
             ${[5,10,15,20,30,50,'all'].map(v => {
