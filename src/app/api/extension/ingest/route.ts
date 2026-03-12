@@ -4,15 +4,15 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
 
 const PostSchema = z.object({
-  url: z.string().optional(),
-  caption: z.string().optional(),
+  url: z.string().nullish(),
+  caption: z.string().nullish(),
   views: z.number().default(0),
   likes: z.number().default(0),
   comments: z.number().default(0),
   shares: z.number().default(0),
   hashtags: z.array(z.string()).default([]),
-  posted_at: z.string().optional(),
-  thumbnail: z.string().optional(),
+  posted_at: z.string().nullish(),
+  thumbnail: z.string().nullish(),
 })
 
 const IngestSchema = z.object({
