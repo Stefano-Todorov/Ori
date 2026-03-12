@@ -7,10 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { DeleteButton } from '@/components/ui/delete-button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown } from 'lucide-react'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag } from 'lucide-react'
 import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags } from '@/app/actions'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
@@ -23,11 +22,11 @@ interface Props {
 
 type IdeaStatus = ProductionStatus
 
-const STATUS_COLORS: Record<IdeaStatus, string> = {
-  new: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-  recording: 'bg-amber-100 text-amber-700 hover:bg-amber-200',
-  editing: 'bg-blue-100 text-blue-700 hover:bg-blue-200',
-  posted: 'bg-green-100 text-green-700 hover:bg-green-200',
+const STATUS_PILL: Record<IdeaStatus, string> = {
+  new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+  editing: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
+  posted: 'bg-green-400/15 text-green-400 border-green-400/30',
 }
 
 const STATUS_LABEL: Record<IdeaStatus, string> = {
@@ -38,9 +37,9 @@ const STATUS_LABEL: Record<IdeaStatus, string> = {
 }
 
 const DIFFICULTY_COLORS = {
-  easy: 'bg-green-100 text-green-700',
-  medium: 'bg-yellow-100 text-yellow-700',
-  hard: 'bg-red-100 text-red-700',
+  easy: 'bg-green-400/15 text-green-400 border-green-400/30',
+  medium: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+  hard: 'bg-red-400/15 text-red-400 border-red-400/30',
 }
 
 const VIDEO_TYPES = ['Talking head', 'B-roll', 'Vlog', 'Reaction', 'Trend', 'Educational']
@@ -224,16 +223,50 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
   )
 }
 
-// ─── Idea card ────────────────────────────────────────────────────────────────
+// ─── Source parsing ──────────────────────────────────────────────────────────
+
+function parseSource(source: string | null): { prefix: string; handle: string; platform: string } | null {
+  if (!source) return null
+  // "extension: @handle (platform)" or "inspiration: @handle (platform)"
+  const m = source.match(/^(extension|inspiration):\s*@?(\S+)\s*\((\w+)\)$/i)
+  if (m) return { prefix: m[1], handle: m[2], platform: m[3] }
+  return null
+}
+
+// ─── Custom checkbox ────────────────────────────────────────────────────────
+
+function IdeaCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`w-[18px] h-[18px] rounded flex items-center justify-center shrink-0 transition-all duration-150 border-[1.5px] ${
+        checked
+          ? 'bg-gradient-to-br from-purple-600 to-purple-500 border-purple-500'
+          : 'bg-[#1a1a2e] border-white/20 hover:border-purple-500'
+      }`}
+    >
+      {checked && (
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+// ─── Content section ────────────────────────────────────────────────────────
 
 function Section({ label, text }: { label: string; text: string }) {
   return (
-    <div className="rounded-lg border bg-muted/30 p-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
-      <p className="text-sm whitespace-pre-wrap">{text}</p>
+    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+      <p className="text-xs font-bold uppercase tracking-wider text-[#71717a] mb-1">{label}</p>
+      <p className="text-sm whitespace-pre-wrap text-[#e4e4e7]">{text}</p>
     </div>
   )
 }
+
+// ─── Idea card ────────────────────────────────────────────────────────────────
 
 function IdeaCard({
   item,
@@ -254,64 +287,131 @@ function IdeaCard({
   onEdit: () => void
   onTagsChange: (tags: string[]) => void
 }) {
-  const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption || item.inspiration_url
+  const [deleting, setDeleting] = useState(false)
+  const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption
+  const parsed = parseSource(item.source)
+
+  async function handleDelete() {
+    setDeleting(true)
+    await onDelete()
+    setDeleting(false)
+  }
 
   return (
-    <Card className={`border-border transition-colors ${selected ? 'ring-2 ring-primary/50 bg-primary/5' : ''}`}>
-      <CardContent className="pt-5 pb-5 space-y-4">
-        {/* Header */}
-        <div className="flex items-start gap-3 flex-wrap">
-          <input
-            type="checkbox"
-            checked={selected}
-            onChange={onToggleSelect}
-            className="mt-1.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
-          />
+    <div
+      className={`rounded-xl border transition-all duration-200 mb-2 ${
+        selected
+          ? 'border-purple-500/50 bg-[#1a1a2e]/80 ring-1 ring-purple-500/30'
+          : 'border-white/[0.06] bg-[#1a1a2e] hover:border-white/[0.12] hover:bg-[#1e1e34]'
+      }`}
+      style={{ padding: '16px 18px' }}
+    >
+      {/* Header row */}
+      <div className="flex items-start gap-3">
+        <div className="pt-0.5">
+          <IdeaCheckbox checked={selected} onChange={onToggleSelect} />
+        </div>
+
+        {/* Purple accent bar */}
+        <div className="w-[3px] self-stretch rounded-full bg-gradient-to-b from-purple-600 to-purple-400 shrink-0" />
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0">
+          {/* Title */}
+          <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
+
+          {/* Metadata row */}
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
+            {item.difficulty && (
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium ${DIFFICULTY_COLORS[item.difficulty]}`}>
+                {item.difficulty}
+              </span>
+            )}
+            {item.video_type && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium bg-white/[0.05] text-[#a1a1aa] border-white/[0.1]">
+                {item.video_type}
+              </span>
+            )}
+            {parsed ? (
+              <>
+                <span className="text-[#71717a]">via {parsed.prefix}:</span>
+                <span className="text-purple-400 font-medium">@{parsed.handle}</span>
+                <span className="text-[#52525b]">({parsed.platform})</span>
+              </>
+            ) : item.source ? (
+              <span className="text-[#71717a]">via {item.source}</span>
+            ) : null}
+            {item.inspiration_url && (
+              <a
+                href={item.inspiration_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-0.5 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View original <ExternalLink size={10} />
+              </a>
+            )}
+            {(item.source || item.inspiration_url) && (
+              <span className="text-[#3f3f46]">&middot;</span>
+            )}
+            <span className="text-[#52525b]">
+              {new Date(item.created_at).toLocaleDateString()}
+            </span>
+          </div>
+
+          {/* Tags row */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <TagPills tags={item.tags ?? []} />
+            <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
+          </div>
+
+          {/* Inline URL (simplified - no box) */}
+          {item.inspiration_url && (
+            <a
+              href={item.inspiration_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 mt-2 text-xs text-purple-400/70 hover:text-purple-300 transition-colors truncate max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LinkIcon size={11} className="shrink-0" />
+              <span className="truncate">{item.inspiration_url}</span>
+            </a>
+          )}
+
+          {/* Content sections */}
+          {hasContent && (
+            <div className="space-y-2 mt-3">
+              {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
+              {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
+              {item.cta && <Section label="CTA" text={item.cta} />}
+              {item.caption && <Section label="Caption" text={item.caption} />}
+            </div>
+          )}
+
+          {!hasContent && !item.inspiration_url && (
+            <p className="text-xs text-[#52525b] mt-2">
+              No details yet — click edit to fill in hook, body, CTA and more.
+            </p>
+          )}
+        </div>
+
+        {/* Right side: thumbnail + actions */}
+        <div className="flex items-start gap-3 shrink-0">
           {item.thumbnail_url && (
-            <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" className="shrink-0" onClick={(e) => e.stopPropagation()}>
+            <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
               <img
                 src={item.thumbnail_url}
                 alt=""
-                className="w-16 h-16 rounded-lg object-cover border border-border"
+                className="w-12 h-12 rounded-lg object-cover border border-white/[0.08]"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             </a>
           )}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base leading-snug">{item.idea}</h3>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {item.difficulty && (
-                <Badge className={`text-xs ${DIFFICULTY_COLORS[item.difficulty]}`}>{item.difficulty}</Badge>
-              )}
-              {item.video_type && (
-                <Badge variant="secondary" className="text-xs">{item.video_type}</Badge>
-              )}
-              {item.source && (
-                <span className="text-xs text-muted-foreground">via {item.source}</span>
-              )}
-              {item.inspiration_url && (
-                <a
-                  href={item.inspiration_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-0.5 transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  View original <ExternalLink size={10} />
-                </a>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {new Date(item.created_at).toLocaleDateString()}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <TagPills tags={item.tags ?? []} />
-              <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1">
             <Select value={item.production_status} onValueChange={(v) => onStatusChange(v as IdeaStatus)}>
-              <SelectTrigger className={`h-8 w-auto text-xs font-semibold border-0 rounded-full px-3 gap-1 ${STATUS_COLORS[item.production_status]}`}>
+              <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-full px-2.5 gap-1 border ${STATUS_PILL[item.production_status]}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -323,46 +423,24 @@ function IdeaCard({
             <button
               type="button"
               onClick={onEdit}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1.5 text-[#71717a] hover:text-white transition-colors rounded-md hover:bg-white/[0.05]"
               title="Edit"
             >
-              <Pencil size={15} />
+              <Pencil size={16} />
             </button>
-            <DeleteButton onDelete={onDelete} />
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 text-[#71717a] hover:text-red-400 transition-colors rounded-md hover:bg-white/[0.05] disabled:opacity-50"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         </div>
-
-        {/* Content sections */}
-        {hasContent && (
-          <div className="space-y-3">
-            {item.inspiration_url && (
-              <div className="rounded-lg border bg-muted/30 p-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">URL</p>
-                <a
-                  href={item.inspiration_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary underline flex items-center gap-1 break-all"
-                >
-                  {item.inspiration_url}
-                  <ExternalLink size={12} className="shrink-0" />
-                </a>
-              </div>
-            )}
-            {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
-            {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
-            {item.cta && <Section label="CTA" text={item.cta} />}
-            {item.caption && <Section label="Caption" text={item.caption} />}
-          </div>
-        )}
-
-        {!hasContent && (
-          <p className="text-xs text-muted-foreground">
-            No details yet — click <Pencil size={11} className="inline" /> to fill in hook, body, CTA and more.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -372,7 +450,7 @@ type SourceFilter = 'all' | 'mine' | 'saved' | 'ai'
 
 function getSourceType(item: ContentIdea): SourceFilter {
   const s = item.source ?? ''
-  if (s.startsWith('inspiration:')) return 'saved'
+  if (s.startsWith('inspiration:') || s.startsWith('extension:')) return 'saved'
   if (s.startsWith('competitor:')) return 'ai'
   return 'mine'
 }
@@ -393,6 +471,45 @@ const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
   hard: 'Hard',
 }
 
+type SortBy = 'date' | 'status' | 'source'
+
+const STATUS_ORDER: Record<IdeaStatus, number> = { new: 0, recording: 1, editing: 2, posted: 3 }
+
+// ─── Collapsible status group ──────────────────────────────────────────────
+
+function StatusGroup({
+  status,
+  ideas,
+  defaultOpen = true,
+  children,
+}: {
+  status: IdeaStatus
+  ideas: ContentIdea[]
+  defaultOpen?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  const count = ideas.length
+  if (count === 0) return null
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 mb-2 group"
+      >
+        <ChevronDown size={14} className={`text-[#52525b] transition-transform ${open ? '' : '-rotate-90'}`} />
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${STATUS_PILL[status]}`}>
+          {STATUS_LABEL[status]}
+        </span>
+        <span className="text-xs text-[#52525b]">{count}</span>
+      </button>
+      {open && children}
+    </div>
+  )
+}
+
 // ─── Main board ───────────────────────────────────────────────────────────────
 
 export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Props) {
@@ -401,6 +518,9 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [tagFilter, setTagFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState<SortBy>('date')
+  const [groupByStatus, setGroupByStatus] = useState(false)
 
   // Derive live allTags from current ideas state
   const allTags = [...new Set([...initialAllTags, ...ideas.flatMap(i => i.tags ?? [])])].sort()
@@ -555,7 +675,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
     if (restored) {
       setIdeas((prev) => [restored, ...prev])
     } else {
-      // Fallback: add back with old data
       setIdeas((prev) => [item, ...prev])
     }
     setRecentlyDeleted((prev) => prev.filter((i) => i.id !== item.id))
@@ -565,47 +684,123 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
     setRecentlyDeleted([])
   }
 
-  // ─── Filtering ──────────────────────────────────────────────────────────────
+  // ─── Filtering & sorting ──────────────────────────────────────────────────
+
+  const q = searchQuery.toLowerCase().trim()
 
   const filtered = ideas
     .filter((i) => filter === 'all' || i.production_status === filter)
     .filter((i) => sourceFilter === 'all' || getSourceType(i) === sourceFilter)
     .filter((i) => difficultyFilter === 'all' || i.difficulty === difficultyFilter)
     .filter((i) => tagFilter === 'all' || (i.tags ?? []).includes(tagFilter))
+    .filter((i) => !q || i.idea.toLowerCase().includes(q) || (i.source ?? '').toLowerCase().includes(q) || (i.hook_idea ?? '').toLowerCase().includes(q))
+    .sort((a, b) => {
+      if (sortBy === 'status') return STATUS_ORDER[a.production_status] - STATUS_ORDER[b.production_status]
+      if (sortBy === 'source') return (a.source ?? '').localeCompare(b.source ?? '')
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   const hasSelection = selected.size > 0
   const allFilteredSelected = filtered.length > 0 && filtered.every((i) => selected.has(i.id))
 
+  function renderCards(items: ContentIdea[]) {
+    return items.map((item) => (
+      <IdeaCard
+        key={item.id}
+        item={item}
+        selected={selected.has(item.id)}
+        allTags={allTags}
+        onToggleSelect={() => toggleSelect(item.id)}
+        onDelete={() => handleDelete(item.id)}
+        onStatusChange={(status) => handleStatusChange(item.id, status)}
+        onEdit={() => openEdit(item)}
+        onTagsChange={(tags) => {
+          setIdeas(prev => prev.map(i => i.id === item.id ? { ...i, tags } : i))
+          updateIdeaTags(item.id, tags)
+        }}
+      />
+    ))
+  }
+
   return (
     <>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex gap-2 flex-wrap">
-            {(['all', 'new', 'recording', 'editing', 'posted'] as const).map((s) => (
-              <Button
-                key={s}
-                variant={filter === s ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter(s)}
-              >
-                {s === 'all' ? 'All' : STATUS_LABEL[s]}
-                {s !== 'all' && (
-                  <span className="ml-1.5 text-xs opacity-70">
-                    {ideas.filter((i) => i.production_status === s).length}
-                  </span>
-                )}
-              </Button>
-            ))}
+      {/* ─── Header row ──────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold text-white">Ideas</h2>
+          <span className="text-xs text-[#52525b] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-0.5 font-medium">
+            {ideas.length} idea{ideas.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+        <button
+          onClick={() => setAddOpen(true)}
+          className="h-9 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center gap-1.5 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(124,58,237,0.4)]"
+        >
+          <Plus size={16} />
+          New idea
+        </button>
+      </div>
+
+      {/* ─── Search + sort + filters ─────────────────────────────── */}
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b]" />
+            <input
+              type="text"
+              placeholder="Search ideas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-8 pl-8 pr-3 text-xs rounded-lg bg-[#1a1a2e] border border-white/[0.08] text-white placeholder:text-[#3f3f46] focus:border-purple-500 focus:outline-none transition-colors"
+            />
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus size={16} className="mr-2" />
-            Add idea
-          </Button>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+            <SelectTrigger className="h-8 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
+              <span className="text-[#71717a]">Sort:</span> <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="status">Status</SelectItem>
+              <SelectItem value="source">Source</SelectItem>
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={() => setGroupByStatus(!groupByStatus)}
+            className={`h-8 px-3 text-xs rounded-lg border transition-all ${
+              groupByStatus
+                ? 'bg-purple-500/15 border-purple-500/30 text-purple-400'
+                : 'bg-[#1a1a2e] border-white/[0.08] text-[#71717a] hover:text-white hover:border-white/[0.15]'
+            }`}
+          >
+            Group
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {(['all', 'new', 'recording', 'editing', 'posted'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`h-7 px-3 text-xs font-medium rounded-lg border transition-all ${
+                filter === s
+                  ? 'bg-purple-500/15 border-purple-500/30 text-purple-400'
+                  : 'bg-transparent border-white/[0.06] text-[#71717a] hover:text-white hover:border-white/[0.15]'
+              }`}
+            >
+              {s === 'all' ? 'All' : STATUS_LABEL[s]}
+              {s !== 'all' && (
+                <span className="ml-1 opacity-60">
+                  {ideas.filter((i) => i.production_status === s).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SourceFilter)}>
-            <SelectTrigger className="h-8 w-auto text-xs gap-1.5">
+            <SelectTrigger className="h-7 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -617,7 +812,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             </SelectContent>
           </Select>
           <Select value={difficultyFilter} onValueChange={(v) => setDifficultyFilter(v as DifficultyFilter)}>
-            <SelectTrigger className="h-8 w-auto text-xs gap-1.5">
+            <SelectTrigger className="h-7 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -628,31 +823,25 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
               ))}
             </SelectContent>
           </Select>
+          <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
         </div>
-
-        <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
 
         {/* Select all + bulk actions bar */}
         <div className="flex items-center gap-3 flex-wrap">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={allFilteredSelected}
-              onChange={selectAll}
-              className="h-4 w-4 rounded border-border accent-primary cursor-pointer"
-            />
+          <label className="flex items-center gap-2 text-xs text-[#71717a] cursor-pointer select-none">
+            <IdeaCheckbox checked={allFilteredSelected} onChange={selectAll} />
             {allFilteredSelected ? 'Deselect all' : 'Select all'}
           </label>
 
           {hasSelection && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+              <span className="text-xs text-[#52525b]">{selected.size} selected</span>
 
               <Select
                 value=""
                 onValueChange={(v) => handleBulkStatus(v as IdeaStatus)}
               >
-                <SelectTrigger className="h-8 w-auto text-xs gap-1" disabled={bulkAction}>
+                <SelectTrigger className="h-7 w-auto text-xs gap-1 bg-[#1a1a2e] border-white/[0.08]" disabled={bulkAction}>
                   <span>Move to</span>
                   <ChevronDown size={12} />
                 </SelectTrigger>
@@ -663,46 +852,44 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                 </SelectContent>
               </Select>
 
-              <Button
-                variant="destructive"
-                size="sm"
+              <button
                 onClick={handleBulkDelete}
                 disabled={bulkAction}
+                className="h-7 px-3 text-xs font-medium rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-all disabled:opacity-50 flex items-center gap-1"
               >
-                <Trash2 size={14} className="mr-1" />
+                <Trash2 size={12} />
                 Delete {selected.size}
-              </Button>
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      <div className="space-y-4">
+      {/* ─── Cards ───────────────────────────────────────────────── */}
+      <div>
         {filtered.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              {filter === 'all'
+          <div className="rounded-xl border border-white/[0.06] bg-[#1a1a2e] py-16 text-center">
+            <p className="text-[#52525b] text-sm">
+              {filter === 'all' && !q
                 ? 'No ideas yet. Add your first one!'
-                : `No ${STATUS_LABEL[filter].toLowerCase()} ideas.`}
-            </CardContent>
-          </Card>
+                : q
+                  ? 'No ideas match your search.'
+                  : `No ${STATUS_LABEL[filter as IdeaStatus].toLowerCase()} ideas.`}
+            </p>
+          </div>
+        ) : groupByStatus ? (
+          <div className="space-y-4">
+            {(['new', 'recording', 'editing', 'posted'] as const).map((s) => {
+              const statusIdeas = filtered.filter((i) => i.production_status === s)
+              return (
+                <StatusGroup key={s} status={s} ideas={statusIdeas}>
+                  {renderCards(statusIdeas)}
+                </StatusGroup>
+              )
+            })}
+          </div>
         ) : (
-          filtered.map((item) => (
-            <IdeaCard
-              key={item.id}
-              item={item}
-              selected={selected.has(item.id)}
-              allTags={allTags}
-              onToggleSelect={() => toggleSelect(item.id)}
-              onDelete={() => handleDelete(item.id)}
-              onStatusChange={(status) => handleStatusChange(item.id, status)}
-              onEdit={() => openEdit(item)}
-              onTagsChange={(tags) => {
-                setIdeas(prev => prev.map(i => i.id === item.id ? { ...i, tags } : i))
-                updateIdeaTags(item.id, tags)
-              }}
-            />
-          ))
+          renderCards(filtered)
         )}
       </div>
 
@@ -713,41 +900,43 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <button
               type="button"
               onClick={() => setShowDeleted(!showDeleted)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-[#71717a] hover:text-white transition-colors"
             >
               <Trash2 size={14} />
               Recently Deleted ({recentlyDeleted.length})
               <ChevronDown size={14} className={`transition-transform ${showDeleted ? 'rotate-180' : ''}`} />
             </button>
             {showDeleted && (
-              <Button variant="ghost" size="sm" onClick={clearRecentlyDeleted} className="text-xs">
+              <button
+                onClick={clearRecentlyDeleted}
+                className="text-xs text-[#52525b] hover:text-white transition-colors"
+              >
                 Clear all
-              </Button>
+              </button>
             )}
           </div>
 
           {showDeleted && (
             <div className="space-y-2">
               {recentlyDeleted.map((item) => (
-                <Card key={item.id} className="border-dashed opacity-60 hover:opacity-100 transition-opacity">
-                  <CardContent className="py-3 flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.idea}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.source ? `via ${item.source}` : 'My idea'} — {STATUS_LABEL[item.production_status]}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRestore(item)}
-                      className="shrink-0"
-                    >
-                      <RotateCcw size={14} className="mr-1" />
-                      Restore
-                    </Button>
-                  </CardContent>
-                </Card>
+                <div
+                  key={item.id}
+                  className="rounded-xl border border-dashed border-white/[0.08] bg-[#1a1a2e]/50 px-4 py-3 flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate text-white">{item.idea}</p>
+                    <p className="text-xs text-[#52525b]">
+                      {item.source ? `via ${item.source}` : 'My idea'} — {STATUS_LABEL[item.production_status]}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRestore(item)}
+                    className="shrink-0 h-7 px-3 text-xs font-medium rounded-lg border border-white/[0.1] text-[#a1a1aa] hover:text-white hover:border-white/[0.2] transition-all flex items-center gap-1"
+                  >
+                    <RotateCcw size={12} />
+                    Restore
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -767,7 +956,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             disabled={!addForm.idea.trim() || adding}
             className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
-            {adding ? 'Saving...' : '✓ Save idea'}
+            {adding ? 'Saving...' : 'Save idea'}
           </button>
         </DialogContent>
       </Dialog>
@@ -798,7 +987,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             disabled={!editForm.idea.trim() || saving}
             className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
-            {saving ? 'Saving...' : '✓ Save changes'}
+            {saving ? 'Saving...' : 'Save changes'}
           </button>
         </DialogContent>
       </Dialog>
