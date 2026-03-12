@@ -85,9 +85,9 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
         </div>
       </div>
 
-      {data.length < 2 ? (
+      {data.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">
-          Add at least 2 days of follower data to see the chart.
+          Add follower data to see the chart.
         </p>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
@@ -106,7 +106,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
                 dataKey={p.key}
                 stroke={(isDark && p.darkColor) ? p.darkColor : p.color}
                 strokeWidth={2.5}
-                dot={false}
+                dot={{ r: 4, fill: (isDark && p.darkColor) ? p.darkColor : p.color }}
                 connectNulls
               />
             ))}

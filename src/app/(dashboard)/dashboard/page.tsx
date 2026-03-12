@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2">
           <FollowerChart snapshots={followerSnapshots ?? []} activePlatforms={profile?.platforms} />
         </div>
-        <AddFollowersForm activePlatforms={profile?.platforms} />
+        <AddFollowersForm activePlatforms={profile?.platforms} snapshots={followerSnapshots ?? []} />
       </div>
 
       {/* ─── Kanban Board ─── */}

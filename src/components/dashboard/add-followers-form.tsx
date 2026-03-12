@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
-import { addFollowerSnapshot } from '@/app/actions'
+import { addFollowerSnapshot, deleteFollowerSnapshot } from '@/app/actions'
 import { useRouter } from 'next/navigation'
-import type { Platform } from '@/lib/types'
+import { ChevronDown, Trash2 } from 'lucide-react'
+import type { Platform, FollowerSnapshot } from '@/lib/types'
 
 const ALL_PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'tiktok', label: 'TikTok' },
@@ -14,9 +15,10 @@ const ALL_PLATFORMS: { key: Platform; label: string }[] = [
 
 interface Props {
   activePlatforms?: Platform[]
+  snapshots?: FollowerSnapshot[]
 }
 
-export function AddFollowersForm({ activePlatforms }: Props) {
+export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
   const PLATFORMS = activePlatforms?.length
     ? ALL_PLATFORMS.filter(p => activePlatforms.includes(p.key))
     : ALL_PLATFORMS
@@ -26,6 +28,8 @@ export function AddFollowersForm({ activePlatforms }: Props) {
   const [count, setCount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [error, setError] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const [historyPlatform, setHistoryPlatform] = useState<Platform | 'all'>('all')
 
   const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
@@ -89,6 +93,82 @@ export function AddFollowersForm({ activePlatforms }: Props) {
           {isPending ? 'Saving...' : 'Save'}
         </button>
       </form>
+
+      {/* History */}
+      {snapshots.length > 0 && (
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showHistory ? '' : '-rotate-90'}`} />
+            History ({snapshots.length})
+          </button>
+
+          {showHistory && (
+            <div className="space-y-2">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setHistoryPlatform('all')}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                    historyPlatform === 'all'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-muted/50 dark:bg-white/[0.04] text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All
+                </button>
+                {PLATFORMS.map(p => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => setHistoryPlatform(p.key)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all ${
+                      historyPlatform === p.key
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-muted/50 dark:bg-white/[0.04] text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                {snapshots
+                  .filter(s => historyPlatform === 'all' || s.platform === historyPlatform)
+                  .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))
+                  .map(s => (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-muted/30 dark:bg-white/[0.03] text-xs"
+                    >
+                      <span className="text-muted-foreground capitalize w-16 shrink-0">{s.platform}</span>
+                      <span className="font-medium text-foreground">{s.count.toLocaleString()}</span>
+                      <span className="text-muted-foreground ml-auto">
+                        {new Date(s.recorded_at + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          startTransition(async () => {
+                            await deleteFollowerSnapshot(s.id)
+                            router.refresh()
+                          })
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
