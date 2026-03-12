@@ -12,6 +12,9 @@
       views: parseInt(st.playCount) || parseInt(st.play_count) || 0,
       likes: parseInt(st.diggCount) || parseInt(st.digg_count) || 0,
       comments: parseInt(st.commentCount) || parseInt(st.comment_count) || 0,
+      shares: parseInt(st.shareCount) || parseInt(st.share_count) || 0,
+      saves: parseInt(st.collectCount) || parseInt(st.collect_count) || 0,
+      caption: it.desc || '',
       thumb: (it.video && (it.video.cover || it.video.dynamicCover || it.video.originCover)) || ''
     };
   }

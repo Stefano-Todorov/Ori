@@ -1071,6 +1071,7 @@ function cacheMediaNode(node) {
     views: node.video_view_count ?? node.play_count ?? null,
     likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
     comments: node.comment_count ?? node.edge_media_to_comment?.count ?? null,
+    saves: node.save_count ?? null,
     thumb: node.display_url ?? node.thumbnail_src ?? node.image_versions2?.candidates?.[0]?.url ?? null,
     caption: captionText,
   })
@@ -1211,7 +1212,7 @@ async function fetchInstagramMetrics(items) {
 
 // ─── TikTok — fetch metrics via MAIN world bridge ────────────────────────
 
-let ttMetricsCache = new Map() // videoId → { views, likes, comments, thumb }
+let ttMetricsCache = new Map() // videoId → { views, likes, comments, shares, saves, caption, thumb }
 
 // Listen for data from tiktok-bridge.js (runs in MAIN world, can access page JS)
 window.addEventListener('message', (e) => {
@@ -1222,6 +1223,9 @@ window.addEventListener('message', (e) => {
           views: item.views || null,
           likes: item.likes || null,
           comments: item.comments || null,
+          shares: item.shares || null,
+          saves: item.saves || null,
+          caption: item.caption || null,
           thumb: item.thumb || null,
         })
       }
@@ -1287,6 +1291,9 @@ function extractTikTokItemsFromJSON(obj, depth) {
       views: parseInt(st.playCount) || parseInt(st.play_count) || null,
       likes: parseInt(st.diggCount) || parseInt(st.digg_count) || null,
       comments: parseInt(st.commentCount) || parseInt(st.comment_count) || null,
+      shares: parseInt(st.shareCount) || parseInt(st.share_count) || null,
+      saves: parseInt(st.collectCount) || parseInt(st.collect_count) || null,
+      caption: obj.desc || null,
       thumb: obj.video?.cover || obj.video?.dynamicCover || obj.video?.originCover || null,
     })
     return
@@ -1370,9 +1377,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             views: cached?.views ?? post.views ?? 0,
             likes: cached?.likes ?? 0,
             comments: cached?.comments ?? 0,
-            shares: 0,
+            shares: cached?.shares ?? 0,
+            saves: cached?.saves ?? 0,
             handle: null,
-            caption: null,
+            caption: cached?.caption || null,
           })
         }
       } else if (data.platform === 'instagram') {
@@ -1416,6 +1424,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             likes: cached?.likes ?? 0,
             comments: cached?.comments ?? 0,
             shares: 0,
+            saves: cached?.saves ?? 0,
             handle: null,
             caption: cached?.caption || null,
             shortcode: post.shortcode,

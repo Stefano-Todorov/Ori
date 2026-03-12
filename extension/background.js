@@ -173,6 +173,17 @@ async function handleMessage(msg) {
       return { ideas: ideasResult.ideas ?? [] }
     }
 
+    case 'CREATE_IDEAS': {
+      return apiPost('/api/extension/ideas', {
+        ideas: msg.ideas.map(i => ({
+          idea: i.idea,
+          inspiration_url: i.url,
+          thumbnail_url: i.thumbnail,
+          source: `extension: @${i.handle} (${i.platform})`,
+        })),
+      })
+    }
+
     case 'ANALYZE_POST': {
       const p2 = msg.postData
       const thumbB64_2 = await fetchThumbnailBase64(p2.thumbnail)
@@ -203,6 +214,7 @@ async function handleMessage(msg) {
           likes: p.likes ?? 0,
           comments: p.comments ?? 0,
           shares: p.shares ?? 0,
+          saves: p.saves ?? 0,
           hashtags: [],
           thumbnail: p.thumbnail ?? null,
         })),
