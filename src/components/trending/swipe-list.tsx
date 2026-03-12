@@ -520,14 +520,12 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
           onClick={() => selectMode ? onToggleSelect() : setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
-          {selectMode && (
-            <span className="shrink-0 mt-1" onClick={(e) => { e.stopPropagation(); onToggleSelect() }}>
-              {isSelected
-                ? <CheckSquare size={16} className="text-purple-500" />
-                : <Square size={16} className="text-muted-foreground/40" />
-              }
-            </span>
-          )}
+          <span className="shrink-0 mt-1" onClick={(e) => { e.stopPropagation(); onToggleSelect() }}>
+            {isSelected
+              ? <CheckSquare size={16} className="text-purple-500" />
+              : <Square size={16} className="text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors" />
+            }
+          </span>
           <Thumbnail post={post} />
           <div className="flex-1 min-w-0 space-y-1">
             {/* Creator + Title + date row */}
