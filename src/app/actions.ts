@@ -100,6 +100,15 @@ export async function addSwipePost(fields: {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
+
+  // Try to fetch thumbnail if not provided
+  let thumbnail = fields.thumbnail_url || null
+  if (!thumbnail && fields.url) {
+    try {
+      thumbnail = await fetchThumbnailForUrl(fields.url)
+    } catch { /* thumbnail is optional */ }
+  }
+
   await supabase.from('posts').insert({
     user_id: user.id,
     url: fields.url,
@@ -109,7 +118,7 @@ export async function addSwipePost(fields: {
     is_trending: true,
     is_competitor: false,
     tags: fields.tags ?? [],
-    thumbnail_url: fields.thumbnail_url || null,
+    thumbnail_url: thumbnail,
     views: 0,
     likes: 0,
     comments: 0,
@@ -117,6 +126,51 @@ export async function addSwipePost(fields: {
     saves: 0,
   })
   revalidatePath('/dashboard/inspo')
+}
+
+async function fetchThumbnailForUrl(url: string): Promise<string | null> {
+  // Try TikTok oEmbed
+  if (url.includes('tiktok.com')) {
+    try {
+      const res = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(5000) })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.thumbnail_url) return data.thumbnail_url
+      }
+    } catch { /* fall through */ }
+  }
+  // Try YouTube oEmbed
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    try {
+      const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, { signal: AbortSignal.timeout(5000) })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.thumbnail_url) return data.thumbnail_url
+      }
+    } catch { /* fall through */ }
+  }
+  // Fallback: fetch page and extract og:image
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Orianna/1.0)', Accept: 'text/html' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return null
+    const reader = res.body?.getReader()
+    if (!reader) return null
+    let html = ''
+    const decoder = new TextDecoder()
+    while (html.length < 50000) {
+      const { done, value } = await reader.read()
+      if (done) break
+      html += decoder.decode(value, { stream: true })
+    }
+    reader.cancel()
+    const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+      ?? html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
+    return ogMatch?.[1] ?? null
+  } catch { return null }
 }
 
 export async function deleteSwipePost(id: string) {

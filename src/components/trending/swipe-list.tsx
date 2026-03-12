@@ -13,6 +13,53 @@ import type { Post } from '@/lib/types'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
 
+// ─── Thumbnail ────────────────────────────────────────
+
+function Thumbnail({ post }: { post: Post }) {
+  const [src, setSrc] = useState(post.thumbnail_url)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (src || failed) return
+    if (!post.url) { setFailed(true); return }
+    // Try fetching thumbnail via our API
+    fetch(`/api/thumbnail?url=${encodeURIComponent(post.url)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.thumbnail) setSrc(d.thumbnail)
+        else setFailed(true)
+      })
+      .catch(() => setFailed(true))
+  }, [src, failed, post.url])
+
+  if (failed && !src) {
+    // Platform-colored placeholder
+    const colors: Record<string, string> = {
+      tiktok: 'bg-black/80 dark:bg-white/10 text-white',
+      instagram: 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-500',
+      youtube: 'bg-red-500/15 text-red-500',
+    }
+    return (
+      <div className={`w-14 h-18 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
+        {post.platform?.[0] ?? '?'}
+      </div>
+    )
+  }
+
+  if (!src) {
+    return <div className="w-14 h-18 rounded-lg shrink-0 bg-muted animate-pulse" />
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-14 h-18 rounded-lg object-cover shrink-0 bg-muted"
+      onError={() => { setFailed(true); setSrc(null) }}
+    />
+  )
+}
+
 // ─── Helpers ───────────────────────────────────────────
 
 function formatNumber(n: number): string {
@@ -288,13 +335,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange }: { p
           onClick={() => setExpanded(!expanded)}
           className="w-full text-left p-4 flex items-start gap-3"
         >
-          {post.thumbnail_url && (
-            <img
-              src={post.thumbnail_url}
-              alt=""
-              className="w-16 h-20 rounded-lg object-cover shrink-0 bg-muted"
-            />
-          )}
+          <Thumbnail post={post} />
           <div className="flex-1 min-w-0 space-y-1">
             {/* Creator + Title + date row */}
             {post.competitor_handle && (
