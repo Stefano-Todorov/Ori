@@ -641,6 +641,18 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             </div>
           </div>
 
+          {post.url && (
+            <a
+              href={post.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0 mt-1 p-1 rounded text-muted-foreground/50 hover:text-purple-500 transition-colors"
+              title="Open original video"
+            >
+              <ExternalLink size={12} />
+            </a>
+          )}
           <ChevronDown
             size={14}
             className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}`}
