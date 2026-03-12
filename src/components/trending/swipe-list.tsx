@@ -647,10 +647,11 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="shrink-0 mt-1 p-1 rounded text-muted-foreground/50 hover:text-purple-500 transition-colors"
+              className="shrink-0 h-8 px-3 rounded-lg border border-border dark:border-white/10 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
               title="Open original video"
             >
               <ExternalLink size={12} />
+              Go to
             </a>
           )}
           <ChevronDown
