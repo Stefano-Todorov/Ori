@@ -137,11 +137,14 @@ function persistTags(tags: string[]) {
 
 interface Props {
   posts: Post[]
+  archivedPosts?: Post[]
   allTags: string[]
 }
 
-export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Props) {
+export function InspoList({ posts: initialPosts, archivedPosts: initialArchived = [], allTags: initialAllTags }: Props) {
   const [posts, setPosts] = useState(initialPosts)
+  const [archivedPosts] = useState(initialArchived)
+  const [showArchived, setShowArchived] = useState(false)
   const [sortMode, setSortMode] = useState<SortMode>('date')
   const [tagFilter, setTagFilter] = useState('all')
   const [knownTags, setKnownTags] = useState<string[]>([])
@@ -153,6 +156,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
   const bulkTagInputRef = useRef<HTMLInputElement>(null)
 
   const selectMode = selected.size > 0
+  const activePosts = showArchived ? archivedPosts : posts
 
   // On mount, merge server tags + persisted tags into knownTags and persist
   useEffect(() => {
@@ -177,7 +181,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
   }, [bulkTagOpen])
 
   // Derive allTags from knownTags + any tags on current posts (catches newly added tags)
-  const allTags = [...new Set([...knownTags, ...posts.flatMap(p => p.tags ?? [])])].sort()
+  const allTags = [...new Set([...knownTags, ...posts.flatMap(p => p.tags ?? []), ...archivedPosts.flatMap(p => p.tags ?? [])])].sort()
 
   function updateTagsAndPersist(postId: string, tags: string[]) {
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, tags } : p))
@@ -187,7 +191,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
     updatePostTags(postId, tags)
   }
 
-  const sorted = [...posts]
+  const sorted = [...activePosts]
     .filter((p) => tagFilter === 'all' || (p.tags ?? []).includes(tagFilter))
     .sort((a, b) => {
       if (sortMode === 'views') return b.views - a.views
@@ -243,7 +247,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
     setBulkTagOpen(false)
   }
 
-  if (posts.length === 0) {
+  if (posts.length === 0 && archivedPosts.length === 0) {
     return (
       <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
         <p className="font-bold text-foreground">No inspo saved yet</p>
@@ -254,8 +258,27 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
 
   return (
     <div className="space-y-3">
+      {/* Archived toggle */}
+      {archivedPosts.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowArchived(!showArchived); setSelected(new Set()) }}
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+              showArchived
+                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+            }`}
+          >
+            {showArchived ? `Showing ${archivedPosts.length} archived` : `Show ${archivedPosts.length} archived`}
+          </button>
+          {showArchived && (
+            <span className="text-[10px] text-muted-foreground">These posts were auto-archived (oldest beyond 100)</span>
+          )}
+        </div>
+      )}
+
       {/* Sort + select controls */}
-      {posts.length > 1 && (
+      {activePosts.length > 1 && (
         <div className="flex items-center gap-1.5">
           <SortAsc size={11} className="text-muted-foreground" />
           <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Sort:</span>

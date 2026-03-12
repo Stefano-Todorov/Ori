@@ -8,16 +8,26 @@ export default async function InspoPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: inspoPosts } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('is_trending', true)
-    .neq('status', 'archived')
-    .order('created_at', { ascending: false })
+  const [{ data: activePosts }, { data: archivedPosts }] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_trending', true)
+      .neq('status', 'archived')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_trending', true)
+      .eq('status', 'archived')
+      .order('created_at', { ascending: false }),
+  ])
 
-  const posts = inspoPosts ?? []
-  const allTags = [...new Set(posts.flatMap(p => p.tags ?? []))].sort()
+  const posts = activePosts ?? []
+  const archived = archivedPosts ?? []
+  const allTags = [...new Set([...posts, ...archived].flatMap(p => p.tags ?? []))].sort()
 
   return (
     <div className="p-8 space-y-6 max-w-4xl">
@@ -39,7 +49,7 @@ export default async function InspoPage() {
         </p>
       </div>
 
-      <InspoList posts={posts} allTags={allTags} />
+      <InspoList posts={posts} archivedPosts={archived} allTags={allTags} />
     </div>
   )
 }
