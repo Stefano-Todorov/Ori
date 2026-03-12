@@ -1388,8 +1388,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await Promise.all(batch.map(async (post) => {
             if (igMetricsCache.has(post.shortcode)) return
             try {
+              const mediaId = shortcodeToMediaId(post.shortcode)
               const res = await fetchWithRetry(
-                `https://www.instagram.com/api/v1/media/${post.shortcode}/info/`,
+                `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
                 { headers: igHeaders },
                 0
               )

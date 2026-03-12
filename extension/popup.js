@@ -30,6 +30,7 @@ let state = {
   sortBy: 'views',
   sortCount: 25,
   bookmarkPosts: [],
+  bookmarkLimit: 'all',
   loadingBookmarks: false,
   importProgress: null,
   importError: null,
@@ -297,10 +298,15 @@ function toggleBookmarkPost(index) {
   if (newList) newList.scrollTop = scrollTop
 }
 
+function getVisibleLimit() {
+  return state.bookmarkLimit === 'all' ? state.bookmarkPosts.length : parseInt(state.bookmarkLimit)
+}
+
 function selectAllBookmarks() {
   const list = document.querySelector('.bookmark-list')
   const scrollTop = list ? list.scrollTop : 0
-  setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: true })) })
+  const limit = getVisibleLimit()
+  setState({ bookmarkPosts: state.bookmarkPosts.map((p, i) => ({ ...p, checked: i < limit ? true : p.checked })) })
   const newList = document.querySelector('.bookmark-list')
   if (newList) newList.scrollTop = scrollTop
 }
@@ -308,7 +314,8 @@ function selectAllBookmarks() {
 function deselectAllBookmarks() {
   const list = document.querySelector('.bookmark-list')
   const scrollTop = list ? list.scrollTop : 0
-  setState({ bookmarkPosts: state.bookmarkPosts.map(p => ({ ...p, checked: false })) })
+  const limit = getVisibleLimit()
+  setState({ bookmarkPosts: state.bookmarkPosts.map((p, i) => ({ ...p, checked: i < limit ? false : p.checked })) })
   const newList = document.querySelector('.bookmark-list')
   if (newList) newList.scrollTop = scrollTop
 }
@@ -463,7 +470,9 @@ function render() {
   // ─── Bookmarks View ───────────────────────────────────────────────────
 
   if (state.view === 'bookmarks') {
-    const posts = state.bookmarkPosts
+    const allPosts = state.bookmarkPosts
+    const limit = state.bookmarkLimit === 'all' ? allPosts.length : parseInt(state.bookmarkLimit)
+    const posts = allPosts.slice(0, limit)
     const checkedCount = posts.filter(p => p.checked).length
     const platformLabel = state.postData?.platform === 'instagram' ? 'Saved Posts' : 'Favorites'
     const platformClass = (state.postData?.platform || '').toLowerCase()
@@ -515,6 +524,12 @@ function render() {
           <button class="btn-text" id="select-all-btn">Select all</button>
           <button class="btn-text" id="deselect-all-btn">Deselect all</button>
           <span class="bookmark-count">${checkedCount} of ${posts.length} selected</span>
+          <select id="bookmark-limit" class="bookmark-limit-select">
+            ${[5,10,15,20,30,50,'all'].map(v => {
+              const label = v === 'all' ? `All (${allPosts.length})` : v
+              return `<option value="${v}" ${String(state.bookmarkLimit) === String(v) ? 'selected' : ''}>${label}</option>`
+            }).join('')}
+          </select>
         </div>
 
         <div class="bookmark-list">${listHtml}</div>
@@ -539,6 +554,9 @@ function render() {
     document.getElementById('select-all-btn')?.addEventListener('click', selectAllBookmarks)
     document.getElementById('deselect-all-btn')?.addEventListener('click', deselectAllBookmarks)
     document.getElementById('import-btn')?.addEventListener('click', handleBulkImport)
+    document.getElementById('bookmark-limit')?.addEventListener('change', (e) => {
+      setState({ bookmarkLimit: e.target.value })
+    })
     document.querySelectorAll('.bookmark-item input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => toggleBookmarkPost(parseInt(cb.dataset.index)))
     })
@@ -740,11 +758,6 @@ function render() {
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Inspo</a></div>` : ''}
         ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
-        <button class="btn btn-secondary" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Get Video Idea'}
-        </button>
-        ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
-
         <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
         </button>
@@ -769,6 +782,11 @@ function render() {
         ` : ''}
         ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
         ${state.errors.createInspo ? `<div class="error-msg">${state.errors.createInspo}</div>` : ''}
+
+        <button class="btn btn-secondary" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Generate Video Idea'}
+        </button>
+        ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
 
         <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}

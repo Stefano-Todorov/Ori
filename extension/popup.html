@@ -407,6 +407,31 @@
     }
     .tag-add-btn:hover { background: rgba(124, 58, 237, 0.25); }
 
+    /* Create from Inspo */
+    .btn-secondary-alt {
+      height: 44px;
+      background: linear-gradient(135deg, #4c1d95, #6d28d9);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(109, 40, 217, 0.2);
+    }
+    .btn-secondary-alt:hover:not(:disabled) { filter: brightness(1.15); box-shadow: 0 4px 16px rgba(109, 40, 217, 0.3); }
+
+    .create-inspo-panel {
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .create-inspo-row { display: flex; gap: 6px; align-items: center; }
+    .create-inspo-input { flex: 1; padding: 8px 12px; font-size: 12px; }
+    .create-inspo-remove {
+      background: none; border: none; color: #71717a; cursor: pointer;
+      font-size: 16px; padding: 4px 6px; transition: color 0.15s;
+    }
+    .create-inspo-remove:hover { color: #ef4444; }
+    .create-inspo-actions { display: flex; align-items: center; justify-content: space-between; }
+
     /* Bookmarks view */
     .bookmark-header {
       margin: 12px 16px 8px;
@@ -434,7 +459,21 @@
     }
     .btn-text:hover { color: #c4b5fd; }
     .bookmark-count {
-      font-size: 11px; color: #52525b; margin-left: auto;
+      font-size: 11px; color: #52525b;
+    }
+    .bookmark-limit-select {
+      margin-left: auto;
+      font-size: 11px;
+      background: #18181b;
+      color: #a1a1aa;
+      border: 1px solid #3f3f46;
+      border-radius: 6px;
+      padding: 2px 6px;
+      cursor: pointer;
+      outline: none;
+    }
+    .bookmark-limit-select:focus {
+      border-color: #a78bfa;
     }
     .bookmark-list {
       max-height: 320px;
