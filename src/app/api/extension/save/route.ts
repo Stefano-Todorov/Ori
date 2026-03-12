@@ -1,5 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+const INSPO_LIMIT = 100
+
+async function archiveOldInspo(supabase: SupabaseClient, userId: string) {
+  const { count } = await supabase
+    .from('posts')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_trending', true)
+    .neq('status', 'archived')
+  if (!count || count <= INSPO_LIMIT) return
+  const excess = count - INSPO_LIMIT
+  const { data: oldest } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_trending', true)
+    .neq('status', 'archived')
+    .order('created_at', { ascending: true })
+    .limit(excess)
+  if (!oldest || oldest.length === 0) return
+  await supabase
+    .from('posts')
+    .update({ status: 'archived' })
+    .in('id', oldest.map((p: { id: string }) => p.id))
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -122,6 +149,9 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from('posts').insert(postRow)
     if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
 
+    // Auto-archive oldest inspo posts beyond 100
+    await archiveOldInspo(supabase, user.id)
+
     return NextResponse.json({ ok: true }, { headers: corsHeaders })
   }
 
@@ -197,6 +227,11 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase.from('posts').insert(postRow)
   if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+
+  // Auto-archive oldest inspo posts beyond 100
+  if (type === 'swipe') {
+    await archiveOldInspo(supabase, user.id)
+  }
 
   return NextResponse.json({ ok: true, isNew: type === 'competitor' && competitorHandle ? true : false }, { headers: corsHeaders })
 }

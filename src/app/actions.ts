@@ -125,6 +125,10 @@ export async function addSwipePost(fields: {
     shares: 0,
     saves: 0,
   })
+
+  // Auto-archive oldest inspo posts beyond 100
+  await archiveOldInspo(supabase, user.id)
+
   revalidatePath('/dashboard/inspo')
 }
 
@@ -171,6 +175,40 @@ async function fetchThumbnailForUrl(url: string): Promise<string | null> {
       ?? html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i)
     return ogMatch?.[1] ?? null
   } catch { return null }
+}
+
+const INSPO_LIMIT = 100
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function archiveOldInspo(supabase: any, userId: string) {
+  // Count active inspo posts
+  const { count } = await supabase
+    .from('posts')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('is_trending', true)
+    .neq('status', 'archived')
+
+  if (!count || count <= INSPO_LIMIT) return
+
+  // Get IDs of posts beyond the limit (oldest first)
+  const excess = count - INSPO_LIMIT
+  const { data: oldest } = await supabase
+    .from('posts')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('is_trending', true)
+    .neq('status', 'archived')
+    .order('created_at', { ascending: true })
+    .limit(excess)
+
+  if (!oldest || oldest.length === 0) return
+
+  const ids = oldest.map((p: { id: string }) => p.id)
+  await supabase
+    .from('posts')
+    .update({ status: 'archived' })
+    .in('id', ids)
 }
 
 export async function deleteSwipePost(id: string) {
