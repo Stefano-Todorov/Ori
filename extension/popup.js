@@ -321,7 +321,8 @@ function deselectAllBookmarks() {
 }
 
 async function handleBulkImport() {
-  const selected = state.bookmarkPosts.filter(p => p.checked)
+  const limit = getVisibleLimit()
+  const selected = state.bookmarkPosts.slice(0, limit).filter(p => p.checked)
   if (selected.length === 0) return
   setState({ saving: 'bulk-import', importError: null, importProgress: null })
 
@@ -555,7 +556,11 @@ function render() {
     document.getElementById('deselect-all-btn')?.addEventListener('click', deselectAllBookmarks)
     document.getElementById('import-btn')?.addEventListener('click', handleBulkImport)
     document.getElementById('bookmark-limit')?.addEventListener('change', (e) => {
-      setState({ bookmarkLimit: e.target.value })
+      const newLimit = e.target.value === 'all' ? state.bookmarkPosts.length : parseInt(e.target.value)
+      setState({
+        bookmarkLimit: e.target.value,
+        bookmarkPosts: state.bookmarkPosts.map((p, i) => ({ ...p, checked: i < newLimit })),
+      })
     })
     document.querySelectorAll('.bookmark-item input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => toggleBookmarkPost(parseInt(cb.dataset.index)))
