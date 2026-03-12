@@ -72,6 +72,20 @@ function postTitle(post: Post): string {
 
 type SortMode = 'date' | 'views' | 'likes'
 
+const INSPO_TAGS_KEY = 'orianna-inspo-tags'
+
+function loadPersistedTags(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const saved = localStorage.getItem(INSPO_TAGS_KEY)
+    return saved ? JSON.parse(saved) : []
+  } catch { return [] }
+}
+
+function persistTags(tags: string[]) {
+  localStorage.setItem(INSPO_TAGS_KEY, JSON.stringify(tags))
+}
+
 // ─── Main List ─────────────────────────────────────────
 
 interface Props {
@@ -83,9 +97,29 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
   const [posts, setPosts] = useState(initialPosts)
   const [sortMode, setSortMode] = useState<SortMode>('date')
   const [tagFilter, setTagFilter] = useState('all')
+  const [knownTags, setKnownTags] = useState<string[]>([])
 
-  // Derive live allTags from current posts state (so new tags show immediately)
-  const allTags = [...new Set([...initialAllTags, ...posts.flatMap(p => p.tags ?? [])])].sort()
+  // On mount, merge server tags + persisted tags into knownTags and persist
+  useEffect(() => {
+    const persisted = loadPersistedTags()
+    const merged = [...new Set([...initialAllTags, ...persisted])].sort()
+    setKnownTags(merged)
+    persistTags(merged)
+  }, [initialAllTags])
+
+  // Derive allTags from knownTags + any tags on current posts (catches newly added tags)
+  const allTags = [...new Set([...knownTags, ...posts.flatMap(p => p.tags ?? [])])].sort()
+
+  function updateTagsAndPersist(postId: string, tags: string[]) {
+    // Update post state
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, tags } : p))
+    // Persist any new tags to localStorage
+    const updated = [...new Set([...knownTags, ...tags])].sort()
+    setKnownTags(updated)
+    persistTags(updated)
+    // Save to DB
+    updatePostTags(postId, tags)
+  }
 
   const sorted = [...posts]
     .filter((p) => tagFilter === 'all' || (p.tags ?? []).includes(tagFilter))
@@ -135,9 +169,8 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
       <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
 
       {sorted.map((post) => (
-        <InspoCard key={post.id} post={post} allTags={allTags} onDelete={handleDelete} onTagsChange={(id, tags) => {
-          setPosts(prev => prev.map(p => p.id === id ? { ...p, tags } : p))
-          updatePostTags(id, tags)
+        <InspoCard key={post.id} post={post} allTags={allTags} onDelete={handleDelete} onTagsChange={updateTagsAndPersist} onNotesChange={(id, notes) => {
+          setPosts(prev => prev.map(p => p.id === id ? { ...p, ai_notes: notes } : p))
         }} />
       ))}
     </div>
@@ -146,7 +179,7 @@ export function InspoList({ posts: initialPosts, allTags: initialAllTags }: Prop
 
 // ─── Inspo Card ────────────────────────────────────────
 
-function InspoCard({ post, allTags, onDelete, onTagsChange }: { post: Post; allTags: string[]; onDelete: (id: string) => void; onTagsChange: (id: string, tags: string[]) => void }) {
+function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange }: { post: Post; allTags: string[]; onDelete: (id: string) => void; onTagsChange: (id: string, tags: string[]) => void; onNotesChange: (id: string, notes: string) => void }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -399,7 +432,10 @@ function InspoCard({ post, allTags, onDelete, onTagsChange }: { post: Post; allT
               <InlineNotes
                 initialValue={post.ai_notes ?? ''}
                 placeholder="Add your notes on why this works..."
-                onSave={(val) => updatePostNotes(post.id, val)}
+                onSave={async (val) => {
+                  onNotesChange(post.id, val)
+                  await updatePostNotes(post.id, val)
+                }}
               />
             </div>
 
