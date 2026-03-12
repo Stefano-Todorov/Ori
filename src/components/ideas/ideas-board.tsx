@@ -267,6 +267,16 @@ function IdeaCard({
             onChange={onToggleSelect}
             className="mt-1.5 h-4 w-4 rounded border-border accent-primary cursor-pointer shrink-0"
           />
+          {item.thumbnail_url && (
+            <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" className="shrink-0" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={item.thumbnail_url}
+                alt=""
+                className="w-16 h-16 rounded-lg object-cover border border-border"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            </a>
+          )}
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base leading-snug">{item.idea}</h3>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -429,6 +439,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       source: addForm.source.trim() || null,
       niche: null,
       inspiration_url: addForm.inspirationUrl.trim() || null,
+      thumbnail_url: null,
       hook_idea: addForm.hookIdea.trim() || null,
       script_snippet: addForm.scriptSnippet.trim() || null,
       cta: addForm.cta.trim() || null,

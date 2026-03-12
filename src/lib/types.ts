@@ -102,6 +102,7 @@ export interface ContentIdea {
   niche: string | null
   hook_idea: string | null
   inspiration_url: string | null
+  thumbnail_url: string | null
   script_snippet: string | null
   cta: string | null
   caption: string | null

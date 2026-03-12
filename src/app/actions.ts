@@ -67,6 +67,7 @@ export async function addIdea(
     caption?: string
     difficulty?: 'easy' | 'medium' | 'hard'
     video_type?: string
+    thumbnail_url?: string
     tags?: string[]
   }
 ) {
@@ -79,6 +80,7 @@ export async function addIdea(
     source: source || null,
     hook_idea: extra?.hook_idea || null,
     inspiration_url: extra?.inspiration_url || null,
+    thumbnail_url: extra?.thumbnail_url || null,
     script_snippet: extra?.script_snippet || null,
     cta: extra?.cta || null,
     caption: extra?.caption || null,
@@ -523,6 +525,7 @@ export async function createIdeaFromInspo(postId: string) {
     idea: post.caption || `Inspired by @${post.competitor_handle || 'unknown'} on ${post.platform}`,
     source: `inspiration: @${post.competitor_handle || 'unknown'} (${post.platform})`,
     inspiration_url: post.url || null,
+    thumbnail_url: post.thumbnail_url || null,
     hook_idea: post.hook_text || null,
     caption: null,
     status: 'new' as const,
