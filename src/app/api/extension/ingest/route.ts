@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
@@ -126,6 +127,8 @@ export async function POST(request: NextRequest) {
 
   const { error } = await supabase.from('posts').insert(postRecords)
   if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+
+  revalidatePath('/dashboard/inspo')
 
   return NextResponse.json({ ingested: postRecords.length, skipped }, { headers: corsHeaders })
 }
