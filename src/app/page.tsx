@@ -4,12 +4,12 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
 const features = [
-  { icon: '✍️', title: 'AI Script Generator', description: 'Generate full video scripts with hook, body sections, and CTA. Pick multiple hook styles and get instant variants tailored to your niche.' },
-  { icon: '📋', title: 'Content Planner', description: 'Save video ideas with hooks, captions, and inspiration. Track what\'s in progress, ready to film, or done — all in a visual board.' },
-  { icon: '📅', title: 'Post Scheduler', description: 'Upload your videos and schedule them to post automatically to TikTok, Instagram Reels, and YouTube Shorts at the exact time you choose.' },
-  { icon: '🤖', title: 'AI Coach Chat', description: 'Chat with an AI coach that knows your niche, goals, past scripts, and content ideas. Get personalized advice, not generic tips.' },
-  { icon: '🔖', title: 'Swipe File', description: 'Save inspiring posts from any platform by URL. Build a personal library of content references to draw from when planning.' },
-  { icon: '🔍', title: 'Competitor Tracking', description: 'Track competitor accounts and import their top-performing posts to analyze hooks, formats, and engagement patterns.' },
+  { icon: '🤖', title: 'AI Coach', description: 'Chat with an AI that knows your niche, past scripts, top posts, and competitors. Get personalized strategy advice — not generic tips from a blog.' },
+  { icon: '✍️', title: 'Script Generator', description: 'Generate ready-to-film scripts with hooks, body sections, CTAs, and hashtags. Choose difficulty, hook angles, and get multiple variants instantly.' },
+  { icon: '💡', title: 'Ideas Board', description: 'Manage video ideas on a visual kanban board. Track each idea from concept through recording, editing, and posting — so nothing falls through the cracks.' },
+  { icon: '🔍', title: 'Competitor Research', description: 'Track competitors across TikTok, Instagram, and YouTube. Import their top posts, see what\'s working, and generate ideas adapted to your style.' },
+  { icon: '🔥', title: 'Inspo Feed', description: 'Save trending videos that catch your eye with our Chrome extension. Build a library of inspiration and turn any post into your next content idea.' },
+  { icon: '📅', title: 'Schedule & Publish', description: 'Plan recording days, schedule posts on a calendar, and auto-publish directly to TikTok, Instagram Reels, and YouTube Shorts.' },
 ]
 
 const avatars = [
@@ -229,7 +229,7 @@ export default function LandingPage() {
 
             {/* Subtext */}
             <p className="hero-sub" style={{ fontSize: 18, color: '#9ca3af', maxWidth: 560, margin: '0 auto 32px', lineHeight: 1.6 }}>
-              Orianna helps TikTok, Instagram Reels, and YouTube Shorts creators plan content, generate scripts, and schedule posts — all in one place.
+              Orianna helps short-form creators research competitors, generate scripts, manage ideas, and publish directly to TikTok, Instagram, and YouTube — all from one dashboard.
             </p>
 
             {/* CTAs */}
@@ -286,7 +286,7 @@ export default function LandingPage() {
               Everything a creator needs
             </h2>
             <p style={{ fontSize: 16, color: '#9ca3af', maxWidth: 480, margin: '0 auto' }}>
-              Powerful tools to plan, create, and grow your short-form content.
+              From research to recording to publishing — one platform for your entire content workflow.
             </p>
           </div>
 
@@ -332,8 +332,8 @@ export default function LandingPage() {
           padding: '60px 0',
         }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Publish directly to your platforms</h2>
-            <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 32 }}>Connect your accounts and schedule posts without leaving the app</p>
+            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Connect and publish everywhere</h2>
+            <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 32 }}>Link your accounts via OAuth, schedule posts on your calendar, and auto-publish when the time comes</p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
               <span style={{
                 background: 'rgba(255,255,255,0.06)',
