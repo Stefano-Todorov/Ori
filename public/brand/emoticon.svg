@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="#0a0a0f"/>
+  <circle cx="32" cy="32" r="28" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.3"/>
+  <!-- 4-point star -->
+  <path d="M32,8 C35,26 38,29 56,32 C38,35 35,38 32,56 C29,38 26,35 8,32 C26,29 29,26 32,8 Z" fill="url(#g3)"/>
+  <circle cx="32" cy="32" r="4" fill="#e9d5ff" opacity="0.8"/>
+  <circle cx="32" cy="32" r="2" fill="white"/>
+</svg>

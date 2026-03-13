@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#1a1025"/>
+    </linearGradient>
+    <linearGradient id="spark3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <!-- Circle background -->
+  <circle cx="256" cy="256" r="256" fill="url(#bg3)"/>
+  <!-- Outer glow ring -->
+  <circle cx="256" cy="256" r="240" fill="none" stroke="#7c3aed" stroke-width="2" opacity="0.3"/>
+  <!-- Main 4-point star / spark -->
+  <path d="M256,60 C270,200 312,244 452,256 C312,268 270,312 256,452 C242,312 200,268 60,256 C200,244 242,200 256,60 Z" fill="url(#spark3)"/>
+  <!-- Inner bright star -->
+  <path d="M256,160 C262,230 282,250 352,256 C282,262 262,282 256,352 C250,282 230,262 160,256 C230,250 250,230 256,160 Z" fill="#e9d5ff" opacity="0.5"/>
+  <!-- Center glow -->
+  <circle cx="256" cy="256" r="20" fill="#e9d5ff" opacity="0.8"/>
+  <circle cx="256" cy="256" r="10" fill="white"/>
+  <!-- Small accent sparks -->
+  <path d="M380,120 L386,136 L402,142 L386,148 L380,164 L374,148 L358,142 L374,136 Z" fill="#c084fc" opacity="0.6"/>
+  <path d="M140,380 L146,396 L162,402 L146,408 L140,424 L134,408 L118,402 L134,396 Z" fill="#a855f7" opacity="0.5"/>
+</svg>

@@ -16,6 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Orianna",
   description: "AI Content Coach",
+  icons: {
+    icon: "/brand/emoticon.svg",
+    apple: "/brand/avatar.svg",
+  },
+  openGraph: {
+    title: "Orianna",
+    description: "AI Content Coach for short-form video creators",
+    images: ["/brand/image.svg"],
+  },
 };
 
 export default function RootLayout({

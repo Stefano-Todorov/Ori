@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#150d25"/>
+    </linearGradient>
+    <linearGradient id="s3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="glow3" cx="50%" cy="42%" r="35%">
+      <stop offset="0%" stop-color="rgba(168,85,247,0.3)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGrad3)"/>
+  <ellipse cx="600" cy="270" rx="300" ry="250" fill="url(#glow3)"/>
+  <!-- Large 4-point star -->
+  <path d="M600,80 C618,230 650,262 800,280 C650,298 618,330 600,480 C582,330 550,298 400,280 C550,262 582,230 600,80 Z" fill="url(#s3)" opacity="0.8"/>
+  <!-- Inner star -->
+  <path d="M600,170 C608,250 625,267 705,280 C625,293 608,310 600,390 C592,310 575,293 495,280 C575,267 592,250 600,170 Z" fill="#e9d5ff" opacity="0.3"/>
+  <!-- Center -->
+  <circle cx="600" cy="280" r="14" fill="#e9d5ff" opacity="0.8"/>
+  <circle cx="600" cy="280" r="7" fill="white"/>
+  <!-- Small accent sparks -->
+  <path d="M820,140 L826,156 L842,162 L826,168 L820,184 L814,168 L798,162 L814,156 Z" fill="#c084fc" opacity="0.5"/>
+  <path d="M400,400 L406,416 L422,422 L406,428 L400,444 L394,428 L378,422 L394,416 Z" fill="#a855f7" opacity="0.4"/>
+  <path d="M880,360 L884,370 L894,374 L884,378 L880,388 L876,378 L866,374 L876,370 Z" fill="#c084fc" opacity="0.3"/>
+  <!-- Brand name -->
+  <text x="600" y="540" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="52" font-weight="800" fill="url(#s3)">Orianna</text>
+  <text x="600" y="580" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="20" fill="#9ca3af">AI Content Coach</text>
+</svg>
