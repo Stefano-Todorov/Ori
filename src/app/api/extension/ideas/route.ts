@@ -31,13 +31,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No ideas provided' }, { status: 400, headers: corsHeaders })
   }
 
-  const rows = ideas.map((item: { idea: string; inspiration_url?: string; thumbnail_url?: string; source?: string }) => ({
+  const rows = ideas.map((item: { idea: string; inspiration_url?: string; thumbnail_url?: string; source?: string; tags?: string[] }) => ({
     user_id: user.id,
     idea: item.idea,
     inspiration_url: item.inspiration_url || null,
     thumbnail_url: item.thumbnail_url || null,
     source: item.source || null,
-    tags: [],
+    tags: item.tags ?? [],
   }))
 
   const { error } = await supabase.from('content_ideas').insert(rows)

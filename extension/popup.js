@@ -26,6 +26,8 @@ let state = {
   dontAskCompetitor: false,
   showCreateInspo: false,
   createInspoItems: [''],
+  createInspoTags: [],
+  showCreateInspoTagDropdown: false,
   sortedPosts: [],
   sortBy: 'views',
   sortCount: 25,
@@ -192,6 +194,23 @@ function addNewTag() {
   input.value = ''
 }
 
+function addCreateInspoTag() {
+  const input = document.getElementById('ci-new-tag-input')
+  if (!input) return
+  const tag = input.value.trim().toLowerCase()
+  if (!tag) return
+  if (!state.createInspoTags.includes(tag)) {
+    setState({ createInspoTags: [...state.createInspoTags, tag] })
+  }
+  if (!state.allTags.includes(tag)) {
+    const updated = [...state.allTags, tag].sort()
+    setState({ allTags: updated })
+    chrome.storage.local.set({ inspoTags: updated })
+    chrome.runtime.sendMessage({ type: 'SYNC_TAGS', tags: updated })
+  }
+  input.value = ''
+}
+
 async function handleCompetitorYes() {
   if (!state.postData?.handle) return
   setState({ saving: 'add-competitor-prompt', showCompetitorPrompt: false })
@@ -282,6 +301,7 @@ async function handleCreateInspo() {
       thumbnail: state.postData.thumbnail,
       handle: state.postData.handle,
       platform: state.postData.platform,
+      tags: state.createInspoTags,
     })),
   })
   setState({ saving: null })
@@ -291,7 +311,9 @@ async function handleCreateInspo() {
     setState({
       messages: { createInspo: `${items.length} idea${items.length > 1 ? 's' : ''} saved` },
       createInspoItems: [''],
+      createInspoTags: [],
       showCreateInspo: false,
+      showCreateInspoTagDropdown: false,
     })
   }
 }
@@ -792,6 +814,29 @@ function render() {
                 ${state.createInspoItems.length > 1 ? `<button class="create-inspo-remove" data-index="${i}">&times;</button>` : ''}
               </div>
             `).join('')}
+            <div class="create-inspo-tags">
+              <div class="create-inspo-tags-row">
+                ${state.createInspoTags.length > 0 ? state.createInspoTags.map(t => `<span class="tag-pill">${escHtml(t)} <span class="create-inspo-tag-remove" data-citag="${escHtml(t)}">×</span></span>`).join('') : ''}
+                <button class="btn-text" id="create-inspo-tag-btn">🏷️ ${state.createInspoTags.length > 0 ? '' : 'Add tags'}</button>
+              </div>
+              ${state.showCreateInspoTagDropdown ? `
+                <div class="tag-dropdown-panel" id="create-inspo-tag-panel">
+                  ${state.allTags.length > 0 ? `
+                    <div class="tag-list">
+                      ${state.allTags.map(t => `
+                        <button class="tag-option ci-tag-option ${state.createInspoTags.includes(t) ? 'active' : ''}" data-citag="${escHtml(t)}">
+                          ${state.createInspoTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
+                        </button>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+                  <div class="tag-new-row">
+                    <input id="ci-new-tag-input" type="text" placeholder="New tag..." />
+                    <button class="tag-add-btn" id="ci-add-tag-btn">+</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
             <div class="create-inspo-actions">
               <button class="btn-text" id="add-another-btn">+ Add another</button>
               <button class="btn-prompt-yes" id="save-inspo-btn"
@@ -895,6 +940,27 @@ function render() {
         setState({ createInspoItems: items.length ? items : [''] })
       })
     })
+    // Create from Inspo — tag picker
+    document.getElementById('create-inspo-tag-btn')?.addEventListener('click', () => {
+      setState({ showCreateInspoTagDropdown: !state.showCreateInspoTagDropdown })
+    })
+    document.querySelectorAll('.ci-tag-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.citag
+        const tags = state.createInspoTags.includes(tag)
+          ? state.createInspoTags.filter(t => t !== tag)
+          : [...state.createInspoTags, tag]
+        setState({ createInspoTags: tags })
+      })
+    })
+    document.querySelectorAll('.create-inspo-tag-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        setState({ createInspoTags: state.createInspoTags.filter(t => t !== btn.dataset.citag) })
+      })
+    })
+    document.getElementById('ci-add-tag-btn')?.addEventListener('click', addCreateInspoTag)
+    document.getElementById('ci-new-tag-input')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') addCreateInspoTag() })
   }
 }
 

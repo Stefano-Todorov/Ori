@@ -180,6 +180,7 @@ async function handleMessage(msg) {
           inspiration_url: i.url,
           thumbnail_url: i.thumbnail,
           source: `extension: @${i.handle} (${i.platform})`,
+          tags: i.tags ?? [],
         })),
       })
     }
