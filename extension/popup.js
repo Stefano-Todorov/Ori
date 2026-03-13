@@ -85,7 +85,12 @@ async function init() {
   try {
     const ctx = await chrome.runtime.sendMessage({ type: 'GET_CONTEXT' })
     competitors = ctx.competitors ?? []
-    allTags = ctx.allTags ?? []
+    const serverTags = ctx.allTags ?? []
+    // Merge server tags with locally cached tags so tags survive post deletion
+    const cached = await chrome.storage.local.get('inspoTags')
+    const cachedTags = cached.inspoTags ?? []
+    allTags = [...new Set([...serverTags, ...cachedTags])].sort()
+    chrome.storage.local.set({ inspoTags: allTags })
   } catch {}
 
   // Auto-detect competitor match by handle (case-insensitive, supports linked groups)
@@ -181,6 +186,7 @@ function addNewTag() {
   if (!state.allTags.includes(tag)) {
     const updated = [...state.allTags, tag].sort()
     setState({ allTags: updated })
+    chrome.storage.local.set({ inspoTags: updated })
     chrome.runtime.sendMessage({ type: 'SYNC_TAGS', tags: updated })
   }
   input.value = ''
