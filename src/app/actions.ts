@@ -501,6 +501,21 @@ export async function updatePostTags(id: string, tags: string[]) {
   revalidatePath('/dashboard/inspo')
 }
 
+export async function syncInspoTags(tags: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  // Merge with existing so we never lose tags
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('inspo_tags')
+    .eq('user_id', user.id)
+    .single()
+  const existing: string[] = (profile?.inspo_tags as string[]) ?? []
+  const merged = [...new Set([...existing, ...tags])].sort()
+  await supabase.from('profiles').update({ inspo_tags: merged }).eq('user_id', user.id)
+}
+
 export async function updateIdeaTags(id: string, tags: string[]) {
   const supabase = await createClient()
   await supabase.from('content_ideas').update({ tags }).eq('id', id)

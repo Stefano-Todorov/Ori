@@ -8,7 +8,7 @@ export default async function InspoPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: activePosts }, { data: archivedPosts }] = await Promise.all([
+  const [{ data: activePosts }, { data: archivedPosts }, { data: profile }] = await Promise.all([
     supabase
       .from('posts')
       .select('*')
@@ -23,11 +23,17 @@ export default async function InspoPage() {
       .eq('is_trending', true)
       .eq('status', 'archived')
       .order('created_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('inspo_tags')
+      .eq('user_id', user.id)
+      .single(),
   ])
 
   const posts = activePosts ?? []
   const archived = archivedPosts ?? []
-  const allTags = [...new Set([...posts, ...archived].flatMap(p => p.tags ?? []))].sort()
+  const savedTags: string[] = profile?.inspo_tags ?? []
+  const allTags = [...new Set([...savedTags, ...posts.flatMap(p => p.tags ?? []), ...archived.flatMap(p => p.tags ?? [])])].sort()
 
   return (
     <div className="p-8 space-y-6 max-w-4xl">

@@ -179,7 +179,9 @@ function addNewTag() {
     setState({ selectedTags: [...state.selectedTags, tag] })
   }
   if (!state.allTags.includes(tag)) {
-    setState({ allTags: [...state.allTags, tag].sort() })
+    const updated = [...state.allTags, tag].sort()
+    setState({ allTags: updated })
+    chrome.runtime.sendMessage({ type: 'SYNC_TAGS', tags: updated })
   }
   input.value = ''
 }

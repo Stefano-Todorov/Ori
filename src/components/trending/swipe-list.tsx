@@ -6,7 +6,7 @@ import {
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
 } from 'lucide-react'
-import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags } from '@/app/actions'
+import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, syncInspoTags } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
@@ -131,6 +131,7 @@ function loadPersistedTags(): string[] {
 
 function persistTags(tags: string[]) {
   localStorage.setItem(INSPO_TAGS_KEY, JSON.stringify(tags))
+  syncInspoTags(tags)
 }
 
 // ─── Main List ─────────────────────────────────────────
