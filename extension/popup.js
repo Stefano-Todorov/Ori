@@ -801,9 +801,34 @@ function render() {
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Inspo</a></div>` : ''}
         ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
 
-        <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
-        </button>
+        <div class="save-row">
+          <button class="btn btn-secondary-alt save-main-btn" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
+            ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
+          </button>
+          <button class="tag-dropdown-btn" id="create-inspo-tag-btn" title="Add tags">🏷️ ▾</button>
+        </div>
+        ${state.createInspoTags.length > 0 ? `
+          <div class="selected-tags-row">
+            ${state.createInspoTags.map(t => `<span class="tag-pill">${escHtml(t)} <span class="create-inspo-tag-remove" data-citag="${escHtml(t)}">×</span></span>`).join('')}
+          </div>
+        ` : ''}
+        ${state.showCreateInspoTagDropdown ? `
+          <div class="tag-dropdown-panel" id="create-inspo-tag-panel">
+            ${state.allTags.length > 0 ? `
+              <div class="tag-list">
+                ${state.allTags.map(t => `
+                  <button class="tag-option ci-tag-option ${state.createInspoTags.includes(t) ? 'active' : ''}" data-citag="${escHtml(t)}">
+                    ${state.createInspoTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+            <div class="tag-new-row">
+              <input id="ci-new-tag-input" type="text" placeholder="New tag..." />
+              <button class="tag-add-btn" id="ci-add-tag-btn">+</button>
+            </div>
+          </div>
+        ` : ''}
         ${state.showCreateInspo ? `
           <div class="create-inspo-panel">
             ${state.createInspoItems.map((item, i) => `
@@ -816,36 +841,11 @@ function render() {
             `).join('')}
             <div class="create-inspo-actions">
               <button class="btn-text" id="add-another-btn">+ Add another</button>
-              <div style="display:flex;align-items:center;gap:4px">
-                <button class="tag-dropdown-btn" id="create-inspo-tag-btn" title="Add tags">🏷️ ▾</button>
-                <button class="btn-prompt-yes" id="save-inspo-btn"
-                  ${state.saving === 'create-inspo' ? 'disabled' : ''}>
-                  ${state.saving === 'create-inspo' ? '<span class="spinner"></span>' : 'Save'}
-                </button>
-              </div>
+              <button class="btn-prompt-yes" id="save-inspo-btn"
+                ${state.saving === 'create-inspo' ? 'disabled' : ''}>
+                ${state.saving === 'create-inspo' ? '<span class="spinner"></span>' : 'Save'}
+              </button>
             </div>
-            ${state.createInspoTags.length > 0 ? `
-              <div class="selected-tags-row">
-                ${state.createInspoTags.map(t => `<span class="tag-pill">${escHtml(t)} <span class="create-inspo-tag-remove" data-citag="${escHtml(t)}">×</span></span>`).join('')}
-              </div>
-            ` : ''}
-            ${state.showCreateInspoTagDropdown ? `
-              <div class="tag-dropdown-panel" id="create-inspo-tag-panel">
-                ${state.allTags.length > 0 ? `
-                  <div class="tag-list">
-                    ${state.allTags.map(t => `
-                      <button class="tag-option ci-tag-option ${state.createInspoTags.includes(t) ? 'active' : ''}" data-citag="${escHtml(t)}">
-                        ${state.createInspoTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
-                      </button>
-                    `).join('')}
-                  </div>
-                ` : ''}
-                <div class="tag-new-row">
-                  <input id="ci-new-tag-input" type="text" placeholder="New tag..." />
-                  <button class="tag-add-btn" id="ci-add-tag-btn">+</button>
-                </div>
-              </div>
-            ` : ''}
           </div>
         ` : ''}
         ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
