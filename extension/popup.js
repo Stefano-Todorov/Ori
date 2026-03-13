@@ -775,9 +775,9 @@ function render() {
           <div class="create-inspo-panel">
             ${state.createInspoItems.map((item, i) => `
               <div class="create-inspo-row">
-                <input class="create-inspo-input" data-index="${i}"
-                  type="text" placeholder="What is the video about?"
-                  value="${escHtml(item)}" />
+                <textarea class="create-inspo-input" data-index="${i}"
+                  placeholder="What is the video about?"
+                  rows="1">${escHtml(item)}</textarea>
                 ${state.createInspoItems.length > 1 ? `<button class="create-inspo-remove" data-index="${i}">&times;</button>` : ''}
               </div>
             `).join('')}
@@ -854,7 +854,14 @@ function render() {
     })
     document.getElementById('save-inspo-btn')?.addEventListener('click', handleCreateInspo)
     document.querySelectorAll('.create-inspo-input').forEach(input => {
+      // Auto-resize textarea to fit content
+      function autoResize() {
+        input.style.height = 'auto'
+        input.style.height = input.scrollHeight + 'px'
+      }
+      autoResize()
       input.addEventListener('input', (e) => {
+        autoResize()
         const items = [...state.createInspoItems]
         items[parseInt(e.target.dataset.index)] = e.target.value
         state.createInspoItems = items
