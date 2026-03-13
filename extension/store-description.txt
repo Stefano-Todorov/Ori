@@ -1,0 +1,43 @@
+Orianna — AI Content Coach for Short-Form Video Creators
+
+Save inspiration, research competitors, and generate video ideas while browsing TikTok and Instagram — all connected to your Orianna dashboard.
+
+HOW IT WORKS
+
+Browse TikTok or Instagram like you normally do. When you find a video worth saving, click the Orianna extension to:
+
+• Save it as inspiration with custom tags
+• See full post stats (views, likes, comments, engagement rate)
+• Generate a video idea adapted to your niche using AI
+• Analyze why a post performed well
+• Track the creator as a competitor
+• Download the video for reference
+
+FEATURES
+
+Save Inspiration
+One click to save any TikTok or Instagram video to your Orianna inspo feed. Add tags to organize by topic, format, or campaign.
+
+Competitor Research
+Orianna auto-detects when you're browsing a tracked competitor. Visit their profile to sort their posts by views, likes, or comments and find their top performers.
+
+AI-Powered Ideas
+Generate video ideas inspired by posts you find. Orianna's AI knows your niche, style, and past content — so ideas are tailored to you, not generic.
+
+Post Analysis
+Understand why a video went viral. Get an AI breakdown of what made the hook, format, and content work.
+
+Bulk Import
+On TikTok favorites or Instagram saved posts? Import them all to Orianna in one click.
+
+Create from Inspo
+Turn any saved video into a concrete content idea with hooks, angles, and CTAs — right from the extension.
+
+REQUIREMENTS
+
+• Free Orianna account (sign up at ori-nine.vercel.app)
+• Works on tiktok.com and instagram.com
+
+PRIVACY
+
+Orianna does not track your browsing activity. Data is only collected when you actively use the extension. No third-party analytics. Read our full privacy policy at ori-nine.vercel.app/legal/privacy.

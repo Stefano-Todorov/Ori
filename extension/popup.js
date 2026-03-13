@@ -432,6 +432,11 @@ function render() {
           </button>
         </div>
       </div>
+      <div class="footer-links">
+        <a href="https://ori-nine.vercel.app/legal/privacy" target="_blank">Privacy</a>
+        <span class="dot">&middot;</span>
+        <a href="https://ori-nine.vercel.app/legal/terms" target="_blank">Terms</a>
+      </div>
     `
     document.getElementById('login-btn').addEventListener('click', () => {
       const email = document.getElementById('email').value.trim()
