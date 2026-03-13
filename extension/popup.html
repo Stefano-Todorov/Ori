@@ -29,10 +29,15 @@
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .logo {
+      display: flex; align-items: center; gap: 6px;
       font-weight: 700; font-size: 18px; letter-spacing: -0.5px;
       background: linear-gradient(135deg, #7c3aed, #a855f7);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text;
+    }
+    .logo-icon {
+      width: 20px; height: 20px; flex-shrink: 0;
+      -webkit-text-fill-color: initial;
     }
     .header-right { display: flex; align-items: center; gap: 8px; }
     .user-email { font-size: 10px; color: #52525b; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

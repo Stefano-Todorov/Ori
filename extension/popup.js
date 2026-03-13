@@ -419,7 +419,7 @@ function render() {
 
   if (state.view === 'login') {
     app.innerHTML = `
-      <div class="header"><span class="logo">Orianna</span></div>
+      <div class="header"><span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span></div>
       <div class="login-section">
         <h2>Sign in to Orianna</h2>
         <p>Use your Orianna account credentials</p>
@@ -449,7 +449,7 @@ function render() {
 
     app.innerHTML = `
       <div class="header">
-        <span class="logo">Orianna</span>
+        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
         <span class="user-email">${state.auth?.email ?? ''}</span>
       </div>
       <div class="ideas-result">
@@ -502,7 +502,7 @@ function render() {
 
     app.innerHTML = `
       <div class="header">
-        <span class="logo">Orianna</span>
+        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
         <div class="header-right">
           <span class="user-email">${state.auth?.email ?? ''}</span>
           <button class="logout-btn" id="logout-btn">Sign out</button>
@@ -600,7 +600,7 @@ function render() {
 
     app.innerHTML = `
       <div class="header">
-        <span class="logo">Orianna</span>
+        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
         <div class="header-right">
           <span class="user-email">${state.auth?.email ?? ''}</span>
           <button class="logout-btn" id="logout-btn">Sign out</button>
@@ -694,7 +694,7 @@ function render() {
 
   app.innerHTML = `
     <div class="header">
-      <span class="logo">Orianna</span>
+      <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
       <div class="header-right">
         <span class="user-email">${state.auth?.email ?? ''}</span>
         <button class="logout-btn" id="logout-btn">Sign out</button>
