@@ -412,8 +412,14 @@
       background: rgba(255,255,255,0.04); color: #a1a1aa;
       cursor: pointer; transition: all 0.15s;
     }
-    .tag-option:hover { background: rgba(124, 58, 237, 0.15); color: #c4b5fd; border-color: rgba(124, 58, 237, 0.3); }
-    .tag-option.active { background: rgba(124, 58, 237, 0.2); color: #a78bfa; border-color: rgba(124, 58, 237, 0.4); }
+    .tag-option:hover, .ci-tag-option:hover { background: rgba(124, 58, 237, 0.15); color: #c4b5fd; border-color: rgba(124, 58, 237, 0.3); }
+    .tag-option.active, .ci-tag-option.active { background: rgba(124, 58, 237, 0.2); color: #a78bfa; border-color: rgba(124, 58, 237, 0.4); }
+    .ci-tag-option {
+      font-size: 11px; padding: 4px 10px;
+      border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04); color: #a1a1aa;
+      cursor: pointer; transition: all 0.15s;
+    }
     .tag-option-row { display: flex; align-items: center; gap: 4px; }
     .tag-option-row .tag-option { flex: 1; text-align: left; }
     .tag-delete-btn {
