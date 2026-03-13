@@ -677,6 +677,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           likes: post.likes,
           comments: post.comments,
           url: post.url,
+          thumbnailUrl: post.thumbnail_url,
         }),
       })
       const data = await res.json()

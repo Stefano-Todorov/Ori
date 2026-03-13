@@ -33,7 +33,21 @@ export async function POST(req: NextRequest) {
   const { user, supabase } = auth
 
   const body = await req.json()
-  const { handle, platform, caption, hookText, views, likes, comments, url, imageBase64 } = body
+  const { handle, platform, caption, hookText, views, likes, comments, url, imageBase64, thumbnailUrl } = body
+
+  // If no base64 provided but we have a thumbnail URL, fetch and convert it
+  let resolvedImageBase64 = imageBase64 ?? null
+  if (!resolvedImageBase64 && thumbnailUrl) {
+    try {
+      const imgRes = await fetch(thumbnailUrl, { signal: AbortSignal.timeout(8000) })
+      if (imgRes.ok) {
+        const buffer = await imgRes.arrayBuffer()
+        resolvedImageBase64 = Buffer.from(buffer).toString('base64')
+      }
+    } catch {
+      // Thumbnail fetch failed — proceed without image
+    }
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -43,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   const engagement = views ? (((likes + (comments ?? 0)) / views) * 100).toFixed(1) : null
 
-  const prompt = `You are an expert short-form video analyst. Analyze why this video performed well based on the available data.${imageBase64 ? ' A thumbnail/screenshot of the video is attached — use visual cues (text overlays, framing, expressions, setting) in your analysis.' : ''}
+  const prompt = `You are an expert short-form video analyst. Analyze why this video performed well based on the available data.${resolvedImageBase64 ? ' A thumbnail/screenshot of the video is attached — use visual cues (text overlays, framing, expressions, setting) in your analysis.' : ''}
 
 CREATOR CONTEXT:
 - Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
@@ -63,15 +77,15 @@ Analyze why this video likely performed well. Consider:
 - Engagement ratio and what it signals
 - Content format and trending patterns
 - What makes viewers watch, like, comment, or share
-${imageBase64 ? '- Visual elements: text overlays, thumbnail appeal, framing, expressions' : ''}
+${resolvedImageBase64 ? '- Visual elements: text overlays, thumbnail appeal, framing, expressions' : ''}
 
 Return 3-5 concise bullet points. Each bullet should be a specific, actionable insight (not generic advice). Start each bullet with a bold keyword.
 
 Format: Return ONLY the bullet points as plain text, one per line, starting with "- **Keyword**: explanation"`
 
-  const userContent: Parameters<typeof anthropic.messages.create>[0]['messages'][0]['content'] = imageBase64
+  const userContent: Parameters<typeof anthropic.messages.create>[0]['messages'][0]['content'] = resolvedImageBase64
     ? [
-        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+        { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: resolvedImageBase64 } },
         { type: 'text', text: prompt },
       ]
     : prompt
