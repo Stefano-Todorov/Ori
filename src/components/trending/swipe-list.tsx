@@ -517,6 +517,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
           likes: post.likes,
           comments: post.comments,
           url: post.url,
+          thumbnailUrl: post.thumbnail_url,
         }),
       })
       const data = await res.json()
@@ -647,11 +648,11 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="shrink-0 h-8 px-3 rounded-lg border border-border dark:border-white/10 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-              title="Open original video"
+              className="shrink-0 h-9 px-4 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+              title="Open original post"
             >
-              <ExternalLink size={12} />
-              Go to
+              <ExternalLink size={13} />
+              View original
             </a>
           )}
           <ChevronDown
@@ -733,18 +734,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 <Plus size={12} />
                 Create idea
               </button>
-              {post.url && (
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all ml-auto"
-                >
-                  <ExternalLink size={11} />
-                  Go to
-                </a>
-              )}
+              <div className="ml-auto" />
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete() }}
                 disabled={deleting}
