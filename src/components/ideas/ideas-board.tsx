@@ -341,17 +341,6 @@ function IdeaCard({
             ) : item.source ? (
               <span className="text-[#71717a]">via {item.source}</span>
             ) : null}
-            {item.inspiration_url && (
-              <a
-                href={item.inspiration_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-purple-400 hover:text-purple-300 hover:underline flex items-center gap-0.5 transition-colors"
-                onClick={(e) => e.stopPropagation()}
-              >
-                View original <ExternalLink size={10} />
-              </a>
-            )}
             {(item.source || item.inspiration_url) && (
               <span className="text-[#3f3f46]">&middot;</span>
             )}
@@ -366,17 +355,17 @@ function IdeaCard({
             <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
           </div>
 
-          {/* Inline URL (simplified - no box) */}
+          {/* View original button */}
           {item.inspiration_url && (
             <a
               href={item.inspiration_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 mt-2 text-xs text-purple-400/70 hover:text-purple-300 transition-colors truncate max-w-md"
+              className="inline-flex items-center gap-2 mt-2 h-8 px-3.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all w-fit"
               onClick={(e) => e.stopPropagation()}
             >
-              <LinkIcon size={11} className="shrink-0" />
-              <span className="truncate">{item.inspiration_url}</span>
+              <ExternalLink size={13} />
+              View original
             </a>
           )}
 
