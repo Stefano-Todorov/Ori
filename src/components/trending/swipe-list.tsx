@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  Trash2, ExternalLink, Eye, Heart, MessageCircle,
+  Trash2, ExternalLink, Eye, Heart, MessageCircle, BarChart3,
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
 } from 'lucide-react'
@@ -148,7 +148,10 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   const [sortMode, setSortMode] = useState<SortMode>('date')
   const [platformFilter, setPlatformFilter] = useState<string>('all')
   const [tagFilter, setTagFilter] = useState('all')
-  const [knownTags, setKnownTags] = useState<string[]>([])
+  const [knownTags, setKnownTags] = useState<string[]>(() => {
+    const persisted = loadPersistedTags()
+    return [...new Set([...initialAllTags, ...persisted])].sort()
+  })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [bulkTagOpen, setBulkTagOpen] = useState(false)
@@ -159,12 +162,14 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   const selectMode = selected.size > 0
   const activePosts = showArchived ? archivedPosts : posts
 
-  // On mount, merge server tags + persisted tags into knownTags and persist
+  // When server tags change (revalidation), merge with persisted + current known tags
   useEffect(() => {
     const persisted = loadPersistedTags()
-    const merged = [...new Set([...initialAllTags, ...persisted])].sort()
-    setKnownTags(merged)
-    persistTags(merged)
+    setKnownTags(prev => {
+      const merged = [...new Set([...prev, ...initialAllTags, ...persisted])].sort()
+      persistTags(merged)
+      return merged
+    })
   }, [initialAllTags])
 
   // Close bulk tag dropdown on outside click
