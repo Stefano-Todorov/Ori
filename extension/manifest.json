@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Orianna",
   "version": "1.0.0",
-  "description": "Capture competitor posts and get AI video ideas while browsing TikTok and Instagram",
+  "description": "Save inspo, track competitors, and generate video ideas while browsing TikTok and Instagram",
   "permissions": ["activeTab", "storage", "tabs", "scripting", "downloads"],
   "host_permissions": [
     "*://*.tiktok.com/*",
