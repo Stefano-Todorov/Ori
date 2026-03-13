@@ -681,21 +681,25 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
 
             {/* Stats grid */}
             {(() => {
-              const stats = [
-                { label: 'Views', value: post.views, icon: Eye },
-                { label: 'Likes', value: post.likes, icon: Heart },
-                { label: 'Comments', value: post.comments, icon: MessageCircle },
+              const colorStats: { label: string; display: string; icon: typeof Eye; color: string }[] = [
+                { label: 'Views', display: formatNumber(post.views), icon: Eye, color: 'text-blue-400' },
+                { label: 'Likes', display: formatNumber(post.likes), icon: Heart, color: 'text-pink-400' },
+                { label: 'Comments', display: formatNumber(post.comments), icon: MessageCircle, color: 'text-amber-400' },
               ]
               if (post.platform === 'tiktok') {
-                stats.push({ label: 'Saves', value: post.saves, icon: Bookmark })
-                stats.push({ label: 'Sends', value: post.shares, icon: Send })
+                colorStats.push({ label: 'Saves', display: formatNumber(post.saves), icon: Bookmark, color: 'text-emerald-400' })
+                colorStats.push({ label: 'Sends', display: formatNumber(post.shares), icon: Send, color: 'text-cyan-400' })
               }
+              if (er != null) {
+                colorStats.push({ label: 'Engagement', display: `${er.toFixed(1)}%`, icon: BarChart3, color: er >= 5 ? 'text-green-400' : 'text-muted-foreground' })
+              }
+              const cols = colorStats.length <= 3 ? 'grid-cols-3' : colorStats.length === 4 ? 'grid-cols-4' : colorStats.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3'
               return (
-            <div className={`grid gap-3 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
-              {stats.map(({ label, value, icon: Icon }) => (
+            <div className={`grid gap-3 ${cols}`}>
+              {colorStats.map(({ label, display, icon: Icon, color }) => (
                 <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
-                  <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
-                  <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
+                  <Icon size={12} className={`mx-auto mb-1 ${color}`} />
+                  <p className={`text-sm font-bold ${color}`}>{display}</p>
                   <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
                 </div>
               ))}
