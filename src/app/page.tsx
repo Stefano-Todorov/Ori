@@ -64,7 +64,13 @@ export default function LandingPage() {
           to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
         .hero-badge { animation: fadeUp 0.6s ease forwards; }
+        .hero-badge .pulse-icon { animation: pulse 2s ease-in-out infinite; }
         .hero-headline { animation: fadeUp 0.6s ease 0.1s forwards; opacity: 0; }
         .hero-sub { animation: fadeUp 0.6s ease 0.2s forwards; opacity: 0; }
         .hero-ctas { animation: fadeUp 0.6s ease 0.3s forwards; opacity: 0; }
@@ -125,18 +131,21 @@ export default function LandingPage() {
         }
 
         .btn-ghost {
-          background: transparent;
+          background: rgba(255,255,255,0.06);
           color: white;
           font-weight: 600;
-          border: 1px solid rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.15);
           border-radius: 10px;
           cursor: pointer;
           transition: all 0.2s ease;
         }
         .btn-ghost:hover {
-          border-color: rgba(124,58,237,0.4);
-          background: rgba(124,58,237,0.06);
+          border-color: rgba(255,255,255,0.3);
+          background: rgba(255,255,255,0.1);
         }
+
+        .nav-login:hover { color: white !important; }
+        .nav-get-started:hover { filter: brightness(1.15); transform: translateY(-1px); }
       `}</style>
 
       <div className="landing-page">
@@ -146,20 +155,31 @@ export default function LandingPage() {
             position: 'sticky',
             top: 0,
             zIndex: 50,
-            backdropFilter: scrolled ? 'blur(12px)' : 'none',
-            background: scrolled ? 'rgba(10,10,15,0.8)' : 'transparent',
-            borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
+            backdropFilter: scrolled ? 'blur(16px)' : 'none',
+            background: scrolled ? 'rgba(10,10,15,0.85)' : 'transparent',
+            borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
             transition: 'all 0.3s ease',
           }}
         >
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 20, fontWeight: 700 }} className="gradient-text">Orianna</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <svg width="24" height="24" viewBox="0 0 64 64" style={{ marginRight: 8 }}>
+                <defs>
+                  <linearGradient id="navSpark" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#c084fc"/>
+                    <stop offset="100%" stopColor="#7c3aed"/>
+                  </linearGradient>
+                </defs>
+                <path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#navSpark)"/>
+              </svg>
+              <span style={{ fontSize: 22, fontWeight: 700 }} className="gradient-text">Orianna</span>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Link href="/login" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}>
+              <Link href="/login" className="nav-login" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}>
                 Log in
               </Link>
               <Link href="/signup">
-                <span style={{ background: 'linear-gradient(135deg, #7c3aed, #9333ea)', color: 'white', fontWeight: 600, fontSize: 14, padding: '8px 20px', borderRadius: 999, display: 'inline-block', transition: 'all 0.2s', cursor: 'pointer' }}>
+                <span className="nav-get-started" style={{ background: 'linear-gradient(135deg, #7c3aed, #9333ea)', color: 'white', fontWeight: 600, fontSize: 14, padding: '8px 20px', borderRadius: 999, display: 'inline-block', transition: 'all 0.2s', cursor: 'pointer' }}>
                   Get started
                 </span>
               </Link>
@@ -179,25 +199,26 @@ export default function LandingPage() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.3), transparent)',
+              background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(124,58,237,0.35), transparent 70%), radial-gradient(ellipse 40% 30% at 50% 40%, rgba(168,85,247,0.1), transparent)',
               pointerEvents: 'none',
             }}
           />
 
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '120px 24px 80px', textAlign: 'center', position: 'relative' }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '100px 24px 40px', textAlign: 'center', position: 'relative' }}>
             {/* Badge */}
             <div className="hero-badge" style={{ marginBottom: 24 }}>
               <span style={{
                 background: 'rgba(124,58,237,0.15)',
-                border: '1px solid rgba(124,58,237,0.3)',
+                border: '1px solid rgba(124,58,237,0.5)',
                 color: '#a855f7',
                 borderRadius: 999,
                 padding: '6px 16px',
                 fontSize: 13,
                 fontWeight: 500,
                 display: 'inline-block',
+                boxShadow: '0 0 20px rgba(124,58,237,0.15)',
               }}>
-                ✨ AI-powered content coach
+                <span className="pulse-icon">✨</span> AI-powered content coach
               </span>
             </div>
 
@@ -212,7 +233,7 @@ export default function LandingPage() {
             </p>
 
             {/* CTAs */}
-            <div className="hero-ctas" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 32 }}>
+            <div className="hero-ctas" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 20 }}>
               <Link href="/signup">
                 <span className="btn-primary" style={{ padding: '14px 32px', fontSize: 16, display: 'inline-block' }}>
                   Start for free
@@ -256,7 +277,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features */}
-        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '80px 24px' }}>
+        <section style={{ maxWidth: 1100, margin: '0 auto', padding: '60px 24px 80px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#a855f7', letterSpacing: '0.1em', display: 'block', marginBottom: 12 }}>
               EVERYTHING YOU NEED
