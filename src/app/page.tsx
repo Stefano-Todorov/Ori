@@ -9,7 +9,7 @@ const features = [
   { icon: '💡', title: 'Ideas Board', description: 'Manage video ideas on a visual kanban board. Track each idea from concept through recording, editing, and posting — so nothing falls through the cracks.' },
   { icon: '🔍', title: 'Competitor Research', description: 'Track competitors across TikTok, Instagram, and YouTube. Import their top posts, see what\'s working, and generate ideas adapted to your style.' },
   { icon: '🔥', title: 'Inspo Feed', description: 'Save trending videos that catch your eye with our Chrome extension. Build a library of inspiration and turn any post into your next content idea.' },
-  { icon: '📅', title: 'Schedule & Publish', description: 'Plan recording days, schedule posts on a calendar, and auto-publish directly to TikTok, Instagram Reels, and YouTube Shorts.' },
+  { icon: '📅', title: 'Content Calendar', description: 'Plan your recording days, assign ideas to dates, and track your production pipeline from recording through editing to posted.' },
 ]
 
 const avatars = [
@@ -229,7 +229,7 @@ export default function LandingPage() {
 
             {/* Subtext */}
             <p className="hero-sub" style={{ fontSize: 18, color: '#9ca3af', maxWidth: 560, margin: '0 auto 32px', lineHeight: 1.6 }}>
-              Orianna helps short-form creators research competitors, generate scripts, manage ideas, and publish directly to TikTok, Instagram, and YouTube — all from one dashboard.
+              Orianna helps short-form creators research competitors, generate scripts, manage ideas, and plan their content calendar — all from one dashboard.
             </p>
 
             {/* CTAs */}
@@ -332,8 +332,8 @@ export default function LandingPage() {
           padding: '60px 0',
         }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Connect and publish everywhere</h2>
-            <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 32 }}>Link your accounts via OAuth, schedule posts on your calendar, and auto-publish when the time comes</p>
+            <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Built for every platform</h2>
+            <p style={{ fontSize: 16, color: '#9ca3af', marginBottom: 32 }}>Research, plan, and create content tailored for the platforms where your audience lives</p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
               <span style={{
                 background: 'rgba(255,255,255,0.06)',
