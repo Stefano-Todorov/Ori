@@ -414,6 +414,15 @@
     }
     .tag-option:hover { background: rgba(124, 58, 237, 0.15); color: #c4b5fd; border-color: rgba(124, 58, 237, 0.3); }
     .tag-option.active { background: rgba(124, 58, 237, 0.2); color: #a78bfa; border-color: rgba(124, 58, 237, 0.4); }
+    .tag-option-row { display: flex; align-items: center; gap: 4px; }
+    .tag-option-row .tag-option { flex: 1; text-align: left; }
+    .tag-delete-btn {
+      font-size: 12px; padding: 2px 5px; border-radius: 4px;
+      background: rgba(239, 68, 68, 0.1); color: #ef4444;
+      border: none; cursor: pointer; transition: all 0.15s;
+      line-height: 1; flex-shrink: 0;
+    }
+    .tag-delete-btn:hover { background: rgba(239, 68, 68, 0.25); }
 
     .tag-new-row {
       display: flex; gap: 4px;

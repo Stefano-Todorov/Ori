@@ -22,12 +22,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
   }
 
-  const { tags } = await req.json()
-  if (!Array.isArray(tags)) {
-    return NextResponse.json({ error: 'tags must be an array' }, { status: 400, headers: corsHeaders })
-  }
+  const body = await req.json()
+  const { tags, deleteTag } = body
 
-  // Merge with existing tags so we never lose any
   const { data: profile } = await supabase
     .from('profiles')
     .select('inspo_tags')
@@ -35,8 +32,31 @@ export async function POST(req: NextRequest) {
     .single()
 
   const existing: string[] = profile?.inspo_tags ?? []
-  const merged = [...new Set([...existing, ...tags])].sort()
 
+  // Delete a single tag
+  if (deleteTag && typeof deleteTag === 'string') {
+    const updated = existing.filter(t => t !== deleteTag)
+    await supabase.from('profiles').update({ inspo_tags: updated }).eq('user_id', user.id)
+    // Also remove from all posts
+    const { data: posts } = await supabase
+      .from('posts')
+      .select('id, tags')
+      .eq('user_id', user.id)
+      .contains('tags', [deleteTag])
+    if (posts) {
+      await Promise.all(posts.map(p =>
+        supabase.from('posts').update({ tags: (p.tags as string[]).filter((t: string) => t !== deleteTag) }).eq('id', p.id)
+      ))
+    }
+    return NextResponse.json({ ok: true, tags: updated }, { headers: corsHeaders })
+  }
+
+  // Merge new tags
+  if (!Array.isArray(tags)) {
+    return NextResponse.json({ error: 'tags must be an array' }, { status: 400, headers: corsHeaders })
+  }
+
+  const merged = [...new Set([...existing, ...tags])].sort()
   await supabase.from('profiles').update({ inspo_tags: merged }).eq('user_id', user.id)
 
   return NextResponse.json({ ok: true, tags: merged }, { headers: corsHeaders })

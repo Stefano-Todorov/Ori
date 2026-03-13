@@ -6,7 +6,7 @@ import {
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
 } from 'lucide-react'
-import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, syncInspoTags } from '@/app/actions'
+import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, syncInspoTags, deleteInspoTag } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
@@ -213,6 +213,17 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
     setSelected(prev => { const next = new Set(prev); next.delete(id); return next })
   }
 
+  async function handleDeleteTag(tag: string) {
+    // Remove from local state
+    setKnownTags(prev => prev.filter(t => t !== tag))
+    setPosts(prev => prev.map(p => ({ ...p, tags: (p.tags ?? []).filter(t => t !== tag) })))
+    if (tagFilter === tag) setTagFilter('all')
+    const updated = knownTags.filter(t => t !== tag)
+    localStorage.setItem(INSPO_TAGS_KEY, JSON.stringify(updated))
+    // Remove from DB (profile + posts)
+    await deleteInspoTag(tag)
+  }
+
   function toggleSelect(id: string) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -342,7 +353,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
         )
       })()}
 
-      <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
+      <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} onDelete={handleDeleteTag} />
 
       {sorted.map((post) => (
         <InspoCard

@@ -752,9 +752,12 @@ function render() {
             ${state.allTags.length > 0 ? `
               <div class="tag-list">
                 ${state.allTags.map(t => `
-                  <button class="tag-option ${state.selectedTags.includes(t) ? 'active' : ''}" data-tag="${escHtml(t)}">
-                    ${state.selectedTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
-                  </button>
+                  <div class="tag-option-row">
+                    <button class="tag-option ${state.selectedTags.includes(t) ? 'active' : ''}" data-tag="${escHtml(t)}">
+                      ${state.selectedTags.includes(t) ? '✓ ' : ''}${escHtml(t)}
+                    </button>
+                    <button class="tag-delete-btn" data-delete-tag="${escHtml(t)}" title="Delete tag">×</button>
+                  </div>
                 `).join('')}
               </div>
             ` : ''}
@@ -852,6 +855,17 @@ function render() {
     })
     document.querySelectorAll('.tag-remove').forEach(btn => {
       btn.addEventListener('click', (e) => { e.stopPropagation(); toggleTag(btn.dataset.tag) })
+    })
+    document.querySelectorAll('.tag-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        const tag = btn.dataset.deleteTag
+        if (!tag || !confirm(`Delete tag "${tag}"? It will be removed from all posts.`)) return
+        const updated = state.allTags.filter(t => t !== tag)
+        setState({ allTags: updated, selectedTags: state.selectedTags.filter(t => t !== tag) })
+        chrome.storage.local.set({ inspoTags: updated })
+        chrome.runtime.sendMessage({ type: 'DELETE_TAG', tag })
+      })
     })
     // Create from Inspo
     document.getElementById('create-inspo-btn')?.addEventListener('click', () => {

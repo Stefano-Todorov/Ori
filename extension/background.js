@@ -225,6 +225,10 @@ async function handleMessage(msg) {
       return apiPost('/api/extension/sync-tags', { tags: msg.tags })
     }
 
+    case 'DELETE_TAG': {
+      return apiPost('/api/extension/sync-tags', { deleteTag: msg.tag })
+    }
+
     case 'DOWNLOAD_VIDEO': {
       const { url, handle, platform } = msg
       if (!url) throw new Error('No video URL available')

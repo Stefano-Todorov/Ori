@@ -33,7 +33,14 @@ export default async function InspoPage() {
   const posts = activePosts ?? []
   const archived = archivedPosts ?? []
   const savedTags: string[] = profile?.inspo_tags ?? []
-  const allTags = [...new Set([...savedTags, ...posts.flatMap(p => p.tags ?? []), ...archived.flatMap(p => p.tags ?? [])])].sort()
+  const postTags = [...posts, ...archived].flatMap(p => p.tags ?? [])
+  const allTags = [...new Set([...savedTags, ...postTags])].sort()
+
+  // Sync: if posts have tags not yet in profile.inspo_tags, save them
+  const newTags = allTags.filter(t => !savedTags.includes(t))
+  if (newTags.length > 0) {
+    supabase.from('profiles').update({ inspo_tags: allTags }).eq('user_id', user.id)
+  }
 
   return (
     <div className="p-8 space-y-6 max-w-4xl">

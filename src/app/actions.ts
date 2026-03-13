@@ -516,6 +516,33 @@ export async function syncInspoTags(tags: string[]) {
   await supabase.from('profiles').update({ inspo_tags: merged }).eq('user_id', user.id)
 }
 
+export async function deleteInspoTag(tag: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  // Remove from profile inspo_tags
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('inspo_tags')
+    .eq('user_id', user.id)
+    .single()
+  const existing: string[] = (profile?.inspo_tags as string[]) ?? []
+  const updated = existing.filter(t => t !== tag)
+  await supabase.from('profiles').update({ inspo_tags: updated }).eq('user_id', user.id)
+  // Remove tag from all posts that have it
+  const { data: posts } = await supabase
+    .from('posts')
+    .select('id, tags')
+    .eq('user_id', user.id)
+    .contains('tags', [tag])
+  if (posts) {
+    await Promise.all(posts.map(p =>
+      supabase.from('posts').update({ tags: (p.tags as string[]).filter((t: string) => t !== tag) }).eq('id', p.id)
+    ))
+  }
+  revalidatePath('/dashboard/inspo')
+}
+
 export async function updateIdeaTags(id: string, tags: string[]) {
   const supabase = await createClient()
   await supabase.from('content_ideas').update({ tags }).eq('id', id)
