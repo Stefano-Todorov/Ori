@@ -127,9 +127,12 @@ export function Sidebar() {
 
   return (
     <aside className="w-60 border-r border-border bg-sidebar flex flex-col h-full">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">Orianna</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">AI Content Coach</p>
+      <div className="p-6 border-b border-border flex items-center gap-3">
+        <img src="/brand/logo-mark.svg" alt="" className="w-9 h-9 rounded-lg" />
+        <div>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent leading-tight">Orianna</h1>
+          <p className="text-[10px] text-muted-foreground">AI Content Coach</p>
+        </div>
       </div>
 
       <nav className="flex-1 p-3 space-y-1">
