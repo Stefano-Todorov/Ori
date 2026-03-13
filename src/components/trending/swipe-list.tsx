@@ -610,6 +610,24 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 <Calendar size={9} />
                 {timeAgo(post.created_at)}
               </span>
+              <span className="flex-1" />
+              {post.url && (
+                <a
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 h-7 px-3 rounded-md bg-purple-500/10 border border-purple-500/25 inline-flex items-center gap-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+                  title="Open original post"
+                >
+                  <ExternalLink size={10} />
+                  View original
+                </a>
+              )}
+              <ChevronDown
+                size={14}
+                className={`text-muted-foreground transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
+              />
             </div>
 
             {/* Stats pills */}
@@ -658,24 +676,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
               <TagEditor tags={post.tags ?? []} allTags={allTags} onChange={(tags) => onTagsChange(post.id, tags)} />
             </div>
           </div>
-
-          {post.url && (
-            <a
-              href={post.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="shrink-0 h-9 px-4 rounded-lg bg-purple-500/10 border border-purple-500/25 flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
-              title="Open original post"
-            >
-              <ExternalLink size={13} />
-              View original
-            </a>
-          )}
-          <ChevronDown
-            size={14}
-            className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}`}
-          />
         </button>
 
         {/* Expanded section */}
