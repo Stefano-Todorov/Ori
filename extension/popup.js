@@ -838,12 +838,12 @@ function render() {
             ` : ''}
             <div class="create-inspo-actions">
               <button class="btn-text" id="add-another-btn">+ Add another</button>
-              <div style="display:flex;align-items:center;gap:4px">
-                <button class="tag-dropdown-btn" id="create-inspo-tag-btn" title="Add tags">🏷️ ▾</button>
-                <button class="btn-prompt-yes" id="save-inspo-btn"
+              <div class="save-row ci-save-row">
+                <button class="btn-prompt-yes save-main-btn" id="save-inspo-btn"
                   ${state.saving === 'create-inspo' ? 'disabled' : ''}>
                   ${state.saving === 'create-inspo' ? '<span class="spinner"></span>' : 'Save'}
                 </button>
+                <button class="tag-dropdown-btn" id="create-inspo-tag-btn" title="Add tags">🏷️ ▾</button>
               </div>
             </div>
           </div>
