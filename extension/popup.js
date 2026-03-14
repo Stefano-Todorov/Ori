@@ -838,9 +838,6 @@ function render() {
         </button>
         ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
 
-        <button class="btn btn-ghost" id="open-post-btn">
-          🔗 Open Post
-        </button>
       </div>
 
       ${state.analysis ? `
@@ -865,7 +862,6 @@ function render() {
   if (hasPost) {
     document.getElementById('inspiration-btn')?.addEventListener('click', () => handleSaveInspiration())
     document.getElementById('tag-dropdown-btn')?.addEventListener('click', () => setState({ showTagDropdown: !state.showTagDropdown }))
-    document.getElementById('open-post-btn')?.addEventListener('click', handleOpenPost)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
     document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
     document.getElementById('dup-replace-btn')?.addEventListener('click', () => handleSaveInspiration('replace'))
