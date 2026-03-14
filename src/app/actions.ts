@@ -98,6 +98,10 @@ export async function addSwipePost(fields: {
   competitor_handle?: string
   tags?: string[]
   thumbnail_url?: string
+  views?: number
+  likes?: number
+  comments?: number
+  shares?: number
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -121,10 +125,10 @@ export async function addSwipePost(fields: {
     is_competitor: false,
     tags: fields.tags ?? [],
     thumbnail_url: thumbnail,
-    views: 0,
-    likes: 0,
-    comments: 0,
-    shares: 0,
+    views: fields.views ?? 0,
+    likes: fields.likes ?? 0,
+    comments: fields.comments ?? 0,
+    shares: fields.shares ?? 0,
     saves: 0,
   })
 

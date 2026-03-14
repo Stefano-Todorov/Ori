@@ -5,6 +5,7 @@ import {
   Trash2, ExternalLink, Eye, Heart, MessageCircle, BarChart3,
   ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
+  Download,
 } from 'lucide-react'
 import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, syncInspoTags, deleteInspoTag } from '@/app/actions'
 import { useRouter } from 'next/navigation'
@@ -547,6 +548,33 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
     }
   }
 
+  // Download state
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  async function handleDownload() {
+    if (!post.url) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const res = await fetch(`/api/download?url=${encodeURIComponent(post.url)}&platform=${post.platform ?? ''}`)
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Download failed')
+      }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `video_${post.platform ?? 'clip'}_${Date.now()}.mp4`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   async function handleDelete() {
     setDeleting(true)
     onDelete(post.id)
@@ -755,6 +783,19 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 <Plus size={12} />
                 Create idea
               </button>
+              {post.url && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+                >
+                  {downloading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  {downloading ? 'Downloading...' : 'Download'}
+                </button>
+              )}
+              {downloadError && (
+                <span className="text-[10px] text-red-500">{downloadError}</span>
+              )}
               <div className="ml-auto" />
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete() }}

@@ -3,11 +3,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, X, ChevronDown, Tag } from 'lucide-react'
+import { Plus, X, ChevronDown, Tag, Loader2 } from 'lucide-react'
 import { addSwipePost } from '@/app/actions'
 import { TagPill } from '@/components/ui/tag-editor'
 
 const PLATFORMS = ['tiktok', 'instagram', 'youtube']
+
+function detectPlatformFromUrl(url: string): string | null {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+  if (url.includes('tiktok.com')) return 'tiktok'
+  if (url.includes('instagram.com')) return 'instagram'
+  return null
+}
 
 interface Props {
   allTags?: string[]
@@ -22,16 +29,44 @@ export function AddSwipeButton({ allTags = [] }: Props) {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
+  // Auto-detect platform when URL changes
+  useEffect(() => {
+    const detected = detectPlatformFromUrl(url)
+    if (detected) setPlatform(detected)
+  }, [url])
+
   async function handleSave() {
     if (!url.trim()) return
     setLoading(true)
-    await addSwipePost({
-      url: url.trim(),
-      platform,
-      caption: notes.trim() || undefined,
-      competitor_handle: handle.trim() || undefined,
-      tags: selectedTags.length > 0 ? selectedTags : undefined,
-    })
+
+    try {
+      // Fetch thumbnail and metrics from the URL
+      const res = await fetch(`/api/competitors/extract?url=${encodeURIComponent(url.trim())}`)
+      const data = res.ok ? await res.json() : {}
+
+      await addSwipePost({
+        url: url.trim(),
+        platform: data.platform || platform,
+        caption: notes.trim() || (typeof data.caption === 'string' ? data.caption : undefined),
+        competitor_handle: handle.trim() || (typeof data.handle === 'string' ? data.handle : undefined),
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+        thumbnail_url: typeof data.thumbnail_url === 'string' ? data.thumbnail_url : undefined,
+        views: data.views != null ? Number(data.views) : undefined,
+        likes: data.likes != null ? Number(data.likes) : undefined,
+        comments: data.comments != null ? Number(data.comments) : undefined,
+        shares: data.shares != null ? Number(data.shares) : undefined,
+      })
+    } catch {
+      // Still save even if extraction fails
+      await addSwipePost({
+        url: url.trim(),
+        platform,
+        caption: notes.trim() || undefined,
+        competitor_handle: handle.trim() || undefined,
+        tags: selectedTags.length > 0 ? selectedTags : undefined,
+      })
+    }
+
     setUrl('')
     setNotes('')
     setHandle('')
@@ -128,9 +163,9 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             <button
               onClick={handleSave}
               disabled={!url.trim() || loading}
-              className="px-5 py-2 rounded-l-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-l-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? <><Loader2 size={13} className="animate-spin" /> Fetching...</> : 'Save'}
             </button>
             <TagDropdown
               tags={selectedTags}

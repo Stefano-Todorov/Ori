@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Orianna",
+  "name": "Orianna — AI Content Coach for Creators",
   "version": "1.0.0",
   "description": "Save inspo, track competitors, and generate video ideas while browsing TikTok and Instagram",
-  "permissions": ["activeTab", "storage", "tabs", "scripting", "downloads"],
+  "permissions": ["activeTab", "storage", "tabs", "scripting"],
   "host_permissions": [
     "*://*.tiktok.com/*",
     "*://*.instagram.com/*",
-    "*://*.supabase.co/*",
-    "*://ori-nine.vercel.app/*"
+    "https://zpowetkkmppaffqbgvzq.supabase.co/*",
+    "https://ori-nine.vercel.app/*"
   ],
   "action": {
     "default_popup": "popup.html",

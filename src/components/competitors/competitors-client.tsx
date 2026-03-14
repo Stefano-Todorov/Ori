@@ -6,6 +6,7 @@ import {
   Eye, Heart, MessageCircle, Pencil, Video,
   Users, BarChart3, Trophy, Loader2, Sparkles, Lightbulb,
   X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
+  Download,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
 import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor } from '@/app/actions'
@@ -699,29 +700,56 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
   const displayTitle = post.title || postTitle(post)
   const fullTitle = post.title || cleanCaption(post.caption) || 'Untitled post'
 
+  // Download state
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  async function handleDownload() {
+    if (!post.url) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const res = await fetch(`/api/download?url=${encodeURIComponent(post.url)}&platform=${post.platform ?? ''}`)
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Download failed')
+      }
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `video_${post.platform ?? 'clip'}_${Date.now()}.mp4`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   return (
     <>
-      <div className="rounded-xl border border-border dark:border-white/6 bg-[#1a1a2e] p-3.5 transition-all hover:border-white/12">
+      <div className={`rounded-xl border overflow-hidden transition-all border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] hover:border-purple-500/20`}>
         {/* Header — clickable to expand */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full text-left flex items-start gap-3"
+          className="w-full text-left p-4 flex items-start gap-3"
         >
           {/* Thumbnail */}
           {post.thumbnail_url ? (
             <img
               src={post.thumbnail_url}
               alt=""
-              className="w-16 h-16 rounded-lg object-cover bg-muted shrink-0"
+              className="w-14 h-18 rounded-lg object-cover bg-muted shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 rounded-lg bg-[#252535] shrink-0 flex items-center justify-center">
+            <div className="w-14 h-18 rounded-lg bg-muted dark:bg-white/10 shrink-0 flex items-center justify-center">
               <Video size={20} className="text-purple-500/40" />
             </div>
           )}
-          <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex-1 min-w-0 space-y-1">
             {/* Title row */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {editingTitle ? (
                 <input
                   ref={titleRef}
@@ -730,112 +758,105 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
                   onBlur={saveTitle}
                   onKeyDown={(e) => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') { setTitleValue(post.title ?? ''); setEditingTitle(false) } }}
                   onClick={(e) => e.stopPropagation()}
-                  className="text-sm font-bold text-foreground leading-snug flex-1 min-w-0 bg-transparent border border-purple-500/40 rounded px-2 py-0.5 focus:outline-none focus:ring-[2px] focus:ring-purple-500/20"
+                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 bg-muted dark:bg-[#1e1e2e] border border-purple-500/40 rounded px-2 py-0.5 focus:outline-none focus:ring-[2px] focus:ring-purple-500/20"
                 />
               ) : (
                 <p
-                  className="text-sm font-bold text-foreground leading-snug flex-1 min-w-0 truncate group/title cursor-text"
-                  title={fullTitle}
+                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 group/title cursor-text"
                   onClick={(e) => { e.stopPropagation(); setTitleValue(post.title || postTitle(post)); setEditingTitle(true) }}
                 >
                   {displayTitle}
                   <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </p>
               )}
-              {/* Platform + date badges */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                {post.platform && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
-                    post.platform === 'instagram'
-                      ? 'bg-pink-500/15 border-pink-500/30 text-pink-500 dark:text-pink-400'
-                      : post.platform === 'tiktok'
-                      ? 'bg-white/10 border-white/15 text-white/80'
-                      : 'bg-red-500/15 border-red-500/30 text-red-500 dark:text-red-400'
-                  }`}>
-                    {post.platform === 'instagram' ? 'Instagram' : post.platform === 'tiktok' ? 'Tiktok' : 'YouTube'}
-                  </span>
-                )}
-                <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
-                  <Calendar size={9} />
-                  {timeAgo(post.created_at)}
+              {post.platform && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${
+                  post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
+                    : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
+                    : post.platform === 'youtube' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
+                    : 'bg-muted text-muted-foreground border-border'
+                }`}>
+                  {post.platform}
                 </span>
-              </div>
+              )}
+              <span className="text-[10px] text-muted-foreground shrink-0 flex items-center gap-1">
+                <Calendar size={9} />
+                {timeAgo(post.created_at)}
+              </span>
+              <span className="flex-1" />
+              {post.url && (
+                <a
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 h-7 px-3 rounded-md bg-purple-500/10 border border-purple-500/25 inline-flex items-center gap-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+                  title="Open original post"
+                >
+                  <ExternalLink size={10} />
+                  View original
+                </a>
+              )}
+              <ChevronDown
+                size={14}
+                className={`text-muted-foreground transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
+              />
             </div>
 
-            {/* Stats — line 1: views, likes, comments, (saves, shares for TikTok) */}
-            <div className="flex items-center gap-2 text-[11px] flex-wrap">
+            {/* Stats pills */}
+            <div className="flex items-center gap-2 text-[11px]">
               {post.views > 0 && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Eye size={10} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.views)}</span>
+                  <span className="font-semibold text-foreground">{formatNumber(post.views)}</span>
                 </span>
               )}
               {post.likes > 0 && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Heart size={10} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.likes)}</span>
+                  <span className="font-semibold text-foreground">{formatNumber(post.likes)}</span>
                 </span>
               )}
               {post.comments > 0 && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <MessageCircle size={10} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.comments)}</span>
+                  <span className="font-semibold text-foreground">{formatNumber(post.comments)}</span>
                 </span>
               )}
               {post.platform === 'tiktok' && post.saves > 0 && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Bookmark size={10} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.saves)}</span>
+                  <span className="font-semibold text-foreground">{formatNumber(post.saves)}</span>
                 </span>
               )}
               {post.platform === 'tiktok' && post.shares > 0 && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted dark:bg-white/5">
                   <Send size={10} className="text-muted-foreground" />
-                  <span className="font-bold text-foreground">{formatNumber(post.shares)}</span>
+                  <span className="font-semibold text-foreground">{formatNumber(post.shares)}</span>
+                </span>
+              )}
+              {er != null && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${er >= 5 ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-muted dark:bg-white/5 text-foreground'}`}>
+                  <span className="font-semibold">{er.toFixed(1)}%</span>
+                  <span className="font-normal text-muted-foreground">eng</span>
                 </span>
               )}
             </div>
-
-            {/* Stats — line 2: engagement badge */}
-            {er != null && (
-              <div>
-                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${engagementColor(er)}`}>
-                  {er.toFixed(1)}% eng
-                </span>
-              </div>
-            )}
 
             {/* Tags */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {tags.map(t => (
-                <span key={t} className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${tagColor(t)}`}>
-                  {t}
-                </span>
-              ))}
+            <div className="flex items-center gap-1.5">
+              <TagPills tags={tags} />
               <TagEditor tags={tags} allTags={allTags} onChange={(newTags) => { setTags(newTags); updatePostTags(post.id, newTags) }} />
-              {post.ai_notes && (
-                <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground">
-                  <MessageCircle size={9} /> 1
-                </span>
-              )}
             </div>
           </div>
-
-          <ChevronDown
-            size={14}
-            className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-1 ${expanded ? 'rotate-180' : ''}`}
-          />
         </button>
 
         {/* Expanded section */}
-        <div className={`overflow-hidden transition-all duration-200 ${expanded ? 'max-h-[2000px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
-          <div className="space-y-3 border-t border-border dark:border-white/6 pt-3">
-            {/* Full title */}
-            <p className="text-sm font-medium text-foreground">{fullTitle}</p>
-
+        {expanded && (
+          <div className="px-4 pb-4 space-y-3 border-t border-border dark:border-white/6">
             {/* Caption */}
             {post.caption && (
-              <div>
+              <div className="pt-3">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1">Caption</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {cleanCaption(post.caption).replace(/\n{2,}/g, '\n').trim()}
@@ -845,21 +866,25 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
 
             {/* Stats grid */}
             {(() => {
-              const stats = [
-                { label: 'Views', value: post.views, icon: Eye },
-                { label: 'Likes', value: post.likes, icon: Heart },
-                { label: 'Comments', value: post.comments, icon: MessageCircle },
+              const colorStats: { label: string; display: string; icon: typeof Eye; color: string }[] = [
+                { label: 'Views', display: formatNumber(post.views), icon: Eye, color: 'text-blue-400' },
+                { label: 'Likes', display: formatNumber(post.likes), icon: Heart, color: 'text-pink-400' },
+                { label: 'Comments', display: formatNumber(post.comments), icon: MessageCircle, color: 'text-amber-400' },
               ]
               if (post.platform === 'tiktok') {
-                stats.push({ label: 'Saves', value: post.saves, icon: Bookmark })
-                stats.push({ label: 'Sends', value: post.shares, icon: Send })
+                colorStats.push({ label: 'Saves', display: formatNumber(post.saves), icon: Bookmark, color: 'text-emerald-400' })
+                colorStats.push({ label: 'Sends', display: formatNumber(post.shares), icon: Send, color: 'text-cyan-400' })
               }
+              if (er != null) {
+                colorStats.push({ label: 'Engagement', display: `${er.toFixed(1)}%`, icon: BarChart3, color: er >= 5 ? 'text-green-400' : 'text-muted-foreground' })
+              }
+              const cols = colorStats.length <= 3 ? 'grid-cols-3' : colorStats.length === 4 ? 'grid-cols-4' : colorStats.length <= 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-3'
               return (
-                <div className={`grid gap-3 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
-                  {stats.map(({ label, value, icon: Icon }) => (
+                <div className={`grid gap-3 ${cols}`}>
+                  {colorStats.map(({ label, display, icon: Icon, color }) => (
                     <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
-                      <Icon size={12} className="mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-bold text-foreground">{formatNumber(value)}</p>
+                      <Icon size={12} className={`mx-auto mb-1 ${color}`} />
+                      <p className={`text-sm font-bold ${color}`}>{display}</p>
                       <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
                     </div>
                   ))}
@@ -888,7 +913,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-purple-500/40 text-xs font-medium text-purple-500 dark:text-purple-400 hover:bg-purple-500/10 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
               >
                 <Lightbulb size={12} />
                 Why it worked
@@ -901,26 +926,29 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
                 Create idea
               </button>
               {post.url && (
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all ml-auto"
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
                 >
-                  <ExternalLink size={12} />
-                  Open post
-                </a>
+                  {downloading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+                  {downloading ? 'Downloading...' : 'Download'}
+                </button>
               )}
+              {downloadError && (
+                <span className="text-[10px] text-red-500">{downloadError}</span>
+              )}
+              <div className="ml-auto" />
               <button
                 onClick={(e) => { e.stopPropagation(); handleDeletePost() }}
                 disabled={deleting}
                 className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
               >
-                <Trash2 size={13} />
+                <Trash2 size={14} />
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Ideas Modal */}

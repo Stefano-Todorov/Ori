@@ -247,35 +247,12 @@ async function handleAnalyze() {
   else setState({ analysis: result.analysis ?? '' })
 }
 
-async function handleDownload() {
+async function handleOpenPost() {
   if (!state.postData?.url) return
-  setState({ saving: 'download', errors: {} })
-
-  let directUrl = null
-  // Instagram: get direct video URL from content script (has user's IG cookies)
-  if (state.postData.platform === 'instagram' && state.postData.shortcode) {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      const igResult = await chrome.tabs.sendMessage(tab.id, {
-        type: 'GET_IG_VIDEO_URL',
-        shortcode: state.postData.shortcode,
-      })
-      directUrl = igResult?.videoUrl ?? null
-    } catch {}
-  }
-
-  const result = await chrome.runtime.sendMessage({
-    type: 'DOWNLOAD_VIDEO',
+  await chrome.runtime.sendMessage({
+    type: 'OPEN_VIDEO',
     url: state.postData.url,
-    videoSrc: state.postData.videoSrc,
-    directUrl,
-    handle: state.postData.handle,
-    platform: state.postData.platform,
   })
-  setState({ saving: null })
-  if (result.error) setState({ errors: { download: result.error } })
-  else if (result.openedSite) setState({ messages: { ...state.messages, download: 'Opened downloader site — paste the link there' } })
-  else setState({ messages: { ...state.messages, download: 'Download started' } })
 }
 
 async function handleGetIdeas() {
@@ -861,11 +838,9 @@ function render() {
         </button>
         ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
 
-        <button class="btn btn-ghost" id="download-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download Video'}
+        <button class="btn btn-ghost" id="open-post-btn">
+          🔗 Open Post
         </button>
-        ${state.messages.download ? `<div class="success-msg">${state.messages.download}</div>` : ''}
-        ${state.errors.download ? `<div class="error-msg">${state.errors.download}</div>` : ''}
       </div>
 
       ${state.analysis ? `
@@ -890,7 +865,7 @@ function render() {
   if (hasPost) {
     document.getElementById('inspiration-btn')?.addEventListener('click', () => handleSaveInspiration())
     document.getElementById('tag-dropdown-btn')?.addEventListener('click', () => setState({ showTagDropdown: !state.showTagDropdown }))
-    document.getElementById('download-btn')?.addEventListener('click', handleDownload)
+    document.getElementById('open-post-btn')?.addEventListener('click', handleOpenPost)
     document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
     document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
     document.getElementById('dup-replace-btn')?.addEventListener('click', () => handleSaveInspiration('replace'))

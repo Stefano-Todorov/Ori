@@ -230,51 +230,11 @@ async function handleMessage(msg) {
       return apiPost('/api/extension/sync-tags', { deleteTag: msg.tag })
     }
 
-    case 'DOWNLOAD_VIDEO': {
-      const { url, handle, platform } = msg
+    case 'OPEN_VIDEO': {
+      const { url } = msg
       if (!url) throw new Error('No video URL available')
-      const filename = `${handle || 'video'}_${platform || 'clip'}_${Date.now()}.mp4`
-
-      // TikTok: use tikwm.com API
-      if (platform === 'tiktok' || url.includes('tiktok.com')) {
-        try {
-          console.log('[Orianna] Trying tikwm for TikTok download...')
-          const res = await fetch('https://www.tikwm.com/api/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `url=${encodeURIComponent(url)}&hd=1`,
-          })
-          if (res.ok) {
-            const json = await res.json()
-            const videoUrl = json?.data?.hdplay || json?.data?.play
-            if (videoUrl) {
-              await chrome.downloads.download({ url: videoUrl, filename })
-              return { ok: true }
-            }
-          }
-        } catch (err) {
-          console.log('[Orianna] tikwm error:', err.message)
-        }
-      }
-
-      // Instagram: use direct video URL from content script (passed by popup)
-      if (msg.directUrl) {
-        try {
-          console.log('[Orianna] Downloading IG video from direct URL...')
-          await chrome.downloads.download({ url: msg.directUrl, filename })
-          return { ok: true }
-        } catch (err) {
-          console.log('[Orianna] IG direct download failed:', err.message)
-        }
-      }
-
-      // Fallback for TikTok only
-      if (url.includes('tiktok.com')) {
-        await chrome.tabs.create({ url: `https://snaptik.app#url=${encodeURIComponent(url)}` })
-        return { ok: true, openedSite: true }
-      }
-
-      throw new Error('Could not get video URL — try refreshing the page and try again')
+      await chrome.tabs.create({ url, active: true })
+      return { ok: true }
     }
 
     default:
