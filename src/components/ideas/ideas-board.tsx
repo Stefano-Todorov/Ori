@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag, CalendarPlus, Check } from 'lucide-react'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check } from 'lucide-react'
 import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
@@ -266,6 +266,123 @@ function Section({ label, text }: { label: string; text: string }) {
   )
 }
 
+// ─── Mini Calendar ──────────────────────────────────────────────────────────
+
+function MiniCalendar({ value, onChange }: { value: string; onChange: (d: string) => void }) {
+  const today = new Date()
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDow = new Date(viewYear, viewMonth, 1).getDay()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const monthLabel = new Date(viewYear, viewMonth).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+
+  function dayStr(d: number) {
+    return `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+  }
+
+  function isPast(d: number) {
+    return dayStr(d) < todayStr
+  }
+
+  function prev() {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1) }
+    else setViewMonth(viewMonth - 1)
+  }
+
+  function next() {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1) }
+    else setViewMonth(viewMonth + 1)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={prev} className="p-1 rounded hover:bg-white/10 text-[#71717a] hover:text-white transition-colors">
+          <ChevronLeft size={14} />
+        </button>
+        <span className="text-xs font-semibold text-[#e4e4e7]">{monthLabel}</span>
+        <button onClick={next} className="p-1 rounded hover:bg-white/10 text-[#71717a] hover:text-white transition-colors">
+          <ChevronRight size={14} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 text-center">
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+          <span key={d} className="text-[9px] font-medium text-[#52525b] py-1">{d}</span>
+        ))}
+        {Array.from({ length: firstDow }).map((_, i) => <span key={`e${i}`} />)}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
+          const ds = dayStr(d)
+          const isSelected = ds === value
+          const isToday = ds === todayStr
+          const past = isPast(d)
+          return (
+            <button
+              key={d}
+              onClick={() => !past && onChange(ds)}
+              disabled={past}
+              className={`text-[11px] font-medium rounded-md py-1 transition-all ${
+                isSelected
+                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/30'
+                  : isToday
+                    ? 'bg-purple-500/15 text-purple-400 hover:bg-purple-500/25'
+                    : past
+                      ? 'text-[#3f3f46] cursor-not-allowed'
+                      : 'text-[#a1a1aa] hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {d}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Bulk Move Dropdown ──────────────────────────────────────────────────────
+
+function BulkMoveDropdown({ disabled, onSelect }: { disabled: boolean; onSelect: (s: IdeaStatus) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [open])
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        disabled={disabled}
+        className="h-7 px-3 text-xs font-medium rounded-lg bg-[#1a1a2e] border border-white/[0.08] text-[#a1a1aa] hover:text-white hover:border-purple-500/40 transition-all disabled:opacity-50 flex items-center gap-1.5"
+      >
+        Move to
+        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-lg shadow-xl py-1 min-w-[120px]">
+          {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => { onSelect(s); setOpen(false) }}
+              className="w-full text-left px-3 py-1.5 text-xs text-[#e4e4e7] hover:bg-purple-500/15 hover:text-white transition-colors"
+            >
+              {STATUS_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Idea card ────────────────────────────────────────────────────────────────
 
 function IdeaCard({
@@ -454,19 +571,13 @@ function IdeaCard({
                 <CalendarPlus size={16} />
               </button>
               {scheduleOpen && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-lg shadow-xl p-3 w-56">
-                  <p className="text-xs font-semibold text-white mb-2">Schedule this idea</p>
-                  <input
-                    type="date"
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full text-xs bg-[#1a1a2e] border border-white/10 rounded-md px-2.5 py-1.5 text-white focus:outline-none focus:border-purple-500 transition-colors [color-scheme:dark]"
-                  />
+                <div className="absolute right-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-xl shadow-2xl shadow-black/40 p-4 w-64">
+                  <p className="text-xs font-semibold text-white mb-3">Schedule this idea</p>
+                  <MiniCalendar value={scheduleDate} onChange={setScheduleDate} />
                   <button
                     onClick={handleSchedule}
                     disabled={!scheduleDate || scheduling || scheduled}
-                    className="mt-2 w-full h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-500 text-white"
+                    className="mt-3 w-full h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 bg-gradient-to-r from-purple-600 to-purple-500 hover:brightness-110 text-white shadow-sm shadow-purple-500/20"
                   >
                     {scheduled ? <><Check size={12} /> Scheduled!</> : scheduling ? 'Scheduling...' : 'Schedule'}
                   </button>
@@ -882,20 +993,10 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-[#52525b]">{selected.size} selected</span>
 
-              <Select
-                value=""
-                onValueChange={(v) => handleBulkStatus(v as IdeaStatus)}
-              >
-                <SelectTrigger className="h-7 w-auto text-xs gap-1 bg-[#1a1a2e] border-white/[0.08]" disabled={bulkAction}>
-                  <span>Move to</span>
-                  <ChevronDown size={12} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
-                    <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <BulkMoveDropdown
+                disabled={bulkAction}
+                onSelect={(status) => handleBulkStatus(status)}
+              />
 
               <button
                 onClick={handleBulkDelete}
