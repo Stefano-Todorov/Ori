@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1080px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 80px;
+    text-align: center;
+  }
+  .quote-mark {
+    font-size: 120px;
+    line-height: 0.6;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 32px;
+  }
+  .quote {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.5;
+    max-width: 780px;
+    margin-bottom: 48px;
+    color: #e5e7eb;
+  }
+  .author {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .author-info { text-align: left; }
+  .author-name { font-size: 20px; font-weight: 700; }
+  .author-handle { font-size: 16px; color: #6b7280; }
+  .stars {
+    margin-bottom: 40px;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: #facc15;
+  }
+  .logo {
+    position: absolute;
+    bottom: 48px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo svg { width: 22px; height: 22px; }
+  .logo span { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="quote-mark">&ldquo;</div>
+    <p class="quote">I used to spend hours staring at a blank screen. Now I open Orianna and have a week of content planned in 10 minutes.</p>
+    <div class="stars">★★★★★</div>
+    <div class="author">
+      <div class="avatar">JM</div>
+      <div class="author-info">
+        <div class="author-name">Jessica M.</div>
+        <div class="author-handle">@jessicamakes &middot; TikTok</div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>

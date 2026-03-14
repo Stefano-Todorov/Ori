@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1080px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .accent-line { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #7c3aed, #a855f7); }
+  .content { display: flex; flex-direction: column; height: 100%; padding: 80px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 60px; }
+  .num { font-size: 80px; font-weight: 900; background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(124,58,237,0.1)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .icon-box { width: 80px; height: 80px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  h2 { font-size: 52px; font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 24px; }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .desc { font-size: 24px; color: #9ca3af; line-height: 1.6; margin-bottom: 48px; max-width: 750px; }
+  .mockup {
+    flex: 1;
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .section { margin-bottom: 20px; }
+  .section-label { font-size: 13px; text-transform: uppercase; color: #6b7280; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .section-text { font-size: 20px; color: #e5e7eb; line-height: 1.4; }
+  .section-text.dim { color: #9ca3af; }
+  .tags { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .tag { background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25); color: #a855f7; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+  .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 16px 0; }
+  .dots { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+  .dot:nth-child(3) { background: #a855f7; width: 28px; border-radius: 5px; }
+</style>
+</head>
+<body>
+  <div class="accent-line"></div>
+  <div class="content">
+    <div class="header">
+      <div class="num">02</div>
+      <div class="icon-box">✍️</div>
+    </div>
+    <h2><span class="gradient">Script Generator</span></h2>
+    <p class="desc">Idea to ready-to-film script in 10 seconds. Hook, body, CTA, hashtags — with multiple variants.</p>
+    <div class="mockup">
+      <div class="section">
+        <div class="section-label">Hook</div>
+        <div class="section-text">"Nobody talks about this mistake that's killing your growth..."</div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-label">Body</div>
+        <div class="section-text dim">3 key points that build tension and deliver value. Each point is 1-2 sentences max for short-form pacing.</div>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-label">CTA</div>
+        <div class="section-text">"Follow for part 2 — I'll show you exactly how to fix it."</div>
+      </div>
+      <div class="tags">
+        <span class="tag">#contentcreator</span>
+        <span class="tag">#growthtips</span>
+        <span class="tag">#creatortool</span>
+        <span class="tag">#tiktokgrowth</span>
+      </div>
+    </div>
+  </div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</body>
+</html>

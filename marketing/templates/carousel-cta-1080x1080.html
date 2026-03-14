@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1080px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 80px;
+    text-align: center;
+  }
+  .logo-big {
+    margin-bottom: 40px;
+  }
+  .logo-big svg { width: 72px; height: 72px; }
+  h1 {
+    font-size: 60px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub {
+    font-size: 26px;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-bottom: 48px;
+    max-width: 650px;
+  }
+  .cta {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: white;
+    font-weight: 700;
+    font-size: 28px;
+    padding: 22px 56px;
+    border-radius: 14px;
+    box-shadow: 0 0 50px rgba(124,58,237,0.4);
+    margin-bottom: 20px;
+  }
+  .free {
+    font-size: 18px;
+    color: #6b7280;
+  }
+  .dots { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+  .dot:nth-child(7) { background: #a855f7; width: 28px; border-radius: 5px; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="logo-big">
+      <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    </div>
+    <h1>Ready to<br><span class="gradient">stop guessing?</span></h1>
+    <p class="sub">Try Orianna — your AI content coach for TikTok & Instagram.</p>
+    <div class="cta">Try it free</div>
+    <div class="free">Free forever &middot; No credit card &middot; Link in bio</div>
+  </div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</body>
+</html>

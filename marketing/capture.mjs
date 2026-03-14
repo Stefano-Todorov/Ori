@@ -19,6 +19,17 @@ const templates = [
   { file: 'twitter-card-1200x675.html', width: 1200, height: 675 },
   { file: 'tiktok-cover-1080x1920.html', width: 1080, height: 1920 },
   { file: 'og-image-1200x630.html', width: 1200, height: 630 },
+  { file: 'carousel-cover-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-slide1-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-slide2-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-slide3-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-slide4-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-slide5-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'carousel-cta-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'before-after-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'how-it-works-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'testimonial-1080x1080.html', width: 1080, height: 1080 },
+  { file: 'feature-aicoach-1080x1350.html', width: 1080, height: 1350 },
 ]
 
 async function capture() {

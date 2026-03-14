@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1080px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .accent-line { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #7c3aed, #a855f7); }
+  .content { display: flex; flex-direction: column; height: 100%; padding: 80px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 60px; }
+  .num { font-size: 80px; font-weight: 900; background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(124,58,237,0.1)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .icon-box { width: 80px; height: 80px; background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  h2 { font-size: 52px; font-weight: 900; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 24px; }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .desc { font-size: 24px; color: #9ca3af; line-height: 1.6; margin-bottom: 48px; max-width: 750px; }
+  .mockup {
+    flex: 1;
+    display: flex;
+    gap: 16px;
+  }
+  .column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .col-header {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .col-header.ideas { background: rgba(124,58,237,0.15); color: #a855f7; }
+  .col-header.scripted { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .col-header.filmed { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .idea-card {
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .idea-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #e5e7eb; }
+  .idea-meta { display: flex; gap: 8px; }
+  .idea-tag { font-size: 12px; padding: 3px 10px; border-radius: 6px; font-weight: 500; }
+  .idea-tag.easy { background: rgba(34,197,94,0.12); color: #4ade80; }
+  .idea-tag.medium { background: rgba(234,179,8,0.12); color: #facc15; }
+  .idea-tag.hard { background: rgba(239,68,68,0.12); color: #f87171; }
+  .dots { position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+  .dot:nth-child(4) { background: #a855f7; width: 28px; border-radius: 5px; }
+</style>
+</head>
+<body>
+  <div class="accent-line"></div>
+  <div class="content">
+    <div class="header">
+      <div class="num">03</div>
+      <div class="icon-box">💡</div>
+    </div>
+    <h2><span class="gradient">Ideas Board</span></h2>
+    <p class="desc">Visual kanban for every video idea. Track from concept to posted — nothing falls through the cracks.</p>
+    <div class="mockup">
+      <div class="column">
+        <div class="col-header ideas">Ideas</div>
+        <div class="idea-card">
+          <div class="idea-title">Morning routine hack</div>
+          <div class="idea-meta"><span class="idea-tag easy">Easy</span></div>
+        </div>
+        <div class="idea-card">
+          <div class="idea-title">Top 5 beginner mistakes</div>
+          <div class="idea-meta"><span class="idea-tag medium">Medium</span></div>
+        </div>
+        <div class="idea-card">
+          <div class="idea-title">Myth busting series</div>
+          <div class="idea-meta"><span class="idea-tag easy">Easy</span></div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="col-header scripted">Scripted</div>
+        <div class="idea-card">
+          <div class="idea-title">Meal prep for busy people</div>
+          <div class="idea-meta"><span class="idea-tag medium">Medium</span></div>
+        </div>
+        <div class="idea-card">
+          <div class="idea-title">Day in my life vlog</div>
+          <div class="idea-meta"><span class="idea-tag easy">Easy</span></div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="col-header filmed">Filmed</div>
+        <div class="idea-card">
+          <div class="idea-title">Product review #12</div>
+          <div class="idea-meta"><span class="idea-tag hard">Hard</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</body>
+</html>
