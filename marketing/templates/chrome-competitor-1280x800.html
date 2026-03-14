@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1280px;
+    height: 800px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: 50%;
+    right: -100px;
+    transform: translateY(-50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 60px 70px;
+    gap: 50px;
+  }
+  .left { flex: 1; }
+  .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub {
+    font-size: 17px;
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 420px;
+  }
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .feat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .feat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(124,58,237,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .feat-text { font-size: 15px; color: #d1d5db; }
+  .right {
+    width: 540px;
+    flex-shrink: 0;
+  }
+  .comp-panel {
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .comp-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .comp-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .comp-name { font-size: 16px; font-weight: 700; }
+  .comp-handle { font-size: 13px; color: #6b7280; }
+  .comp-meta {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+  }
+  .meta-item { text-align: center; }
+  .meta-num { font-size: 20px; font-weight: 800; }
+  .meta-label { font-size: 11px; color: #6b7280; text-transform: uppercase; }
+  .comp-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .comp-posts-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .post-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .post-rank {
+    font-size: 12px;
+    font-weight: 700;
+    color: #a855f7;
+    width: 20px;
+  }
+  .post-caption {
+    flex: 1;
+    font-size: 12px;
+    color: #d1d5db;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .post-views {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    flex-shrink: 0;
+  }
+  .comp-btns { display: flex; gap: 8px; }
+  .comp-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .comp-btn.primary { background: linear-gradient(135deg, #7c3aed, #9333ea); }
+  .comp-btn.secondary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #d1d5db; }
+  .logo {
+    position: absolute;
+    bottom: 24px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 2;
+  }
+  .logo svg { width: 18px; height: 18px; }
+  .logo span { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="badge">Competitor Tracking</div>
+      <h1>Know what<br>your competitors<br>are <span class="gradient">doing</span></h1>
+      <p class="sub">Browse any creator's profile and import their top posts with one click. See views, engagement, and what hooks are working.</p>
+      <div class="features">
+        <div class="feat"><div class="feat-icon">📊</div><div class="feat-text">Full engagement metrics</div></div>
+        <div class="feat"><div class="feat-icon">🔄</div><div class="feat-text">Sort by views, likes, or comments</div></div>
+        <div class="feat"><div class="feat-icon">💡</div><div class="feat-text">Generate ideas from their best posts</div></div>
+        <div class="feat"><div class="feat-icon">📥</div><div class="feat-text">Export data as CSV</div></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="comp-panel">
+        <div class="comp-header">
+          <div class="comp-avatar">JF</div>
+          <div>
+            <div class="comp-name">Jake Fitness</div>
+            <div class="comp-handle">@jakefitness &middot; TikTok</div>
+          </div>
+        </div>
+        <div class="comp-meta">
+          <div class="meta-item"><div class="meta-num">2.4M</div><div class="meta-label">Avg Views</div></div>
+          <div class="meta-item"><div class="meta-num">8.2%</div><div class="meta-label">Eng Rate</div></div>
+          <div class="meta-item"><div class="meta-num">142</div><div class="meta-label">Posts</div></div>
+          <div class="meta-item"><div class="meta-num">1.2M</div><div class="meta-label">Followers</div></div>
+        </div>
+        <div class="comp-posts">
+          <div class="comp-posts-label">Top performing posts</div>
+          <div class="post-row"><span class="post-rank">#1</span><span class="post-caption">"5 mistakes killing your gains"</span><span class="post-views">4.2M</span></div>
+          <div class="post-row"><span class="post-rank">#2</span><span class="post-caption">"POV: gym crush asks for your number"</span><span class="post-views">3.8M</span></div>
+          <div class="post-row"><span class="post-rank">#3</span><span class="post-caption">"What I eat in a day to stay lean"</span><span class="post-views">3.1M</span></div>
+          <div class="post-row"><span class="post-rank">#4</span><span class="post-caption">"How I built my physique in 6 months"</span><span class="post-views">2.7M</span></div>
+        </div>
+        <div class="comp-btns">
+          <div class="comp-btn primary">Import All Posts</div>
+          <div class="comp-btn secondary">Export CSV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>

@@ -30,6 +30,10 @@ const templates = [
   { file: 'how-it-works-1080x1080.html', width: 1080, height: 1080 },
   { file: 'testimonial-1080x1080.html', width: 1080, height: 1080 },
   { file: 'feature-aicoach-1080x1350.html', width: 1080, height: 1350 },
+  { file: 'chrome-save-inspo-1280x800.html', width: 1280, height: 800 },
+  { file: 'chrome-bulk-import-1280x800.html', width: 1280, height: 800 },
+  { file: 'chrome-download-1280x800.html', width: 1280, height: 800 },
+  { file: 'chrome-competitor-1280x800.html', width: 1280, height: 800 },
 ]
 
 async function capture() {

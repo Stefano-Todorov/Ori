@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1280px;
+    height: 800px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: -100px;
+    left: 30%;
+    width: 500px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 60px 70px;
+    gap: 50px;
+  }
+  .left { flex: 1; }
+  .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub {
+    font-size: 17px;
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 420px;
+  }
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .feat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .feat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(124,58,237,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .feat-text { font-size: 15px; color: #d1d5db; }
+  .right {
+    width: 520px;
+    flex-shrink: 0;
+  }
+  .download-panel {
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .dl-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dl-header svg { width: 18px; height: 18px; }
+  .dl-header span { font-size: 14px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .dl-content { padding: 20px; }
+  .dl-video {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .dl-thumb {
+    width: 72px;
+    height: 96px;
+    background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .dl-info { flex: 1; }
+  .dl-creator { font-size: 13px; font-weight: 600; color: #e5e7eb; margin-bottom: 3px; }
+  .dl-caption { font-size: 11px; color: #6b7280; margin-bottom: 8px; line-height: 1.4; }
+  .dl-quality {
+    display: flex;
+    gap: 6px;
+  }
+  .quality-tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .quality-tag.hd { background: rgba(34,197,94,0.12); color: #4ade80; }
+  .quality-tag.watermark { background: rgba(234,179,8,0.12); color: #facc15; }
+  .dl-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 0 20px rgba(124,58,237,0.2);
+  }
+  .dl-progress {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+  .progress-fill {
+    width: 75%;
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+  }
+  .progress-text { font-size: 12px; color: #a855f7; font-weight: 600; flex-shrink: 0; }
+  .logo {
+    position: absolute;
+    bottom: 24px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 2;
+  }
+  .logo svg { width: 18px; height: 18px; }
+  .logo span { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="badge">Video Downloader</div>
+      <h1>Download any<br>video in <span class="gradient">HD</span></h1>
+      <p class="sub">Save TikTok and Instagram videos to your device with one click. No watermark option available.</p>
+      <div class="features">
+        <div class="feat"><div class="feat-icon">🎬</div><div class="feat-text">HD quality downloads</div></div>
+        <div class="feat"><div class="feat-icon">✨</div><div class="feat-text">No watermark option</div></div>
+        <div class="feat"><div class="feat-icon">⚡</div><div class="feat-text">One-click download</div></div>
+        <div class="feat"><div class="feat-icon">📱</div><div class="feat-text">TikTok & Instagram support</div></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="download-panel">
+        <div class="dl-header">
+          <svg viewBox="0 0 64 64"><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="#a855f7"/></svg>
+          <span>Orianna</span>
+        </div>
+        <div class="dl-content">
+          <div class="dl-video">
+            <div class="dl-thumb">🎵</div>
+            <div class="dl-info">
+              <div class="dl-creator">@fitnesscreator</div>
+              <div class="dl-caption">5 mistakes that are killing your gains #fitness #gym</div>
+              <div class="dl-quality">
+                <span class="quality-tag hd">1080p HD</span>
+                <span class="quality-tag watermark">No Watermark</span>
+              </div>
+            </div>
+          </div>
+          <div class="dl-btn">⬇ Download Video</div>
+          <div style="height: 14px;"></div>
+          <div class="dl-progress">
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+            <div class="progress-text">75%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>

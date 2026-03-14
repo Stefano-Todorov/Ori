@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1280px;
+    height: 800px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: -150px;
+    right: -50px;
+    width: 600px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 60px 70px;
+    gap: 50px;
+  }
+  .left { flex: 1; }
+  .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub {
+    font-size: 17px;
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 420px;
+  }
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(124,58,237,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #a855f7;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: 15px; color: #d1d5db; }
+  .right {
+    width: 520px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  /* Fake browser window */
+  .browser {
+    background: #1a1a2e;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .browser-bar {
+    background: #12121a;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .url-bar {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    color: #6b7280;
+    background: rgba(255,255,255,0.05);
+    padding: 4px 12px;
+    border-radius: 5px;
+    margin-left: 8px;
+  }
+  .browser-content {
+    padding: 20px;
+    position: relative;
+  }
+  /* Fake TikTok video */
+  .tiktok-video {
+    background: #0f0f1a;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .video-thumb {
+    width: 90px;
+    height: 120px;
+    background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .video-info { flex: 1; }
+  .video-creator { font-size: 14px; font-weight: 600; color: #e5e7eb; margin-bottom: 4px; }
+  .video-caption { font-size: 12px; color: #9ca3af; line-height: 1.4; margin-bottom: 10px; }
+  .video-stats { display: flex; gap: 14px; font-size: 12px; color: #6b7280; }
+  /* Extension popup overlay */
+  .ext-popup {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 280px;
+    background: #12121a;
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 32px rgba(124,58,237,0.15), 0 0 0 1px rgba(124,58,237,0.1);
+  }
+  .ext-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .ext-logo svg { width: 16px; height: 16px; }
+  .ext-logo span { font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .ext-detected {
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.2);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .ext-label { font-size: 10px; color: #a855f7; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; }
+  .ext-title { font-size: 12px; color: #d1d5db; margin-bottom: 6px; }
+  .ext-metrics { display: flex; gap: 10px; font-size: 11px; color: #6b7280; }
+  .ext-btns { display: flex; gap: 6px; }
+  .ext-btn {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .ext-btn.primary { background: linear-gradient(135deg, #7c3aed, #9333ea); color: white; }
+  .ext-btn.secondary { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #d1d5db; }
+  .logo {
+    position: absolute;
+    bottom: 24px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .logo svg { width: 18px; height: 18px; }
+  .logo span { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="badge">Chrome Extension</div>
+      <h1>Save inspo while<br>you <span class="gradient">scroll</span></h1>
+      <p class="sub">See a viral video? One click saves it to your swipe file with full metrics. Then turn it into your own idea.</p>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Browse TikTok or Instagram normally</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Click the Orianna extension icon</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">Saved with views, likes & engagement</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text">Turn any saved post into a content idea</div></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dot" style="background:#ff5f57"></div>
+          <div class="dot" style="background:#ffbd2e"></div>
+          <div class="dot" style="background:#28c840"></div>
+          <div class="url-bar">tiktok.com/@fitnesscreator</div>
+        </div>
+        <div class="browser-content">
+          <div class="tiktok-video">
+            <div class="video-thumb">🎬</div>
+            <div class="video-info">
+              <div class="video-creator">@fitnesscreator</div>
+              <div class="video-caption">5 mistakes that are killing your gains and you don't even know it #fitness #gym #gains</div>
+              <div class="video-stats">
+                <span>👁 2.4M</span>
+                <span>❤️ 340K</span>
+                <span>💬 8.2K</span>
+              </div>
+            </div>
+          </div>
+          <div class="tiktok-video" style="opacity: 0.4;">
+            <div class="video-thumb">🏋️</div>
+            <div class="video-info">
+              <div class="video-creator">@fitnesscreator</div>
+              <div class="video-caption">POV: your gym crush asks you to spot them</div>
+              <div class="video-stats">
+                <span>👁 1.8M</span>
+                <span>❤️ 220K</span>
+                <span>💬 5.1K</span>
+              </div>
+            </div>
+          </div>
+          <div class="ext-popup">
+            <div class="ext-logo">
+              <svg viewBox="0 0 64 64"><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="#a855f7"/></svg>
+              <span>Orianna</span>
+            </div>
+            <div class="ext-detected">
+              <div class="ext-label">Detected Video</div>
+              <div class="ext-title">@fitnesscreator &middot; "5 mistakes killing your gains"</div>
+              <div class="ext-metrics">
+                <span>👁 2.4M</span>
+                <span>❤️ 340K</span>
+                <span>💬 8.2K</span>
+              </div>
+            </div>
+            <div class="ext-btns">
+              <div class="ext-btn primary">Save to Swipe File</div>
+              <div class="ext-btn secondary">Create Idea</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>

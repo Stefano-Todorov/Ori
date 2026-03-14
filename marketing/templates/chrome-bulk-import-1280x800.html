@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1280px;
+    height: 800px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(124,58,237,0.2) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 60px 70px;
+    gap: 50px;
+  }
+  .left { flex: 1; }
+  .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: 44px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .gradient { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub {
+    font-size: 17px;
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    max-width: 420px;
+  }
+  .stats-row {
+    display: flex;
+    gap: 32px;
+  }
+  .stat-box { text-align: center; }
+  .stat-num {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-label { font-size: 13px; color: #6b7280; margin-top: 4px; }
+  .right {
+    width: 520px;
+    flex-shrink: 0;
+  }
+  .import-panel {
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .import-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .import-title { font-size: 16px; font-weight: 700; }
+  .import-count { font-size: 13px; color: #a855f7; font-weight: 600; }
+  .import-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .import-item {
+    background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
+    border-radius: 8px;
+    height: 80px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .import-item.selected {
+    border: 2px solid #a855f7;
+    box-shadow: 0 0 12px rgba(124,58,237,0.2);
+  }
+  .import-item .check {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+  }
+  .import-item .views {
+    position: absolute;
+    bottom: 4px;
+    left: 6px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+  }
+  .import-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 0 24px rgba(124,58,237,0.25);
+  }
+  .import-source {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #6b7280;
+    background: rgba(255,255,255,0.04);
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .logo {
+    position: absolute;
+    bottom: 24px;
+    right: 70px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 2;
+  }
+  .logo svg { width: 18px; height: 18px; }
+  .logo span { font-size: 16px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="badge">Bulk Import</div>
+      <h1>Import your<br><span class="gradient">bookmarks</span><br>in one click</h1>
+      <p class="sub">Already have saved posts on TikTok or Instagram? Import them all at once into your swipe file with full metrics.</p>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num">100+</div>
+          <div class="stat-label">Posts at once</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">2</div>
+          <div class="stat-label">Platforms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num">1</div>
+          <div class="stat-label">Click</div>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="import-panel">
+        <div class="import-header">
+          <div class="import-title">Bulk Import</div>
+          <div class="import-count">12 selected</div>
+        </div>
+        <div class="import-source">
+          <span style="font-size: 16px;">🎵</span>
+          Detected: TikTok Bookmarks Page &middot; 48 posts
+        </div>
+        <div class="import-grid">
+          <div class="import-item selected">🎬<div class="check">✓</div><div class="views">2.4M</div></div>
+          <div class="import-item selected">🏋️<div class="check">✓</div><div class="views">1.8M</div></div>
+          <div class="import-item selected">🍳<div class="check">✓</div><div class="views">945K</div></div>
+          <div class="import-item selected">💪<div class="check">✓</div><div class="views">3.1M</div></div>
+          <div class="import-item selected">🎤<div class="check">✓</div><div class="views">670K</div></div>
+          <div class="import-item selected">📱<div class="check">✓</div><div class="views">1.2M</div></div>
+          <div class="import-item selected">🎯<div class="check">✓</div><div class="views">890K</div></div>
+          <div class="import-item selected">✨<div class="check">✓</div><div class="views">2.1M</div></div>
+          <div class="import-item selected">🎵<div class="check">✓</div><div class="views">1.5M</div></div>
+          <div class="import-item selected">🔥<div class="check">✓</div><div class="views">4.2M</div></div>
+          <div class="import-item selected">💡<div class="check">✓</div><div class="views">780K</div></div>
+          <div class="import-item selected">🚀<div class="check">✓</div><div class="views">1.9M</div></div>
+        </div>
+        <div class="import-btn">Import 12 posts to Swipe File</div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>
