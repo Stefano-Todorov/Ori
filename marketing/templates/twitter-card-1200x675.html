@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1200px;
+    height: 675px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: -150px;
+    right: -100px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 60px 80px;
+    gap: 60px;
+  }
+  .left {
+    flex: 1;
+  }
+  .badge {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.5);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .gradient {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub {
+    font-size: 18px;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+  .cta {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: white;
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 32px;
+    border-radius: 10px;
+    display: inline-block;
+    box-shadow: 0 0 30px rgba(124,58,237,0.3);
+  }
+  .right {
+    width: 420px;
+    flex-shrink: 0;
+  }
+  .mockup {
+    background: #12121a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .mock-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .mock-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .mock-card {
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.2);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .mock-label {
+    font-size: 11px;
+    color: #a855f7;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .mock-text {
+    font-size: 12px;
+    color: #d1d5db;
+    line-height: 1.5;
+  }
+  .mock-text.dim { color: #6b7280; }
+  .mock-card-alt {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="badge">✨ AI content coach</div>
+      <h1>Stop guessing.<br><span class="gradient">Start creating.</span></h1>
+      <p class="sub">Generate scripts, track competitors, and plan your content calendar — all with AI.</p>
+      <div class="cta">Try Orianna free &rarr;</div>
+    </div>
+    <div class="right">
+      <div class="mockup">
+        <div class="mock-header">
+          <div class="mock-dot" style="background:#ff5f57"></div>
+          <div class="mock-dot" style="background:#ffbd2e"></div>
+          <div class="mock-dot" style="background:#28c840"></div>
+        </div>
+        <div class="mock-card">
+          <div class="mock-label">AI Coach</div>
+          <div class="mock-text dim" style="margin-bottom:8px">What hooks work in fitness?</div>
+          <div class="mock-text">POV hooks are getting 3x saves. Try: "POV: you finally found a workout..."</div>
+        </div>
+        <div class="mock-card-alt">
+          <div class="mock-label">Script</div>
+          <div class="mock-text" style="margin-bottom:4px"><strong>Hook:</strong> "Nobody talks about this..."</div>
+          <div class="mock-text dim"><strong>CTA:</strong> "Follow for part 2"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

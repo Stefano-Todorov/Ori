@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1920px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow-top {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 600px;
+    background: radial-gradient(ellipse, rgba(124,58,237,0.35) 0%, transparent 70%);
+  }
+  .glow-bottom {
+    position: absolute;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 700px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(168,85,247,0.2) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 120px 64px 100px;
+  }
+  .top-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hook {
+    font-size: 28px;
+    color: #a855f7;
+    font-weight: 600;
+    margin-bottom: 32px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  h1 {
+    font-size: 80px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+  }
+  .gradient {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub {
+    font-size: 28px;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-bottom: 48px;
+  }
+  .features {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 60px;
+  }
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 24px;
+    color: #d1d5db;
+  }
+  .feature .check {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(124,58,237,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a855f7;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .bottom-section {
+    text-align: center;
+  }
+  .cta {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: white;
+    font-weight: 700;
+    font-size: 28px;
+    padding: 24px 64px;
+    border-radius: 16px;
+    box-shadow: 0 0 50px rgba(124,58,237,0.35);
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+  .free {
+    font-size: 20px;
+    color: #6b7280;
+  }
+  .logo {
+    position: absolute;
+    top: 48px;
+    left: 64px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+  }
+  .logo svg { width: 32px; height: 32px; }
+  .logo span {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+</style>
+</head>
+<body>
+  <div class="glow-top"></div>
+  <div class="glow-bottom"></div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64">
+      <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs>
+      <path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/>
+    </svg>
+    <span>Orianna</span>
+  </div>
+  <div class="content">
+    <div class="top-section">
+      <div class="hook">Still brainstorming for hours?</div>
+      <h1>Your AI<br><span class="gradient">content coach</span><br>is here.</h1>
+      <p class="sub">Scripts, ideas, and a calendar — generated in minutes, not hours.</p>
+      <div class="features">
+        <div class="feature"><div class="check">&#10003;</div> AI-generated video scripts</div>
+        <div class="feature"><div class="check">&#10003;</div> Competitor tracking</div>
+        <div class="feature"><div class="check">&#10003;</div> Ideas board & calendar</div>
+        <div class="feature"><div class="check">&#10003;</div> Chrome extension for inspo</div>
+      </div>
+    </div>
+    <div class="bottom-section">
+      <div class="cta">Try Orianna free</div>
+      <div class="free">Free forever &middot; No credit card</div>
+    </div>
+  </div>
+</body>
+</html>

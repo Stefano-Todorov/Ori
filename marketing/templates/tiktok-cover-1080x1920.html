@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  body {
+    width: 1080px;
+    height: 1920px;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0f;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
+  .glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(124,58,237,0.25) 0%, transparent 70%);
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 100px 80px;
+    text-align: center;
+  }
+  .emoji {
+    font-size: 80px;
+    margin-bottom: 48px;
+  }
+  h1 {
+    font-size: 88px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 40px;
+  }
+  .gradient {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub {
+    font-size: 32px;
+    color: #9ca3af;
+    line-height: 1.4;
+    margin-bottom: 60px;
+  }
+  .tag {
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.4);
+    color: #a855f7;
+    border-radius: 999px;
+    padding: 12px 32px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .logo {
+    position: absolute;
+    bottom: 80px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo svg { width: 36px; height: 36px; }
+  .logo span {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="emoji">🤯</div>
+    <h1>I found the<br><span class="gradient">AI tool</span><br>every creator<br>needs</h1>
+    <p class="sub">Scripts, ideas, and competitor<br>research — in one free app</p>
+    <div class="tag">Watch to see how it works</div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64">
+      <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs>
+      <path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/>
+    </svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>
