@@ -57,42 +57,80 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'YouTube downloads are not supported. Use the "View original" link instead.' }, { status: 400 })
     }
 
-    // Instagram: try multiple approaches
+    // Instagram: use snapinsta.app to extract video download URL
     if (platform === 'instagram' || url.includes('instagram.com')) {
-      // Normalize the URL to ensure it ends with the right format
       const cleanUrl = normalizeInstagramUrl(url)
 
-      // Method 1: Try fetching the page with various user agents to get og:video
-      const userAgents = [
-        'Mozilla/5.0 (compatible; Twitterbot/1.0)',
-        'facebookexternalhit/1.1',
-        'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)',
-      ]
+      // Method 1: snapinsta.app API
+      try {
+        // First, get the page to extract the token
+        const pageRes = await fetch('https://snapinsta.app', {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          },
+          signal: AbortSignal.timeout(10000),
+        })
+        if (pageRes.ok) {
+          const pageHtml = await pageRes.text()
+          const tokenMatch = pageHtml.match(/name="token" value="([^"]+)"/)
+          const token = tokenMatch?.[1] ?? ''
 
-      for (const ua of userAgents) {
-        try {
-          const pageRes = await fetch(cleanUrl, {
+          // Submit the URL to snapinsta
+          const formRes = await fetch('https://snapinsta.app/action.php', {
+            method: 'POST',
             headers: {
-              'User-Agent': ua,
-              Accept: 'text/html',
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              Origin: 'https://snapinsta.app',
+              Referer: 'https://snapinsta.app/',
             },
-            redirect: 'follow',
-            signal: AbortSignal.timeout(10000),
+            body: `url=${encodeURIComponent(cleanUrl)}&token=${encodeURIComponent(token)}&lang=en`,
+            signal: AbortSignal.timeout(15000),
           })
-          if (pageRes.ok) {
-            const html = await pageRes.text()
-            // Try og:video first, then video:url
-            const videoMatch = html.match(/<meta property="og:video(?::url)?" content="([^"]+)"/)
-              || html.match(/<meta content="([^"]+)" property="og:video(?::url)?"/)
-            if (videoMatch?.[1]) {
-              const streamResult = await streamVideo(videoMatch[1], 'instagram')
+          if (formRes.ok) {
+            const resultHtml = await formRes.text()
+            // Extract the download URL from the response HTML
+            const dlMatch = resultHtml.match(/href="(https:\/\/[^"]+\.mp4[^"]*)"/)
+              || resultHtml.match(/href="(https:\/\/[^"]+)"[^>]*>Download Video/)
+              || resultHtml.match(/class="download-bottom"[\s\S]*?href="(https:\/\/[^"]+)"/)
+              || resultHtml.match(/"(https:\/\/scontent[^"]+)"/)
+            if (dlMatch?.[1]) {
+              const videoUrl = dlMatch[1].replace(/&amp;/g, '&')
+              const streamResult = await streamVideo(videoUrl, 'instagram')
               if (streamResult) return streamResult
             }
           }
-        } catch { /* try next UA */ }
-      }
+        }
+      } catch { /* try next method */ }
 
-      return NextResponse.json({ error: 'Instagram download failed. Instagram blocks most server-side downloads. Try right-clicking the video on the original post.' }, { status: 400 })
+      // Method 2: saveig.app API (fallback)
+      try {
+        const res = await fetch('https://saveig.app/api/ajaxSearch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Origin: 'https://saveig.app',
+            Referer: 'https://saveig.app/',
+          },
+          body: `q=${encodeURIComponent(cleanUrl)}&t=media&lang=en`,
+          signal: AbortSignal.timeout(15000),
+        })
+        if (res.ok) {
+          const json = await res.json()
+          const html = json?.data ?? ''
+          const dlMatch = html.match(/href="(https:\/\/[^"]+)"[^>]*download/)
+            || html.match(/"(https:\/\/scontent[^"]+)"/)
+            || html.match(/href="(https:\/\/[^"]+\.mp4[^"]*)"/)
+          if (dlMatch?.[1]) {
+            const videoUrl = dlMatch[1].replace(/&amp;/g, '&')
+            const streamResult = await streamVideo(videoUrl, 'instagram')
+            if (streamResult) return streamResult
+          }
+        }
+      } catch { /* fall through */ }
+
+      return NextResponse.json({ error: 'Instagram download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
     }
 
     return NextResponse.json({ error: 'Unsupported platform. Only TikTok and Instagram downloads are supported.' }, { status: 400 })
