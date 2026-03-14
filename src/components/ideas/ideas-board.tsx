@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag } from 'lucide-react'
-import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags } from '@/app/actions'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag, CalendarPlus, Check } from 'lucide-react'
+import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -288,13 +288,40 @@ function IdeaCard({
   onTagsChange: (tags: string[]) => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const [scheduleOpen, setScheduleOpen] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [scheduling, setScheduling] = useState(false)
+  const [scheduled, setScheduled] = useState(false)
+  const scheduleRef = useRef<HTMLDivElement>(null)
   const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption
   const parsed = parseSource(item.source)
+
+  useEffect(() => {
+    if (!scheduleOpen) return
+    function handle(e: MouseEvent) {
+      if (scheduleRef.current && !scheduleRef.current.contains(e.target as Node)) setScheduleOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [scheduleOpen])
 
   async function handleDelete() {
     setDeleting(true)
     await onDelete()
     setDeleting(false)
+  }
+
+  async function handleSchedule() {
+    if (!scheduleDate) return
+    setScheduling(true)
+    await schedulePost({
+      content_idea_id: item.id,
+      title: item.idea,
+      scheduled_date: scheduleDate,
+    })
+    setScheduling(false)
+    setScheduled(true)
+    setTimeout(() => { setScheduleOpen(false); setScheduled(false); setScheduleDate('') }, 1200)
   }
 
   return (
@@ -417,6 +444,35 @@ function IdeaCard({
             >
               <Pencil size={16} />
             </button>
+            <div className="relative" ref={scheduleRef}>
+              <button
+                type="button"
+                onClick={() => setScheduleOpen(!scheduleOpen)}
+                className={`p-1.5 transition-colors rounded-md hover:bg-white/[0.05] ${scheduleOpen ? 'text-purple-400' : 'text-[#71717a] hover:text-white'}`}
+                title="Schedule"
+              >
+                <CalendarPlus size={16} />
+              </button>
+              {scheduleOpen && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-lg shadow-xl p-3 w-56">
+                  <p className="text-xs font-semibold text-white mb-2">Schedule this idea</p>
+                  <input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full text-xs bg-[#1a1a2e] border border-white/10 rounded-md px-2.5 py-1.5 text-white focus:outline-none focus:border-purple-500 transition-colors [color-scheme:dark]"
+                  />
+                  <button
+                    onClick={handleSchedule}
+                    disabled={!scheduleDate || scheduling || scheduled}
+                    className="mt-2 w-full h-7 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 bg-purple-600 hover:bg-purple-500 text-white"
+                  >
+                    {scheduled ? <><Check size={12} /> Scheduled!</> : scheduling ? 'Scheduling...' : 'Schedule'}
+                  </button>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={handleDelete}
