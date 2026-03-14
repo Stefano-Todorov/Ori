@@ -300,7 +300,7 @@ export default function LandingPage() {
           }}
         >
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', cursor: 'pointer' }}>
               <svg width="24" height="24" viewBox="0 0 64 64" style={{ marginRight: 8 }}>
                 <defs>
                   <linearGradient id="navSpark" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -311,7 +311,7 @@ export default function LandingPage() {
                 <path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#navSpark)"/>
               </svg>
               <span style={{ fontSize: 22, fontWeight: 700 }} className="gradient-text">Orianna</span>
-            </div>
+            </a>
             <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
               <a href="#features" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Features</a>
               <a href="#how-it-works" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">How it works</a>
