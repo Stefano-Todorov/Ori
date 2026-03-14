@@ -299,14 +299,14 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
 
       {/* Sort + select controls */}
       {activePosts.length > 1 && (
-        <div className="flex items-center gap-1.5">
-          <SortAsc size={11} className="text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Sort:</span>
+        <div className="flex items-center gap-2">
+          <SortAsc size={13} className="text-muted-foreground" />
+          <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Sort:</span>
           {(['date', 'views', 'likes'] as SortMode[]).map(mode => (
             <button
               key={mode}
               onClick={() => setSortMode(mode)}
-              className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all capitalize ${
                 sortMode === mode
                   ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -318,7 +318,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
           <div className="ml-auto flex items-center gap-1.5">
             <button
               onClick={selectAll}
-              className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
+              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
                 selectMode
                   ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -335,13 +335,13 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
         const platforms = [...new Set(activePosts.map(p => p.platform).filter(Boolean))].sort()
         if (platforms.length <= 1) return null
         return (
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Platform:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Platform:</span>
             {['all', ...platforms].map(p => (
               <button
                 key={p}
                 onClick={() => { setPlatformFilter(p); setSelected(new Set()) }}
-                className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all capitalize ${
+                className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all capitalize ${
                   platformFilter === p
                     ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'

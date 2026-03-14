@@ -182,12 +182,12 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
   const [editing, setEditing] = useState(false)
   if (allTags.length === 0) return null
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      <Tag size={11} className="text-muted-foreground" />
-      <span className="text-[10px] text-muted-foreground uppercase tracking-wide mr-1">Tag:</span>
+    <div className="flex items-center gap-2 flex-wrap">
+      <Tag size={13} className="text-muted-foreground" />
+      <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Tag:</span>
       <button
         onClick={() => onChange('all')}
-        className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
+        className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
           activeTag === 'all'
             ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -199,20 +199,20 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
         <span key={tag} className="relative inline-flex items-center">
           <button
             onClick={() => !editing && onChange(tag)}
-            className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-all ${
+            className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
               activeTag === tag
                 ? `border ${tagColor(tag)}`
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            } ${editing ? 'pr-5' : ''}`}
+            } ${editing ? 'pr-6' : ''}`}
           >
             {tag}
           </button>
           {editing && onDelete && (
             <button
               onClick={() => { if (confirm(`Delete tag "${tag}"? It will be removed from all posts.`)) onDelete(tag) }}
-              className="absolute right-0.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-red-500/15 text-red-500 hover:bg-red-500/30 transition-colors"
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full bg-red-500/15 text-red-500 hover:bg-red-500/30 transition-colors"
             >
-              <X size={8} />
+              <X size={9} />
             </button>
           )}
         </span>
@@ -220,7 +220,7 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
       {onDelete && (
         <button
           onClick={() => setEditing(!editing)}
-          className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md transition-all ${
+          className={`text-xs font-medium px-2 py-1 rounded-lg transition-all ${
             editing
               ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted'

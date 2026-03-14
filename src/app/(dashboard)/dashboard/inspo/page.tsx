@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AddSwipeButton } from '@/components/trending/add-swipe-button'
 import { InspoList } from '@/components/trending/swipe-list'
+import { DismissibleTip } from '@/components/ui/dismissible-tip'
 
 export default async function InspoPage() {
   const supabase = await createClient()
@@ -54,13 +55,10 @@ export default async function InspoPage() {
         <AddSwipeButton allTags={allTags} />
       </div>
 
-      <div className="bg-purple-500/[0.04] border border-purple-500/15 rounded-2xl p-5 text-sm">
-        <p className="font-bold text-foreground mb-1.5">How Inspo works</p>
-        <p className="text-muted-foreground leading-relaxed">
-          Save videos that catch your eye — great hooks, clever angles, high engagement. Add notes on <em>why</em> they work.
-          Use AI to analyze what made them perform. When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any inspo into your own video concept on the Ideas board.
-        </p>
-      </div>
+      <DismissibleTip storageKey="inspo-how-it-works" title="How Inspo works">
+        Save videos that catch your eye — great hooks, clever angles, high engagement. Add notes on <em>why</em> they work.
+        Use AI to analyze what made them perform. When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any inspo into your own video concept on the Ideas board.
+      </DismissibleTip>
 
       <InspoList posts={posts} archivedPosts={archived} allTags={allTags} />
     </div>
