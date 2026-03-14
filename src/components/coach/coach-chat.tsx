@@ -15,10 +15,10 @@ interface DisplayMessage {
 }
 
 const SUGGESTIONS: { icon: string; text: string }[] = [
-  { icon: '📊', text: 'Analyze my best performing posts and tell me what to do more of' },
+  { icon: '🔍', text: 'Analyze my competitors and find content gaps' },
   { icon: '✍️', text: 'Write me 5 hook ideas for my next video' },
-  { icon: '📅', text: 'What content should I post this week?' },
-  { icon: '📈', text: 'How do I improve my engagement rate?' },
+  { icon: '📅', text: 'Build me a content calendar for this week' },
+  { icon: '🚀', text: 'How should I market my product on social?' },
 ]
 
 export function CoachChat({ initialHistory }: Props) {
@@ -111,19 +111,19 @@ export function CoachChat({ initialHistory }: Props) {
           >
             {/* Avatar */}
             <div
-              className="flex items-center justify-center rounded-full mb-6"
+              className="flex items-center justify-center rounded-full mb-4"
               style={{
-                width: 72,
-                height: 72,
+                width: 56,
+                height: 56,
                 background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
                 animation: 'coach-pulse 3s ease-in-out infinite',
               }}
             >
-              <span style={{ color: 'white', fontSize: 24, fontWeight: 700 }}>✦</span>
+              <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>✦</span>
             </div>
 
             {/* Title */}
-            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
               <span style={{ color: 'white' }}>Hey, I&apos;m </span>
               <span
                 style={{
@@ -138,19 +138,19 @@ export function CoachChat({ initialHistory }: Props) {
             <p
               style={{
                 color: '#9ca3af',
-                fontSize: 15,
+                fontSize: 14,
                 maxWidth: 400,
-                lineHeight: 1.6,
-                marginBottom: 32,
+                lineHeight: 1.5,
+                marginBottom: 24,
               }}
             >
-              I know your content, your niche, and your goals. Ask me anything.
+              Your AI marketing manager — I know your niche, competitors, and goals. Ask me anything.
             </p>
 
             {/* Suggestion cards */}
             <div
               className="grid grid-cols-1 sm:grid-cols-2 w-full"
-              style={{ maxWidth: 640, gap: 12 }}
+              style={{ maxWidth: 520, gap: 10 }}
             >
               {SUGGESTIONS.map((s) => (
                 <button
@@ -161,7 +161,7 @@ export function CoachChat({ initialHistory }: Props) {
                     background: '#1a1a2e',
                     border: '1px solid rgba(255,255,255,0.07)',
                     borderRadius: 12,
-                    padding: '18px 20px',
+                    padding: '12px 16px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
@@ -180,8 +180,8 @@ export function CoachChat({ initialHistory }: Props) {
                     el.style.transform = 'translateY(0)'
                   }}
                 >
-                  <span style={{ fontSize: 16, display: 'block', marginBottom: 10 }}>{s.icon}</span>
-                  <span style={{ fontSize: 14, color: '#e2e8f0', fontWeight: 500, lineHeight: '1.5' }}>
+                  <span style={{ fontSize: 14, display: 'block', marginBottom: 6 }}>{s.icon}</span>
+                  <span style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500, lineHeight: '1.4' }}>
                     {s.text}
                   </span>
                   <ArrowRight

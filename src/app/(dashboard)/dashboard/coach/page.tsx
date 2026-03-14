@@ -19,7 +19,7 @@ export default async function CoachPage() {
       <div className="px-6 pt-6 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: 'white' }}>AI Coach</h1>
         <p style={{ color: '#9ca3af', fontSize: 15, marginTop: 4 }}>
-          Your personal content strategist — ask anything about your niche, scripts, or growth strategy.
+          Your AI marketing manager — strategy, content ideas, competitor analysis, and growth.
         </p>
       </div>
       <CoachChat initialHistory={history ?? []} />
