@@ -77,7 +77,7 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
   }
 
   return (
-    <div className="rounded-xl p-4 space-y-4 animate-in fade-in duration-300 relative overflow-hidden" style={{ background: '#12121a', border: '1px solid rgba(124,58,237,0.25)' }}>
+    <div className="rounded-xl p-4 space-y-4 animate-in fade-in duration-300 relative" style={{ background: '#12121a', border: '1px solid rgba(124,58,237,0.25)' }}>
       {/* Shimmer border effect */}
       <div className="absolute inset-0 rounded-xl pointer-events-none" style={{
         background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.08), transparent)',
