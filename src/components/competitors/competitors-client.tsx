@@ -9,7 +9,7 @@ import {
   Download,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
-import { deleteCompetitor, deletePost, updateCompetitorNotes, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor } from '@/app/actions'
+import { deleteCompetitor, deletePost, updateCompetitorNotes, updateCompetitorUrl, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
@@ -146,6 +146,8 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const [linkMenuOpen, setLinkMenuOpen] = useState(false)
   const [linking, setLinking] = useState(false)
+  const [connectingId, setConnectingId] = useState<string | null>(null)
+  const [connectUrl, setConnectUrl] = useState('')
 
   const linkableCompetitors = allCompetitors.filter(c => c.group_id !== group.groupId)
 
@@ -181,6 +183,14 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
 
   async function handleUnlink(compId: string) {
     await unlinkCompetitor(compId)
+    router.refresh()
+  }
+
+  async function handleConnectUrl(compId: string) {
+    if (!connectUrl.trim()) return
+    await updateCompetitorUrl(compId, connectUrl.trim())
+    setConnectingId(null)
+    setConnectUrl('')
     router.refresh()
   }
 
@@ -287,7 +297,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
               )}
             </div>
 
-            {/* Profile links — visually distinct per platform */}
+            {/* Profile links — connect or visit per platform */}
             {comps.map(c => c.profile_url ? (
               <a
                 key={c.id}
@@ -304,7 +314,49 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
               >
                 {c.platform === 'tiktok' ? 'TT' : c.platform === 'instagram' ? 'IG' : 'YT'} <ExternalLink size={10} />
               </a>
-            ) : null)}
+            ) : (
+              <div key={c.id} className="relative">
+                {connectingId === c.id ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="url"
+                      value={connectUrl}
+                      onChange={e => setConnectUrl(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleConnectUrl(c.id); if (e.key === 'Escape') { setConnectingId(null); setConnectUrl('') } }}
+                      placeholder={`Paste ${c.platform} profile URL`}
+                      autoFocus
+                      className="h-8 w-56 px-2.5 rounded-lg border border-purple-500/40 bg-background text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                    />
+                    <button
+                      onClick={() => handleConnectUrl(c.id)}
+                      disabled={!connectUrl.trim()}
+                      className="h-8 px-2.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-500 disabled:opacity-40 transition-all"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setConnectingId(null); setConnectUrl('') }}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setConnectingId(c.id); setConnectUrl('') }}
+                    className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-dashed text-xs font-semibold transition-all hover:border-purple-500/40 hover:text-purple-500 ${
+                      c.platform === 'tiktok'
+                        ? 'border-white/15 text-white/40'
+                        : c.platform === 'instagram'
+                        ? 'border-pink-500/20 text-pink-500/40'
+                        : 'border-red-500/20 text-red-500/40'
+                    }`}
+                  >
+                    {c.platform === 'tiktok' ? 'TT' : c.platform === 'instagram' ? 'IG' : 'YT'} <Link size={10} />
+                  </button>
+                )}
+              </div>
+            ))}
 
             <AddPostButton handle={primaryComp.handle} platform={primaryComp.platform as Platform} allTags={allTags} />
 

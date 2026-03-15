@@ -479,6 +479,12 @@ export async function unlinkCompetitor(competitorId: string) {
   return { error: null }
 }
 
+export async function updateCompetitorUrl(id: string, profileUrl: string) {
+  const supabase = await createClient()
+  await supabase.from('competitors').update({ profile_url: profileUrl || null }).eq('id', id)
+  revalidatePath('/dashboard/competitors')
+}
+
 export async function updateCompetitorNotes(id: string, notes: string) {
   const supabase = await createClient()
   await supabase.from('competitors').update({ notes: notes || null }).eq('id', id)
