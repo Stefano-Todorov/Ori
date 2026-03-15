@@ -269,6 +269,8 @@ async function handleGetIdeas() {
 async function handleCreateInspo() {
   const items = state.createInspoItems.filter(t => t.trim())
   if (items.length === 0) return
+  // Use createInspoTags if set, otherwise fall back to selectedTags (main picker)
+  const tags = state.createInspoTags.length > 0 ? state.createInspoTags : state.selectedTags
   setState({ saving: 'create-inspo', errors: {}, messages: {} })
   const result = await chrome.runtime.sendMessage({
     type: 'CREATE_IDEAS',
@@ -278,7 +280,7 @@ async function handleCreateInspo() {
       thumbnail: state.postData.thumbnail,
       handle: state.postData.handle,
       platform: state.postData.platform,
-      tags: state.createInspoTags,
+      tags,
     })),
   })
   setState({ saving: null })
@@ -890,8 +892,10 @@ function render() {
       const opening = !state.showCreateInspo
       const patch = { showCreateInspo: opening }
       // Carry over any tags selected in the main tag picker
-      if (opening && state.selectedTags.length > 0 && state.createInspoTags.length === 0) {
-        patch.createInspoTags = [...state.selectedTags]
+      if (opening && state.selectedTags.length > 0) {
+        // Merge main picker tags into create-inspo tags (avoid duplicates)
+        const merged = [...new Set([...state.createInspoTags, ...state.selectedTags])]
+        patch.createInspoTags = merged
       }
       setState(patch)
     })
