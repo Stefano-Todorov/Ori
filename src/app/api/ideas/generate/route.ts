@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
+import { loadKnowledge } from '@/lib/knowledge'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -47,8 +48,12 @@ export async function POST(request: NextRequest) {
     context.inspirationUrl ? `Inspiration URL: ${context.inspirationUrl}` : null,
   ].filter(Boolean).join('\n')
 
+  // Load relevant knowledge per generation type
+  const hookFormulas = type === 'hook' || type === 'similar' ? loadKnowledge('hook-formulas') : ''
+  const ctaPsychology = type === 'cta' ? loadKnowledge('cta-psychology') : ''
+
   const prompts: Record<string, string> = {
-    hook: `You are an expert short-form video hook writer. Generate ${count} compelling, scroll-stopping hook${count > 1 ? 's' : ''} (opening lines) for this video.
+    hook: `You are an elite short-form video hook writer with deep expertise in scroll-stopping psychology. Generate ${count} compelling hook${count > 1 ? 's' : ''} (opening lines) for this video.
 
 Creator: ${niche}${subNiche} creator. Goals: ${goals}
 
@@ -56,14 +61,22 @@ ${contextBlock}
 
 ${instructions ? `Creator's instructions: ${instructions}` : ''}
 
-Each hook should be 1-2 sentences max. Make them impossible to scroll past. Vary the styles (question, bold statement, story opener, negative, statistic, etc.).
+HOOK FORMULA REFERENCE — each hook MUST use a different proven pattern from this list:
+${hookFormulas}
+
+Requirements:
+- Each hook should be 1-2 sentences max
+- Each hook MUST use a DIFFERENT formula from the reference (name the formula in parentheses after each hook is not needed, just use the technique)
+- Pass the "scroll test" — would someone stop scrolling at full speed for this?
+- First 2 words of each hook are critical — make them count
+- Be specific (use numbers, names, concrete details) not vague
 
 Return a JSON array of exactly ${count} string${count > 1 ? 's' : ''}:
 ["hook 1", "hook 2", ...]
 
 Return ONLY the JSON array, no other text.`,
 
-    cta: `You are an expert at writing calls-to-action for short-form video. Generate ${count} effective CTA${count > 1 ? 's' : ''} for this video.
+    cta: `You are an expert at writing psychologically-grounded calls-to-action for short-form video. Generate ${count} effective CTA${count > 1 ? 's' : ''} for this video.
 
 Creator: ${niche}${subNiche} creator. Goals: ${goals}
 
@@ -71,14 +84,22 @@ ${contextBlock}
 
 ${instructions ? `Creator's instructions: ${instructions}` : ''}
 
-Each CTA should drive a specific action (follow, comment, share, save, watch again, link in bio). Make them natural and compelling, not generic.
+CTA PSYCHOLOGY REFERENCE — ground each CTA in these principles:
+${ctaPsychology}
+
+Requirements:
+- Each CTA should use a DIFFERENT psychological principle from the reference
+- Each should drive a specific action (follow, comment, share, save, watch again, link in bio)
+- Must feel natural and earned — not a generic "like and subscribe"
+- The CTA should feel like a continuation of the video's value, not a commercial break
+- One CTA per suggestion — don't combine multiple asks
 
 Return a JSON array of exactly ${count} string${count > 1 ? 's' : ''}:
 ["cta 1", "cta 2", ...]
 
 Return ONLY the JSON array, no other text.`,
 
-    caption: `You are an expert social media caption writer. Generate ${count} engaging caption${count > 1 ? 's' : ''} with relevant hashtags for this video.
+    caption: `You are an expert social media caption writer who understands platform algorithms and hashtag strategy. Generate ${count} engaging caption${count > 1 ? 's' : ''} with relevant hashtags for this video.
 
 Creator: ${niche}${subNiche} creator. Goals: ${goals}
 
@@ -86,14 +107,19 @@ ${contextBlock}
 
 ${instructions ? `Creator's instructions: ${instructions}` : ''}
 
-Each caption should include a strong opening line, the main message, and 5-10 relevant hashtags. Vary the tone (storytelling, educational, controversial, relatable, etc.).
+Requirements:
+- Each caption should include a strong opening line (first line is what shows before "...more")
+- Include the main message/value proposition
+- End with 3-5 targeted, niche-specific hashtags (not generic ones like #fyp or #viral)
+- Vary the tone across suggestions (storytelling, educational, controversial, relatable, question-based)
+- The opening line of the caption should complement the hook, NOT repeat it
 
 Return a JSON array of exactly ${count} string${count > 1 ? 's' : ''}:
 ["caption 1 with #hashtags", "caption 2 with #hashtags", ...]
 
 Return ONLY the JSON array, no other text.`,
 
-    similar: `You are an expert short-form video strategist. Generate ${count} similar but distinct video idea${count > 1 ? 's' : ''} inspired by this one.
+    similar: `You are an expert short-form video strategist with deep knowledge of content angles and viral mechanics. Generate ${count} similar but distinct video idea${count > 1 ? 's' : ''} inspired by this one.
 
 Creator: ${niche}${subNiche} creator. Goals: ${goals}
 
@@ -101,7 +127,14 @@ ${contextBlock}
 
 ${instructions ? `Creator's instructions: ${instructions}` : ''}
 
-Each idea should be specific and actionable (not vague). Explain the angle and why it would work. Make each one different enough to be a standalone video.
+HOOK FORMULA REFERENCE — suggest a hook approach for each idea:
+${hookFormulas}
+
+Requirements:
+- Each idea should use a DIFFERENT content angle (different hook formula, different structure, different emotional trigger)
+- Be hyper-specific (not vague like "make a video about X" — specify the exact angle, format, and hook approach)
+- Explain WHY each angle would perform well
+- Each idea should be different enough to be a standalone video, not just a rephrasing
 
 Return a JSON array of exactly ${count} string${count > 1 ? 's' : ''}:
 ["idea 1 — specific and actionable description", "idea 2 — specific and actionable description", ...]

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
+import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -60,7 +61,13 @@ export async function POST(request: NextRequest) {
     'Link in bio': 'Direct them to take a next step via link.',
   }
 
-  const prompt = `You are an expert short-form video scriptwriter. Create a complete, ready-to-film script.
+  // Load knowledge
+  const hookFormulas = loadKnowledge('hook-formulas')
+  const scriptFrameworks = loadKnowledge('script-frameworks')
+  const platformKnowledge = loadPlatformKnowledge(platform)
+  const ctaPsychology = loadKnowledge('cta-psychology')
+
+  const prompt = `You are an elite short-form video scriptwriter with deep expertise in viral content mechanics, hook psychology, and platform algorithms. Create a complete, ready-to-film script that is engineered to maximize watch time and engagement.
 
 Creator profile:
 - Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
@@ -77,6 +84,18 @@ ${primaryHook ? `- Primary hook style: ${primaryHook} — ${hookAngleGuides[prim
 ${extraHookStyles.length > 0 ? `- Also generate variant hooks for these styles: ${extraHookStyles.join(', ')}` : ''}
 ${primaryCta ? `- Primary CTA style: ${primaryCta} — ${ctaAngleGuides[primaryCta] ?? ''}` : ''}
 ${(ctaAngles?.length ?? 0) > 1 ? `- Alternative CTA styles to consider: ${ctaAngles!.slice(1).join(', ')}` : ''}
+
+HOOK FORMULA REFERENCE — use a proven pattern from this list:
+${hookFormulas}
+
+SCRIPT FRAMEWORK REFERENCE — structure the body using one of these frameworks:
+${scriptFrameworks}
+
+CTA PSYCHOLOGY REFERENCE — ground the CTA in these principles:
+${ctaPsychology}
+
+PLATFORM KNOWLEDGE (${platform}) — optimize for this platform's algorithm:
+${platformKnowledge}
 
 IMPORTANT: The body must be structured into clearly labeled sections separated by newlines. Use this format:
 [INTRO] - the setup after the hook

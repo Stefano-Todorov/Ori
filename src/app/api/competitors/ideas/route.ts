@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
+import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
   const { user, supabase } = auth
 
   const body = await request.json()
-  const { postId, handle, platform, caption, hookText, views, likes, count: requestedCount, imageBase64 } = body
+  const { postId, handle, platform, caption, hookText, views, likes, shares, saves, hashtags, duration, count: requestedCount, imageBase64 } = body
   const count = Math.min(Math.max(requestedCount ?? 3, 1), 5)
 
   const { data: profile } = await supabase
@@ -43,7 +44,15 @@ export async function POST(request: NextRequest) {
     .eq('user_id', user.id)
     .single()
 
-  const prompt = `You are an expert short-form video strategist. A creator is studying a competitor's top-performing post and wants video ideas they can make on the same topic — but adapted to their own niche.${imageBase64 ? ' A thumbnail of the video is attached — use visual cues to better understand the content style.' : ''}
+  // Load knowledge
+  const hookFormulas = loadKnowledge('hook-formulas')
+  const platformKnowledge = loadPlatformKnowledge(platform ?? 'tiktok')
+  const scriptFrameworks = loadKnowledge('script-frameworks')
+  const ctaPsychology = loadKnowledge('cta-psychology')
+
+  const engagement = views ? ((((likes ?? 0) + (shares ?? 0)) / views) * 100).toFixed(1) : null
+
+  const prompt = `You are an expert short-form video strategist with deep knowledge of hooks, scripting frameworks, and platform algorithms. A creator is studying a competitor's top-performing post and wants video ideas they can make on the same topic — but adapted to their own niche.${imageBase64 ? ' A thumbnail of the video is attached — use visual cues to better understand the content style.' : ''}
 
 CREATOR PROFILE:
 - Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
@@ -54,18 +63,37 @@ COMPETITOR POST (from @${handle} on ${platform}):
 - Hook: ${hookText ?? '(not provided)'}
 - Views: ${views?.toLocaleString() ?? 'unknown'}
 - Likes: ${likes?.toLocaleString() ?? 'unknown'}
+${shares != null ? `- Shares: ${shares.toLocaleString()}` : ''}
+${saves != null ? `- Saves: ${saves.toLocaleString()}` : ''}
+${engagement ? `- Engagement rate: ${engagement}%` : ''}
+${hashtags?.length ? `- Hashtags: ${hashtags.join(', ')}` : ''}
+${duration ? `- Duration: ${duration} seconds` : ''}
 
-Generate ${count} specific, distinct video idea${count === 1 ? '' : 's'} this creator could make INSPIRED by this competitor post, but adapted for THEIR niche and audience. Each idea should:
-- Have a compelling video angle/hook concept
+HOOK FORMULA REFERENCE — use these proven patterns for the hook_idea:
+${hookFormulas}
+
+SCRIPT FRAMEWORK REFERENCE — use these structures to inform the idea format:
+${scriptFrameworks}
+
+CTA REFERENCE — suggest CTAs grounded in psychology:
+${ctaPsychology}
+
+PLATFORM KNOWLEDGE (${platform}):
+${platformKnowledge}
+
+Generate ${count} specific, distinct video idea${count === 1 ? '' : 's'} this creator could make INSPIRED by this competitor post, but adapted for THEIR niche and audience. Each idea MUST:
+- Use a specific hook formula from the reference (name the formula used)
+- Suggest a script framework (AIDA, PAS, List, Story, Tutorial) that fits the idea
+- Include a psychologically-grounded CTA
 - Be specific (not vague like "make a video about X")
-- Explain WHY this type of content performed well and how to apply it
+- Match the platform's algorithm preferences
 
 Return a JSON array of exactly ${count} object${count === 1 ? '' : 's'}:
 [
   {
     "idea": "The video idea — specific and actionable (1-2 sentences)",
-    "hook_idea": "A specific hook line to open the video with",
-    "caption": "Suggested caption for posting",
+    "hook_idea": "A specific hook line using a named hook formula",
+    "caption": "Suggested caption with 3-5 targeted hashtags",
     "difficulty": "easy" | "medium" | "hard",
     "video_type": "talking head" | "voiceover" | "tutorial" | "storytime" | "list" | "reaction"
   }
@@ -82,7 +110,7 @@ Return ONLY the JSON array, no other text.`
 
   const message = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1500,
+    max_tokens: 2000,
     messages: [{ role: 'user', content: userContent }],
   })
 
@@ -106,7 +134,7 @@ Return ONLY the JSON array, no other text.`
     return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500, headers: corsHeaders })
   }
 
-  // Save all 3 ideas to content_ideas
+  // Save all ideas to content_ideas
   const inserts = ideas.map(idea => ({
     user_id: user.id,
     idea: idea.idea,
