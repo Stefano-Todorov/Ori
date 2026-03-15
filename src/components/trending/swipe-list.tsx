@@ -157,6 +157,8 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   })
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkDownloading, setBulkDownloading] = useState(false)
+  const [bulkDownloadProgress, setBulkDownloadProgress] = useState(0)
   const [bulkTagOpen, setBulkTagOpen] = useState(false)
   const [bulkNewTag, setBulkNewTag] = useState('')
   const bulkTagRef = useRef<HTMLDivElement>(null)
@@ -266,6 +268,25 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
     persistTags(updated)
     setBulkNewTag('')
     setBulkTagOpen(false)
+  }
+
+  async function handleBulkDownload() {
+    const selectedPosts = sorted.filter(p => selected.has(p.id) && p.url)
+    if (selectedPosts.length === 0) return
+    setBulkDownloading(true)
+    setBulkDownloadProgress(0)
+    for (let i = 0; i < selectedPosts.length; i++) {
+      try {
+        const blob = await downloadVideo(selectedPosts[i].url!, selectedPosts[i].platform ?? '')
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = `video_${selectedPosts[i].platform ?? 'clip'}_${Date.now()}.mp4`
+        a.click()
+        URL.revokeObjectURL(a.href)
+      } catch { /* skip failed downloads */ }
+      setBulkDownloadProgress(i + 1)
+    }
+    setBulkDownloading(false)
   }
 
   if (posts.length === 0 && archivedPosts.length === 0) {
@@ -423,6 +444,16 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
               </div>
             )}
           </div>
+
+          {/* Bulk download */}
+          <button
+            onClick={handleBulkDownload}
+            disabled={bulkDownloading}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+          >
+            {bulkDownloading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+            {bulkDownloading ? `${bulkDownloadProgress}/${sorted.filter(p => selected.has(p.id) && p.url).length}` : 'Download'}
+          </button>
 
           {/* Bulk delete */}
           <button
