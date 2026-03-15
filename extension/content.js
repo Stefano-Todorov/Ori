@@ -720,12 +720,16 @@ async function fetchIgStatsFromApi(shortcode) {
     const item = data?.items?.[0]
     if (!item) return null
     const thumb = item.image_versions2?.candidates?.[0]?.url ?? item.display_url ?? item.thumbnail_src ?? null
-    console.log('[Orianna] API stats:', { play_count: item.play_count, like_count: item.like_count, comment_count: item.comment_count, thumb: !!thumb })
+    const caption = item.caption?.text ?? null
+    const handle = item.user?.username ?? null
+    console.log('[Orianna] API stats:', { play_count: item.play_count, like_count: item.like_count, comment_count: item.comment_count, handle, caption: caption?.slice(0, 40), thumb: !!thumb })
     return {
       views: item.play_count ?? item.video_play_count ?? null,
       likes: item.like_count ?? null,
       comments: item.comment_count ?? null,
       thumbnail: thumb,
+      caption,
+      handle,
     }
   } catch (e) {
     console.log('[Orianna] API stats fetch failed:', e)
@@ -1346,6 +1350,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (apiStats.likes != null) data.likes = apiStats.likes
           if (apiStats.comments != null) data.comments = apiStats.comments
           if (apiStats.thumbnail) data.thumbnail = apiStats.thumbnail
+          if (apiStats.caption) {
+            data.caption = apiStats.caption
+            data.hashtags = extractHashtags(apiStats.caption)
+          }
+          if (apiStats.handle) data.handle = apiStats.handle
         }
       }
       sendResponse({ data })
