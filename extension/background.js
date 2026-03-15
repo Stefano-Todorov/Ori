@@ -174,7 +174,7 @@ async function handleMessage(msg) {
     }
 
     case 'CREATE_IDEAS': {
-      return apiPost('/api/extension/ideas', {
+      const payload = {
         ideas: msg.ideas.map(i => ({
           idea: i.idea,
           inspiration_url: i.url,
@@ -182,7 +182,9 @@ async function handleMessage(msg) {
           source: `extension: @${i.handle} (${i.platform})`,
           tags: i.tags ?? [],
         })),
-      })
+      }
+      console.log('[Orianna BG] CREATE_IDEAS payload:', JSON.stringify(payload))
+      return apiPost('/api/extension/ideas', payload)
     }
 
     case 'ANALYZE_POST': {

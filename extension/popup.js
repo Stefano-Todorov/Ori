@@ -269,10 +269,11 @@ async function handleGetIdeas() {
 async function handleCreateInspo() {
   const items = state.createInspoItems.filter(t => t.trim())
   if (items.length === 0) return
-  // Use createInspoTags if set, otherwise fall back to selectedTags (main picker)
-  const tags = state.createInspoTags.length > 0 ? state.createInspoTags : state.selectedTags
+  // Combine tags from both pickers (create-inspo panel + main picker), dedup
+  const tags = [...new Set([...state.createInspoTags, ...state.selectedTags])]
+  console.log('[Orianna] handleCreateInspo tags:', { createInspoTags: state.createInspoTags, selectedTags: state.selectedTags, finalTags: tags, items })
   setState({ saving: 'create-inspo', errors: {}, messages: {} })
-  const result = await chrome.runtime.sendMessage({
+  const msg = {
     type: 'CREATE_IDEAS',
     ideas: items.map(idea => ({
       idea: idea.trim(),
@@ -280,9 +281,11 @@ async function handleCreateInspo() {
       thumbnail: state.postData.thumbnail,
       handle: state.postData.handle,
       platform: state.postData.platform,
-      tags,
+      tags: [...tags],
     })),
-  })
+  }
+  console.log('[Orianna] Sending CREATE_IDEAS:', JSON.stringify(msg))
+  const result = await chrome.runtime.sendMessage(msg)
   setState({ saving: null })
   if (result.error) {
     setState({ errors: { createInspo: result.error } })

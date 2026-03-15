@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
     tags: item.tags ?? [],
   }))
 
+  console.log('[extension/ideas] inserting rows with tags:', rows.map(r => ({ idea: r.idea.slice(0, 30), tags: r.tags })))
+
   const { error } = await supabase.from('content_ideas').insert(rows)
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
