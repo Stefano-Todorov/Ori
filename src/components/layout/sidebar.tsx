@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { UsageBar } from '@/components/layout/usage-bar'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -180,6 +181,8 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      <UsageBar />
 
       <div className="p-3 border-t border-border">
         <Button

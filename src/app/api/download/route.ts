@@ -1,16 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkUsage, incrementUsage } from '@/lib/usage'
 
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Check usage limit
+  const usage = await checkUsage(user.id, 'downloads')
+  if (!usage.allowed) {
+    return NextResponse.json({
+      error: 'limit_reached',
+      message: `You've used all ${usage.limit} downloads this month. Upgrade for more.`,
+      usage,
+    }, { status: 429 })
+  }
+
   const url = req.nextUrl.searchParams.get('url')
   const platform = req.nextUrl.searchParams.get('platform') ?? ''
   if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
 
   try {
+    // Increment usage upfront (check already passed above)
+    await incrementUsage(user.id, 'downloads')
+
     // TikTok: try multiple download APIs
     if (platform === 'tiktok' || url.includes('tiktok.com')) {
       // Method 1: tikwm.com API

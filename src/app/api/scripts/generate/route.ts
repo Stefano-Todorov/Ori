@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
+import { checkUsage, incrementUsage } from '@/lib/usage'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -19,6 +20,18 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Check usage limit
+  const usage = await checkUsage(user.id, 'script_generations')
+  if (!usage.allowed) {
+    return NextResponse.json({
+      error: 'limit_reached',
+      message: usage.limit === 0
+        ? 'Script generation is not available on your current plan. Upgrade to Creator or above.'
+        : `You've used all ${usage.limit} script generations this month. Upgrade for more.`,
+      usage,
+    }, { status: 429 })
+  }
 
   const body = await request.json()
   const parsed = RequestSchema.safeParse(body)
@@ -168,6 +181,8 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await incrementUsage(user.id, 'script_generations')
 
   return NextResponse.json({ script, meta: scriptData })
 }

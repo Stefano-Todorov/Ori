@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL, buildSystemPrompt } from '@/lib/claude'
+import { checkUsage, incrementUsage } from '@/lib/usage'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Check usage limit
+  const usage = await checkUsage(user.id, 'coach_messages')
+  if (!usage.allowed) {
+    return NextResponse.json({
+      error: 'limit_reached',
+      message: usage.limit === 0
+        ? 'AI Coach is not available on your current plan. Upgrade to Creator or above.'
+        : `You've used all ${usage.limit} coach messages this month. Upgrade for more.`,
+      usage,
+    }, { status: 429 })
+  }
 
   const { message, history } = await request.json()
 
@@ -87,12 +100,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Save assistant response
-      await supabase.from('coach_messages').insert({
-        user_id: user.id,
-        role: 'assistant',
-        content: fullText,
-      })
+      // Save assistant response and increment usage
+      await Promise.all([
+        supabase.from('coach_messages').insert({
+          user_id: user.id,
+          role: 'assistant',
+          content: fullText,
+        }),
+        incrementUsage(user.id, 'coach_messages'),
+      ])
 
       controller.close()
     },

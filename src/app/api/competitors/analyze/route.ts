@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
+import { checkUsage, incrementUsage } from '@/lib/usage'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,6 +33,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   }
   const { user, supabase } = auth
+
+  // Check usage limit
+  const usage = await checkUsage(user.id, 'competitor_analyze')
+  if (!usage.allowed) {
+    return NextResponse.json({
+      error: 'limit_reached',
+      message: usage.limit === 0
+        ? 'Post analysis is not available on your current plan. Upgrade to Creator or above.'
+        : `You've used all ${usage.limit} post analyses this month. Upgrade for more.`,
+      usage,
+    }, { status: 429, headers: corsHeaders })
+  }
 
   const body = await req.json()
   const { handle, platform, caption, hookText, views, likes, comments, shares, saves, url, imageBase64, thumbnailUrl, hashtags, duration } = body
@@ -124,6 +137,8 @@ Format: Return ONLY the bullet points as plain text, one per line, starting with
   if (content.type !== 'text') {
     return NextResponse.json({ error: 'AI error' }, { status: 500, headers: corsHeaders })
   }
+
+  await incrementUsage(user.id, 'competitor_analyze')
 
   return NextResponse.json({ analysis: content.text.trim() }, { headers: corsHeaders })
 }

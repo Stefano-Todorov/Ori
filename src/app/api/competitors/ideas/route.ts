@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
+import { checkUsage, incrementUsage } from '@/lib/usage'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,6 +34,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   }
   const { user, supabase } = auth
+
+  // Check usage limit
+  const usage = await checkUsage(user.id, 'competitor_ideas')
+  if (!usage.allowed) {
+    return NextResponse.json({
+      error: 'limit_reached',
+      message: usage.limit === 0
+        ? 'AI idea generation from competitors is not available on your current plan. Upgrade to Creator or above.'
+        : `You've used all ${usage.limit} competitor idea generations this month. Upgrade for more.`,
+      usage,
+    }, { status: 429, headers: corsHeaders })
+  }
 
   const body = await request.json()
   const { postId, handle, platform, caption, hookText, views, likes, shares, saves, hashtags, duration, count: requestedCount, imageBase64 } = body
@@ -149,6 +162,8 @@ Return ONLY the JSON array, no other text.`
 
   const { error } = await supabase.from('content_ideas').insert(inserts)
   if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+
+  await incrementUsage(user.id, 'competitor_ideas')
 
   return NextResponse.json({ count: ideas.length, ideas }, { headers: corsHeaders })
 }
