@@ -49,6 +49,42 @@ function timeAgo(dateStr: string) {
   return `${months}mo ago`
 }
 
+// ─── Thumbnail with API fallback ──────────────────────
+
+function CompetitorThumbnail({ post }: { post: Post }) {
+  const [src, setSrc] = useState<string | null>(post.thumbnail_url)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    if (src || failed) return
+    if (!post.url) { setFailed(true); return }
+    fetch(`/api/thumbnail?url=${encodeURIComponent(post.url)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.thumbnail) setSrc(d.thumbnail)
+        else setFailed(true)
+      })
+      .catch(() => setFailed(true))
+  }, [src, failed, post.url])
+
+  if (!src) {
+    return (
+      <div className="w-14 h-18 rounded-lg bg-muted dark:bg-white/10 shrink-0 flex items-center justify-center">
+        <Video size={20} className="text-purple-500/40" />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className="w-14 h-18 rounded-lg object-cover bg-muted shrink-0"
+      onError={() => { setFailed(true); setSrc(null) }}
+    />
+  )
+}
+
 const TAG_COLORS: Record<string, string> = {
   routine: 'bg-blue-400/15 border-blue-400/30 text-blue-500 dark:text-blue-400',
   training: 'bg-purple-400/15 border-purple-400/30 text-purple-500 dark:text-purple-400',
@@ -784,17 +820,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           className="w-full text-left p-4 flex items-start gap-3"
         >
           {/* Thumbnail */}
-          {post.thumbnail_url ? (
-            <img
-              src={post.thumbnail_url}
-              alt=""
-              className="w-14 h-18 rounded-lg object-cover bg-muted shrink-0"
-            />
-          ) : (
-            <div className="w-14 h-18 rounded-lg bg-muted dark:bg-white/10 shrink-0 flex items-center justify-center">
-              <Video size={20} className="text-purple-500/40" />
-            </div>
-          )}
+          <CompetitorThumbnail post={post} />
           <div className="flex-1 min-w-0 space-y-1">
             {/* Title row */}
             <div className="flex items-center gap-2 flex-wrap">
