@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { addFollowerSnapshot, deleteFollowerSnapshot } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, Trash2 } from 'lucide-react'
@@ -78,12 +79,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
           onChange={e => setCount(e.target.value)}
           className={inputClass}
         />
-        <Input
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          className={inputClass}
-        />
+        <DatePicker value={date} onChange={setDate} placeholder="Date" />
         {error && <p className="text-sm text-destructive">{error}</p>}
         <button
           type="submit"

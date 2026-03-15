@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { Textarea } from '@/components/ui/textarea'
 import { schedulePost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
@@ -70,12 +71,7 @@ export function PlanPostForm({ ideas }: Props) {
           className={inputClass}
         />
 
-        <Input
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          className={inputClass}
-        />
+        <DatePicker value={date} onChange={setDate} placeholder="Pick a date" />
 
         <div className="flex gap-1.5">
           {PLATFORMS.map(p => (

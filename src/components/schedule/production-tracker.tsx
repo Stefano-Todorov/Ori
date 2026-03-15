@@ -11,7 +11,6 @@ interface Props {
 }
 
 const STAGES: { status: ProductionStatus; label: string; color: string; bg: string }[] = [
-  { status: 'new', label: 'New', color: 'text-gray-500', bg: 'bg-gray-500/10' },
   { status: 'recording', label: 'Recording', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
   { status: 'editing', label: 'Editing', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10' },
   { status: 'posted', label: 'Posted', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-500/10' },
@@ -22,7 +21,7 @@ export function ProductionTracker({ ideas }: Props) {
   const [isPending, startTransition] = useTransition()
 
   function advance(ideaId: string, currentStatus: ProductionStatus) {
-    const order: ProductionStatus[] = ['new', 'recording', 'editing', 'posted']
+    const order: ProductionStatus[] = ['recording', 'editing', 'posted']
     const idx = order.indexOf(currentStatus)
     if (idx >= order.length - 1) return
     const next = order[idx + 1]
@@ -37,7 +36,7 @@ export function ProductionTracker({ ideas }: Props) {
       <p className="text-sm font-bold text-foreground">Production Pipeline</p>
 
       {/* Stage headers */}
-      <div className="hidden md:grid grid-cols-4 gap-2">
+      <div className="hidden md:grid grid-cols-3 gap-2">
         {STAGES.map((s, i) => (
           <div key={s.status} className="flex items-center gap-1">
             <span className={`text-xs font-semibold ${s.color}`}>{s.label}</span>
@@ -53,7 +52,8 @@ export function ProductionTracker({ ideas }: Props) {
       ) : (
         <div className="space-y-1.5">
           {ideas.map(idea => {
-            const stage = STAGES.find(s => s.status === idea.production_status) ?? STAGES[0]
+            const displayStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
+            const stage = STAGES.find(s => s.status === displayStatus) ?? STAGES[0]
             const isPosted = idea.production_status === 'posted'
 
             return (

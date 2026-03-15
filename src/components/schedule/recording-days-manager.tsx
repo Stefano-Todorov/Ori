@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { Input } from '@/components/ui/input'
+import { DatePicker } from '@/components/ui/date-picker'
 import { addRecordingDay, deleteRecordingDay, addIdeaToRecordingDay, removeIdeaFromRecordingDay, updateProductionStatus } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
@@ -83,7 +84,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
 
       {/* Add new recording day */}
       <form onSubmit={handleAddDay} className="flex gap-2 items-end">
-        <Input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className={`${inputClass} flex-1`} />
+        <DatePicker value={newDate} onChange={setNewDate} className="flex-1" placeholder="Pick a date" />
         <Input placeholder="Notes (optional)" value={newNotes} onChange={e => setNewNotes(e.target.value)} className={`${inputClass} flex-1`} />
         <button
           type="submit"
