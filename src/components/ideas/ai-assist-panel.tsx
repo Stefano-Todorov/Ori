@@ -77,7 +77,7 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
   }
 
   return (
-    <div className="rounded-xl border border-purple-500/20 bg-muted p-4 space-y-4 animate-in fade-in duration-300 relative overflow-hidden">
+    <div className="rounded-xl p-4 space-y-4 animate-in fade-in duration-300 relative overflow-hidden" style={{ background: '#12121a', border: '1px solid rgba(124,58,237,0.25)' }}>
       {/* Shimmer border effect */}
       <div className="absolute inset-0 rounded-xl pointer-events-none" style={{
         background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.08), transparent)',
@@ -86,27 +86,28 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
       <style>{`@keyframes shimmer { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }`}</style>
 
       <div className="flex items-center gap-2 relative">
-        <Sparkles size={16} className="text-purple-500" />
-        <span className="text-sm font-semibold text-purple-600">AI Assist</span>
+        <Sparkles size={16} className="text-purple-400" />
+        <span className="text-sm font-semibold text-purple-400">AI Assist</span>
       </div>
 
       <div className="flex gap-3 items-end relative">
         <div className="flex-1 space-y-1.5">
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Instructions (optional)</Label>
+          <Label className="text-xs uppercase tracking-wider" style={{ color: '#a1a1aa' }}>Instructions (optional)</Label>
           <Input
             placeholder="e.g. negative connotation, storytime style, funny tone..."
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            className="text-sm bg-background border-border focus:border-purple-500 focus:ring-purple-500/20"
+            className="text-sm"
+            style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', color: 'white', borderRadius: 10 }}
           />
         </div>
         <div className="w-20 space-y-1.5">
-          <Label className="text-xs uppercase tracking-wider text-muted-foreground">Qty</Label>
+          <Label className="text-xs uppercase tracking-wider" style={{ color: '#a1a1aa' }}>Qty</Label>
           <Select value={count} onValueChange={setCount}>
-            <SelectTrigger className="h-9 bg-background border-border">
+            <SelectTrigger className="h-9" style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.08)', color: 'white', borderRadius: 10 }}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={{ background: '#16161e', border: '1px solid rgba(255,255,255,0.10)' }}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <SelectItem key={n} value={String(n)}>{n}</SelectItem>
               ))}
@@ -121,7 +122,20 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
             key={type}
             disabled={generating || !idea.trim()}
             onClick={() => generate(type)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 transition-all hover:bg-gradient-to-r hover:from-purple-600 hover:to-purple-500 hover:text-white hover:border-purple-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', color: '#c084fc' }}
+            onMouseEnter={(e) => {
+              if (!(e.currentTarget as HTMLButtonElement).disabled) {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #7c3aed, #a855f7)'
+                e.currentTarget.style.color = 'white'
+                e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(124,58,237,0.1)'
+              e.currentTarget.style.color = '#c084fc'
+              e.currentTarget.style.borderColor = 'rgba(124,58,237,0.25)'
+            }}
           >
             {generating && generationType === type ? (
               <Loader2 size={13} className="animate-spin" />
@@ -139,17 +153,17 @@ export function AiAssistPanel({ idea, context }: AiAssistPanelProps) {
 
       {results.length > 0 && generationType && (
         <div className="space-y-2 relative">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: '#a1a1aa' }}>
             Generated {TYPE_LABELS[generationType]}s ({results.length})
           </p>
           {results.map((result, i) => (
-            <div key={i} className="rounded-lg border border-border bg-background p-3 space-y-2">
-              <p className="text-sm whitespace-pre-wrap">{result}</p>
+            <div key={i} className="rounded-lg p-3 space-y-2" style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: '#e2e8f0' }}>{result}</p>
               <div className="flex justify-end">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-xs text-purple-600 hover:text-purple-500"
+                  className="h-7 text-xs text-purple-400 hover:text-purple-300"
                   onClick={() => copyToClipboard(result, i)}
                 >
                   {copied === i ? (
