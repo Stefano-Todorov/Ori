@@ -57,14 +57,16 @@ export async function POST(req: NextRequest) {
 
   // Add competitor only (no post) — from profile page
   if (type === 'add-competitor' && handle) {
-    const { data: existing } = await supabase
+    // Check if already tracked on THIS platform (not just any platform)
+    const { data: existingOnPlatform } = await supabase
       .from('competitors')
       .select('id')
       .eq('user_id', user.id)
       .ilike('handle', handle)
+      .eq('platform', platform)
       .limit(1)
 
-    if (!existing || existing.length === 0) {
+    if (!existingOnPlatform || existingOnPlatform.length === 0) {
       const profileUrl = platform === 'instagram'
         ? `https://instagram.com/${handle}`
         : platform === 'tiktok'
@@ -73,13 +75,27 @@ export async function POST(req: NextRequest) {
         ? `https://youtube.com/@${handle}`
         : null
 
-      await supabase.from('competitors').insert({
+      // Check if already tracked on a different platform — auto-link to same group
+      const { data: existingOther } = await supabase
+        .from('competitors')
+        .select('group_id')
+        .eq('user_id', user.id)
+        .ilike('handle', handle)
+        .limit(1)
+
+      const insertData: Record<string, unknown> = {
         user_id: user.id,
         handle,
         platform,
         display_name: handle,
         profile_url: profileUrl,
-      })
+      }
+      // If same handle exists on another platform, join their group
+      if (existingOther && existingOther.length > 0) {
+        insertData.group_id = existingOther[0].group_id
+      }
+
+      await supabase.from('competitors').insert(insertData)
     }
 
     // Auto-populate: mark any existing posts from this handle as competitor posts
