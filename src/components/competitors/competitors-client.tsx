@@ -17,53 +17,6 @@ import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { updatePostTags } from '@/app/actions'
 
-// ─── Instagram client-side video URL extraction ──────────────────────────
-
-function extractShortcode(url: string): string | null {
-  const match = url.match(/\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/)
-  return match?.[2] ?? null
-}
-
-function shortcodeToMediaId(shortcode: string): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-  let id = BigInt(0)
-  for (const char of shortcode) {
-    id = id * BigInt(64) + BigInt(alphabet.indexOf(char))
-  }
-  return id.toString()
-}
-
-async function fetchIgVideoUrl(shortcode: string): Promise<string | null> {
-  try {
-    const mediaId = shortcodeToMediaId(shortcode)
-    const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
-      headers: { 'X-IG-App-ID': '936619743392459' },
-      credentials: 'include',
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const item = data?.items?.[0]
-      const videoUrl = item?.video_versions?.[0]?.url
-      if (videoUrl) return videoUrl
-    }
-  } catch { /* try next method */ }
-
-  try {
-    const res = await fetch(`https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`, {
-      headers: { 'X-IG-App-ID': '936619743392459' },
-      credentials: 'include',
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const media = data?.graphql?.shortcode_media ?? data?.items?.[0]
-      const videoUrl = media?.video_url ?? media?.video_versions?.[0]?.url
-      if (videoUrl) return videoUrl
-    }
-  } catch { /* fall through */ }
-
-  return null
-}
-
 // ─── Helpers ───────────────────────────────────────────
 
 function formatNumber(n: number): string {
@@ -756,23 +709,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
     setDownloading(true)
     setDownloadError(null)
     try {
-      let downloadUrl = post.url
-      const platform = post.platform ?? ''
-
-      // For Instagram, fetch direct video URL client-side (browser has IG cookies)
-      if (platform === 'instagram' || post.url.includes('instagram.com')) {
-        const shortcode = extractShortcode(post.url)
-        if (shortcode) {
-          const directUrl = await fetchIgVideoUrl(shortcode)
-          if (directUrl) {
-            downloadUrl = directUrl
-          } else {
-            throw new Error('Could not extract video URL. Try opening the post directly.')
-          }
-        }
-      }
-
-      const res = await fetch(`/api/download?url=${encodeURIComponent(downloadUrl)}&platform=${platform}`)
+      const res = await fetch(`/api/download?url=${encodeURIComponent(post.url)}&platform=${post.platform ?? ''}`)
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Download failed')
@@ -780,7 +717,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `video_${platform || 'clip'}_${Date.now()}.mp4`
+      a.download = `video_${post.platform ?? 'clip'}_${Date.now()}.mp4`
       a.click()
       URL.revokeObjectURL(a.href)
     } catch (err) {
