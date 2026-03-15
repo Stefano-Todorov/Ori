@@ -63,7 +63,7 @@ const steps = [
 const faqs = [
   {
     q: 'Is Orianna really free?',
-    a: 'Yes. Orianna is free to use with all core features — AI coach, script generation, ideas board, competitor research, and the Chrome extension.',
+    a: 'Yes — the Explorer plan is free forever with competitor tracking, downloads, scheduling, and the Chrome extension. AI features like the coach, script generator, and idea generation start at $3.99/month on the Creator plan.',
   },
   {
     q: 'What platforms does it support?',
@@ -315,6 +315,7 @@ export default function LandingPage() {
             <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
               <a href="#features" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Features</a>
               <a href="#how-it-works" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">How it works</a>
+              <a href="#pricing" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Pricing</a>
               <a href="#faq" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">FAQ</a>
               <Link href="/login" className="nav-login" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}>
                 Log in
@@ -378,7 +379,7 @@ export default function LandingPage() {
             </div>
 
             <p className="hero-proof" style={{ fontSize: 14, color: '#6b7280', marginBottom: 60 }}>
-              Free forever &middot; No credit card required &middot; Set up in 30 seconds
+              Free plan available &middot; No credit card required &middot; Set up in 30 seconds
             </p>
 
             {/* Dashboard mockup */}
@@ -726,6 +727,126 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Pricing */}
+        <section id="pricing" style={{ maxWidth: 1100, margin: '0 auto', padding: '100px 24px' }}>
+          <div ref={addRef} className="anim-target" style={{ textAlign: 'center', marginBottom: 60 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#a855f7', letterSpacing: '0.1em', display: 'block', marginBottom: 12 }}>
+              PRICING
+            </span>
+            <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+              Simple, transparent <span className="gradient-text">pricing</span>
+            </h2>
+            <p style={{ fontSize: 16, color: '#9ca3af', maxWidth: 500, margin: '0 auto' }}>
+              Start free. Upgrade when you&apos;re ready to unlock AI-powered features.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {/* Explorer */}
+            <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column' }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Explorer</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$0</span>
+                  <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
+                </div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Get started with the basics. No AI, no credit card.</p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
+                {['5 competitors tracked', '15 downloads/month', '10 swipe saves/month', 'Content calendar', 'Chrome extension (save only)', 'Ideas board'].map((item, i) => (
+                  <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup">
+                <span className="btn-ghost" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
+                  Get started free
+                </span>
+              </Link>
+            </div>
+
+            {/* Creator */}
+            <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', transitionDelay: '0.1s' }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Creator</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$3.99</span>
+                  <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
+                </div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI features to start creating smarter content.</p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
+                {['15 AI coach messages/mo', '5 script generations/mo', '5 idea generations/mo', '15 competitors tracked', '30 downloads/month', '30 swipe saves/month', 'Chrome extension (save only)'].map((item, i) => (
+                  <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup">
+                <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
+                  Start creating
+                </span>
+              </Link>
+            </div>
+
+            {/* Pro - Popular */}
+            <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '2px solid rgba(124,58,237,0.5)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 0 40px rgba(124,58,237,0.1)', transitionDelay: '0.2s' }}>
+              <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, #7c3aed, #9333ea)', color: 'white', fontSize: 11, fontWeight: 700, padding: '4px 16px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Most popular
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#a855f7', marginBottom: 4 }}>Pro</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$9.99</span>
+                  <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
+                </div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>For serious creators who want to grow fast.</p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
+                {['100 AI coach messages/mo', '30 script generations/mo', '30 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited swipe saves', 'Full Chrome extension'].map((item, i) => (
+                  <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#a855f7', fontSize: 14 }}>&#10003;</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup">
+                <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
+                  Go Pro
+                </span>
+              </Link>
+            </div>
+
+            {/* Studio */}
+            <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', transitionDelay: '0.3s' }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Studio</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$29.99</span>
+                  <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
+                </div>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlimited everything. For teams and power creators.</p>
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
+                {['Unlimited AI coach', 'Unlimited scripts', 'Unlimited idea generation', 'Unlimited competitors', 'Unlimited downloads', 'Unlimited swipe saves', 'Full Chrome extension'].map((item, i) => (
+                  <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/signup">
+                <span className="btn-ghost" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
+                  Go unlimited
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ */}
         <section id="faq" style={{ maxWidth: 700, margin: '0 auto', padding: '100px 24px' }}>
           <div ref={addRef} className="anim-target" style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -796,7 +917,7 @@ export default function LandingPage() {
                 Get started free
               </span>
             </Link>
-            <p style={{ fontSize: 14, color: '#6b7280', marginTop: 16 }}>Free forever &middot; No credit card required</p>
+            <p style={{ fontSize: 14, color: '#6b7280', marginTop: 16 }}>Free plan available &middot; No credit card required</p>
           </div>
         </section>
 
@@ -822,6 +943,7 @@ export default function LandingPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <a href="#features" style={{ fontSize: 14, color: '#6b7280', textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Features</a>
                   <a href="#how-it-works" style={{ fontSize: 14, color: '#6b7280', textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">How it works</a>
+                  <a href="#pricing" style={{ fontSize: 14, color: '#6b7280', textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Pricing</a>
                   <a href="#faq" style={{ fontSize: 14, color: '#6b7280', textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">FAQ</a>
                 </div>
               </div>
