@@ -13,6 +13,11 @@ const assets = [
   { file: 'screenshot-3-competitors.html', out: 'screenshot-3-competitors.png', w: 1280, h: 800 },
   { file: 'screenshot-4-bulk-import.html', out: 'screenshot-4-bulk-import.png', w: 1280, h: 800 },
   { file: 'screenshot-5-download.html', out: 'screenshot-5-download.png', w: 1280, h: 800 },
+  { file: 'ss1-save-inspo-1280x800.html', out: 'ss1-save-inspo-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss2-ai-ideas-1280x800.html', out: 'ss2-ai-ideas-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss3-analyze-1280x800.html', out: 'ss3-analyze-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss4-bulk-import-1280x800.html', out: 'ss4-bulk-import-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss5-competitors-1280x800.html', out: 'ss5-competitors-1280x800.png', w: 1280, h: 800 },
 ];
 
 const browser = await puppeteer.launch({ headless: true });

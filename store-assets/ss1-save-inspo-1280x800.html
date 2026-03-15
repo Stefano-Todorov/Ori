@@ -3,18 +3,10 @@
 <head>
 <meta charset="utf-8">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-  body {
-    width: 1280px;
-    height: 800px;
-    font-family: 'Inter', sans-serif;
-    background: #0a0a0f;
-    color: white;
-    overflow: hidden;
-    position: relative;
-  }
-  .glow { position: absolute; top: -100px; right: 0; width: 600px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1280px; height: 800px; font-family: Inter, sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; top: -100px; right: -50px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
   .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 56px; }
   .left { flex: 1; }
   .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
@@ -24,161 +16,163 @@
   .bullets { display: flex; flex-direction: column; gap: 14px; }
   .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
   .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
-  .right { width: 480px; flex-shrink: 0; }
-  /* Extension popup mockup */
-  .popup {
-    background: #13131d;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    width: 380px;
-    margin: 0 auto;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1);
-    overflow: hidden;
-  }
-  .popup-header {
-    background: linear-gradient(135deg, #7c3aed, #9333ea);
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .popup-logo { display: flex; align-items: center; gap: 8px; }
-  .popup-logo svg { width: 18px; height: 18px; }
-  .popup-logo span { font-size: 15px; font-weight: 700; }
-  .popup-user { font-size: 11px; color: rgba(255,255,255,0.7); }
-  .popup-body { padding: 16px; }
-  .post-card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 12px;
-  }
-  .post-top { display: flex; gap: 12px; margin-bottom: 10px; }
-  .post-thumb {
-    width: 64px;
-    height: 80px;
-    background: linear-gradient(135deg, #1e1e30, #2e1e40);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    flex-shrink: 0;
-  }
-  .post-info { flex: 1; }
-  .post-creator { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .post-platform { font-size: 10px; color: #6b7280; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
-  .platform-badge { background: rgba(124,58,237,0.15); color: #a855f7; padding: 2px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
-  .post-caption { font-size: 11px; color: #9ca3af; line-height: 1.4; }
-  .post-metrics {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-  .metric { text-align: center; }
-  .metric-num { font-size: 13px; font-weight: 700; color: #e5e7eb; }
-  .metric-label { font-size: 9px; color: #6b7280; text-transform: uppercase; }
-  .post-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-  .tag { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.25); color: #a855f7; padding: 3px 10px; border-radius: 999px; font-size: 10px; font-weight: 500; }
-  .save-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #7c3aed, #9333ea);
-    border-radius: 8px;
-    padding: 11px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 700;
-    box-shadow: 0 0 16px rgba(124,58,237,0.25);
-    margin-bottom: 8px;
-  }
-  .secondary-btns { display: flex; gap: 6px; }
-  .sec-btn {
-    flex: 1;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    padding: 9px;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: #d1d5db;
-  }
-  .engagement {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 10px;
-  }
-  .eng-badge { background: rgba(34,197,94,0.12); color: #4ade80; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
-  .logo { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
-  .logo svg { width: 20px; height: 20px; }
-  .logo span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .right { width: 440px; flex-shrink: 0; display: flex; justify-content: center; }
+  .logo-bottom { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo-bottom svg { width: 20px; height: 20px; }
+  .logo-bottom span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .popup { width: 420px; background: #0f0f13; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1); font-size: 13px; }
+  .p-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .p-logo { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 18px; letter-spacing: -0.5px; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .p-logo svg { width: 20px; height: 20px; -webkit-text-fill-color: initial; }
+  .p-right { display: flex; align-items: center; gap: 8px; }
+  .p-email { font-size: 10px; color: #52525b; }
+  .p-logout { font-size: 10px; color: #52525b; }
+  .detected { margin: 12px 16px; padding: 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+  .detected-row { display: flex; align-items: center; gap: 8px; }
+  .detected-handle { font-size: 14px; color: #fff; font-weight: 700; }
+  .platform-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; }
+  .platform-badge.tiktok { background: linear-gradient(135deg, #ff0050, #00f2ea); }
+  .platform-badge.instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+  .competitor-tag { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: transparent; color: #2dd4bf; text-transform: uppercase; letter-spacing: 0.04em; border: 1px solid rgba(45,212,191,0.4); }
+  .detected-caption { font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 8px 0; }
+  .stats-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+  .sn { font-weight: 700; color: #fff; }
+  .sn.eng { color: #fbbf24; }
+  .sl { font-size: 10px; color: #52525b; margin-left: 2px; }
+  .hashtag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .hashtag { font-size: 10px; color: #a78bfa; background: rgba(124,58,237,0.1); padding: 2px 6px; border-radius: 4px; }
+  .actions { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .btn { width: 100%; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: Inter, sans-serif; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .save-row { display: flex; gap: 0; }
+  .save-main-btn { flex: 1; border-radius: 10px 0 0 10px !important; }
+  .btn-primary { height: 48px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
+  .tag-dropdown-btn { padding: 0 12px; background: linear-gradient(135deg, #6d28d9, #9333ea); color: #fff; border: none; border-left: 1px solid rgba(255,255,255,0.2); border-radius: 0 10px 10px 0; font-size: 12px; display: flex; align-items: center; }
+  .selected-tags-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0; }
+  .tag-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.25); }
+  .btn-secondary-alt { height: 44px; background: linear-gradient(135deg, #4c1d95, #6d28d9); color: #fff; }
+  .btn-secondary { height: 46px; background: #5b21b6; color: #fff; }
+  .btn-outline { height: 44px; background: transparent; color: #a855f7; border: 1.5px solid rgba(168,85,247,0.5); }
+  .btn-ghost { height: 44px; background: rgba(255,255,255,0.05); color: #a1a1aa; border: 1px solid rgba(255,255,255,0.08); }
+
+  /* Profile view */
+  .profile-header { margin: 12px 16px 8px; padding: 10px 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; gap: 8px; }
+  .sort-box { margin: 8px 16px; padding: 12px 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+  .sort-controls { display: flex; align-items: center; gap: 8px; }
+  .sort-label { font-size: 11px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; font-weight: 600; }
+  .sort-controls select { width: auto; padding: 7px 12px; font-size: 12px; background: #16162a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fafafa; font-family: Inter, sans-serif; }
+  .sort-controls .btn { width: auto; padding: 9px 20px; font-size: 13px; margin-left: auto; height: auto; }
+  .sort-status { font-size: 11px; color: #52525b; font-style: italic; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; margin-top: 8px; }
+  .sorted-list { max-height: 460px; overflow-y: auto; padding: 4px 16px 10px; }
+  .sorted-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 8px; }
+  .sorted-rank { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; min-width: 32px; text-align: center; }
+  .sorted-thumb { width: 56px; height: 56px; border-radius: 8px; background: #27272a; flex-shrink: 0; }
+  .sorted-metrics { flex: 1; min-width: 0; }
+  .sorted-metric-row { display: flex; gap: 12px; font-size: 12px; color: #71717a; }
+  .sorted-metric-row .val { font-weight: 700; color: #fff; }
+  .sorted-metric-row .primary { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
+  .sorted-url { font-size: 10px; color: #3f3f46; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .sorted-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .sorted-actions button { padding: 5px 12px; font-size: 10px; font-weight: 600; border-radius: 6px; border: none; white-space: nowrap; }
+  .btn-open { background: rgba(255,255,255,0.05); color: #71717a; border: 1px solid rgba(255,255,255,0.1); }
+  .btn-goto { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+  .sort-export { padding: 4px 16px 12px; }
+
+  /* Bookmarks view */
+  .bookmark-header { margin: 12px 16px 8px; padding: 10px 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; display: flex; align-items: center; gap: 8px; }
+  .bookmark-title { font-size: 14px; font-weight: 700; color: #fff; }
+  .bookmark-controls { display: flex; align-items: center; gap: 8px; padding: 6px 16px 4px; }
+  .btn-bookmark-action { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; }
+  .bookmark-count { font-size: 11px; color: #52525b; }
+  .bookmark-limit-select { margin-left: auto; font-size: 11px; background: #18181b; color: #a1a1aa; border: 1px solid #3f3f46; border-radius: 6px; padding: 2px 6px; }
+  .bookmark-list { max-height: 320px; overflow-y: auto; padding: 4px 16px; }
+  .bookmark-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; margin-bottom: 2px; }
+  .bookmark-item input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; accent-color: #7c3aed; }
+  .bookmark-thumb { width: 40px; height: 40px; border-radius: 6px; background: rgba(255,255,255,0.06); flex-shrink: 0; }
+  .bookmark-label { flex: 1; min-width: 0; font-size: 11px; color: #a1a1aa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bookmark-views { font-size: 10px; font-weight: 700; color: #71717a; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+  .bookmark-footer { padding: 10px 16px 14px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .bookmark-hint { font-size: 10px; color: #3f3f46; text-align: center; font-style: italic; margin-top: 6px; }
+
+  /* Analysis result */
+  .analysis-result { margin: 8px 16px 12px; padding: 12px 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; }
+  .analysis-title { font-size: 12px; font-weight: 600; color: #4ade80; margin-bottom: 8px; }
+  .analysis-text { font-size: 11px; color: #71717a; line-height: 1.6; }
+  .analysis-bullet { margin-bottom: 4px; }
+  .analysis-bullet strong { color: #e4e4e7; }
+
+  /* Create inspo panel */
+  .create-inspo-panel { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .create-inspo-input { width: 100%; padding: 8px 12px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fafafa; font-size: 12px; font-family: Inter, sans-serif; }
+  .create-inspo-actions { display: flex; align-items: center; justify-content: space-between; }
+  .btn-text { background: none; border: none; color: #a78bfa; font-size: 11px; font-weight: 600; }
+  .ci-save-row { display: flex; gap: 0; }
+  .ci-save-row .save-main-btn { padding: 6px 16px; font-size: 12px; font-weight: 600; border-radius: 8px 0 0 8px !important; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; border: none; }
+  .ci-save-row .tag-dropdown-btn { padding: 6px 10px; font-size: 11px; border-radius: 0 8px 8px 0; }
+
+  /* Ideas result */
+  .ideas-result { padding: 12px 18px 16px; }
+  .ideas-result h3 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #4ade80; }
+  .idea-item { padding: 10px 12px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; margin-bottom: 8px; }
+  .idea-text { font-size: 12px; line-height: 1.5; }
+  .idea-hook { font-size: 11px; color: #71717a; margin-top: 4px; font-style: italic; }
+  .btn-link { background: none; border: none; color: #a78bfa; font-size: 12px; text-align: center; width: 100%; display: block; padding: 4px 0; text-decoration: underline; }
+  .success-msg { font-size: 11px; color: #4ade80; text-align: center; padding: 2px 0; }
 </style>
 </head>
 <body>
   <div class="glow"></div>
   <div class="content">
     <div class="left">
-      <div class="feature-num">Feature 01</div>
-      <h1>Save any video<br>as <span class="grad">inspiration</span></h1>
-      <p class="sub">One click captures any TikTok or Instagram video with full metrics — views, likes, comments, engagement rate, hashtags, and audio info.</p>
-      <div class="bullets">
-        <div class="bullet"><div class="bullet-dot">✓</div> Full metrics captured automatically</div>
-        <div class="bullet"><div class="bullet-dot">✓</div> Tag and organize your swipe file</div>
-        <div class="bullet"><div class="bullet-dot">✓</div> Engagement rate calculated instantly</div>
-        <div class="bullet"><div class="bullet-dot">✓</div> Works on TikTok & Instagram</div>
-      </div>
-    </div>
+  <div class="feature-num">Feature 01</div>
+  <h1>Save any video<br>as <span class="grad">inspiration</span></h1>
+  <p class="sub">One click captures any TikTok or Instagram video with full metrics, engagement rate, hashtags, and audio info.</p>
+  <div class="bullets">
+    <div class="bullet"><div class="bullet-dot">✓</div> Full metrics captured automatically</div>
+    <div class="bullet"><div class="bullet-dot">✓</div> Tag and organize your swipe file</div>
+    <div class="bullet"><div class="bullet-dot">✓</div> Engagement rate calculated instantly</div>
+    <div class="bullet"><div class="bullet-dot">✓</div> Works on TikTok &amp; Instagram</div>
+  </div>
+</div>
     <div class="right">
-      <div class="popup">
-        <div class="popup-header">
-          <div class="popup-logo">
-            <svg viewBox="0 0 64 64"><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="white"/></svg>
-            <span>Orianna</span>
-          </div>
-          <div class="popup-user">you@email.com</div>
-        </div>
-        <div class="popup-body">
-          <div class="post-card">
-            <div class="post-top">
-              <div class="post-thumb">🎬</div>
-              <div class="post-info">
-                <div class="post-creator">@fitnesscreator</div>
-                <div class="post-platform"><span class="platform-badge">TikTok</span> &middot; 2h ago</div>
-                <div class="post-caption">"5 mistakes that are killing your gains and you don't even know it"</div>
-              </div>
-            </div>
-            <div class="post-metrics">
-              <div class="metric"><div class="metric-num">2.4M</div><div class="metric-label">Views</div></div>
-              <div class="metric"><div class="metric-num">340K</div><div class="metric-label">Likes</div></div>
-              <div class="metric"><div class="metric-num">8.2K</div><div class="metric-label">Comments</div></div>
-              <div class="metric"><div class="metric-num">12.1K</div><div class="metric-label">Shares</div></div>
-            </div>
-            <div class="engagement">
-              <span class="eng-badge">14.2% engagement</span>
-            </div>
-            <div class="post-tags">
-              <span class="tag">#fitness</span>
-              <span class="tag">#gym</span>
-              <span class="tag">#gains</span>
-              <span class="tag">+ Add tag</span>
-            </div>
-          </div>
-          <div class="save-btn">💾 Save as Inspiration</div>
-          <div class="secondary-btns">
-            <div class="sec-btn">💡 Get AI Ideas</div>
-            <div class="sec-btn">⬇ Download</div>
-          </div>
-        </div>
-      </div>
+      <div class="popup"><div class="p-header"><span class="p-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span><div class="p-right"><span class="p-email">you@email.com</span><span class="p-logout">Sign out</span></div></div>
+  <div class="detected">
+    <div class="detected-row">
+      <span class="platform-badge tiktok">TikTok</span>
+      <span class="detected-handle">@fitnesscreator</span>
+      <span class="competitor-tag">Tracked</span>
+    </div>
+    <div class="detected-caption">“5 mistakes that are killing your gains and you don’t even know it”</div>
+    <div class="stats-row">
+      <div>👁 <span class="sn">2.4M</span><span class="sl"> views</span></div>
+      <div>❤️ <span class="sn">340K</span><span class="sl"> likes</span></div>
+      <div>💬 <span class="sn">8.2K</span><span class="sl"> comments</span></div>
+      <div>📤 <span class="sn">12.1K</span><span class="sl"> shares</span></div>
+      <div>⚡ <span class="sn eng">14.2%</span><span class="sl"> eng</span></div>
+    </div>
+    <div class="hashtag-row">
+      <span class="hashtag">#fitness</span>
+      <span class="hashtag">#gym</span>
+      <span class="hashtag">#gains</span>
+      <span class="hashtag">#workout</span>
     </div>
   </div>
-  <div class="logo">
-    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
-    <span>Orianna</span>
+  <div class="actions">
+    <div class="save-row">
+      <button class="btn btn-primary save-main-btn">💾 Save as Inspiration</button>
+      <button class="tag-dropdown-btn">🏷️ ▾</button>
+    </div>
+    <div class="selected-tags-row">
+      <span class="tag-pill">fitness <span style="opacity:0.7">×</span></span>
+      <span class="tag-pill">hooks <span style="opacity:0.7">×</span></span>
+    </div>
+    <button class="btn btn-secondary-alt">✨ Create from Inspo</button>
+    <button class="btn btn-secondary">🎬 Generate Video Idea</button>
+    <button class="btn btn-outline">💡 Why Did It Do Well?</button>
   </div>
+</div>
+    </div>
+  </div>
+  <div class="logo-bottom"><svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg><span>Orianna</span></div>
 </body>
 </html>
