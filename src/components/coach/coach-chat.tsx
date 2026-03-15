@@ -38,7 +38,9 @@ export function CoachChat({ initialHistory }: Props) {
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto'
-      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 128) + 'px'
+      const sh = inputRef.current.scrollHeight
+      inputRef.current.style.height = Math.min(sh, 128) + 'px'
+      inputRef.current.style.overflowY = sh > 128 ? 'auto' : 'hidden'
     }
   }, [input])
 
@@ -271,7 +273,7 @@ export function CoachChat({ initialHistory }: Props) {
               outline: 'none',
               minHeight: 48,
               maxHeight: 128,
-              overflowY: 'auto',
+              overflowY: 'hidden',
               transition: 'border-color 0.2s, box-shadow 0.2s',
               lineHeight: '1.5',
             }}
