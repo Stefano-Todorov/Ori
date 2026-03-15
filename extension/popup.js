@@ -167,7 +167,7 @@ async function handleSaveInspiration(force) {
     else setState({ errors: { inspiration: result.error } })
     return
   }
-  setState({ messages: { inspiration: force === 'replace' ? 'Replaced' : 'Saved' }, selectedTags: [] })
+  setState({ messages: { inspiration: force === 'replace' ? 'Replaced' : 'Saved' }, createInspoTags: state.selectedTags, selectedTags: [] })
 }
 
 function toggleTag(tag) {
