@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { TierSlug } from '@/lib/tiers'
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   let event
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!,
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       if (!userId) break
 
       // Get subscription to find price ID
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+      const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
       const priceId = subscription.items.data[0]?.price.id ?? ''
       const tier = tierFromPriceId(priceId)
 
