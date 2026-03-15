@@ -602,10 +602,19 @@ function extractInstagram() {
   }
 
   // Handle extraction — try multiple methods
-  // Method 1: Embedded page JSON data (most reliable)
-  let handle = extractIgHandleFromPageData()
+  // Method 1: URL path — always current even during SPA navigation
+  let handle = null
+  const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
+  if (urlMatch && urlMatch[1] !== 'reel' && urlMatch[1] !== 'p') {
+    handle = urlMatch[1]
+  }
 
-  // Method 2: DOM selectors
+  // Method 2: Embedded page JSON data
+  if (!handle) {
+    handle = extractIgHandleFromPageData()
+  }
+
+  // Method 3: DOM selectors
   if (!handle) {
     // Look for profile link near the post
     const profileLink = document.querySelector('article a[href]:not([href*="/reel/"]):not([href*="/p/"]):not([href*="/explore/"])')
@@ -613,14 +622,6 @@ function extractInstagram() {
       const href = profileLink.getAttribute('href')
       const hMatch = href?.match(/^\/([a-zA-Z0-9._]+)\/?$/)
       if (hMatch) handle = hMatch[1]
-    }
-  }
-
-  // Method 3: URL path — instagram.com/username/reel/xxx (exclude "reel" and "p" themselves)
-  if (!handle) {
-    const urlMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)\/(?:reel|p)\//)
-    if (urlMatch && urlMatch[1] !== 'reel' && urlMatch[1] !== 'p') {
-      handle = urlMatch[1]
     }
   }
 
