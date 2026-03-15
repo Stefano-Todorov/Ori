@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'YouTube downloads are not supported. Use the "View original" link instead.' }, { status: 400 })
     }
 
-    // Instagram: use embed page to extract video URL server-side
+    // Instagram: use cobalt.tools API (open-source download service)
     if (platform === 'instagram' || url.includes('instagram.com') || url.includes('cdninstagram.com')) {
       // If it's already a direct CDN URL, just proxy it
       if (url.includes('cdninstagram.com') || url.includes('fbcdn.net')) {
@@ -65,9 +65,62 @@ export async function GET(req: NextRequest) {
         if (streamResult) return streamResult
       }
 
+      // Method 1: cobalt.tools API
+      try {
+        const cobaltRes = await fetch('https://api.cobalt.tools/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ url }),
+          signal: AbortSignal.timeout(20000),
+        })
+        if (cobaltRes.ok) {
+          const data = await cobaltRes.json()
+          // cobalt returns { status: "redirect"|"tunnel", url: "..." }
+          if (data.url) {
+            const streamResult = await streamVideo(data.url, 'instagram')
+            if (streamResult) return streamResult
+          }
+          // Or it might return a picker with multiple options
+          if (data.picker?.[0]?.url) {
+            const streamResult = await streamVideo(data.picker[0].url, 'instagram')
+            if (streamResult) return streamResult
+          }
+        }
+      } catch { /* try next method */ }
+
+      // Method 2: saveig.app API
+      try {
+        const saveigRes = await fetch('https://v3.saveig.app/api/ajaxSearch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            Origin: 'https://saveig.app',
+            Referer: 'https://saveig.app/',
+          },
+          body: `q=${encodeURIComponent(url)}&t=media&lang=en`,
+          signal: AbortSignal.timeout(15000),
+        })
+        if (saveigRes.ok) {
+          const data = await saveigRes.json()
+          if (data.data) {
+            // Response contains HTML with download links
+            const dlMatch = data.data.match(/href="([^"]*(?:cdninstagram|fbcdn)[^"]*)"/)
+            if (dlMatch?.[1]) {
+              const videoUrl = decodeHtmlEntities(dlMatch[1])
+              const streamResult = await streamVideo(videoUrl, 'instagram')
+              if (streamResult) return streamResult
+            }
+          }
+        }
+      } catch { /* try next method */ }
+
+      // Method 3: Instagram embed page
       const shortcode = extractInstagramShortcode(url)
       if (shortcode) {
-        // Method 1: Fetch the embed page (designed for external access, not blocked like API)
         try {
           const embedRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/`, {
             headers: {
@@ -78,51 +131,9 @@ export async function GET(req: NextRequest) {
           })
           if (embedRes.ok) {
             const html = await embedRes.text()
-            // The embed page contains video URL in several possible formats
             const videoUrl = extractVideoUrlFromEmbed(html)
             if (videoUrl) {
               const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        } catch { /* try next method */ }
-
-        // Method 2: GraphQL query via embed-related endpoint
-        try {
-          const mediaId = shortcodeToMediaId(shortcode)
-          const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'X-IG-App-ID': '936619743392459',
-            },
-            signal: AbortSignal.timeout(10000),
-          })
-          if (res.ok) {
-            const data = await res.json()
-            const item = data?.items?.[0]
-            const videoUrl = item?.video_versions?.[0]?.url ?? item?.video_url
-            if (videoUrl) {
-              const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        } catch { /* try next method */ }
-
-        // Method 3: og:video from page with bot UA
-        try {
-          const pageRes = await fetch(`https://www.instagram.com/p/${shortcode}/`, {
-            headers: {
-              'User-Agent': 'facebookexternalhit/1.1',
-              Accept: 'text/html',
-            },
-            redirect: 'follow',
-            signal: AbortSignal.timeout(10000),
-          })
-          if (pageRes.ok) {
-            const html = await pageRes.text()
-            const videoMatch = html.match(/<meta property="og:video" content="([^"]+)"/)
-            if (videoMatch?.[1]) {
-              const streamResult = await streamVideo(decodeHtmlEntities(videoMatch[1]), 'instagram')
               if (streamResult) return streamResult
             }
           }
@@ -178,14 +189,6 @@ function extractInstagramShortcode(url: string): string | null {
   return match?.[2] ?? null
 }
 
-function shortcodeToMediaId(shortcode: string): string {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-  let id = BigInt(0)
-  for (const char of shortcode) {
-    id = id * BigInt(64) + BigInt(alphabet.indexOf(char))
-  }
-  return id.toString()
-}
 
 function extractVideoUrlFromEmbed(html: string): string | null {
   // Try multiple patterns that appear in Instagram embed pages
