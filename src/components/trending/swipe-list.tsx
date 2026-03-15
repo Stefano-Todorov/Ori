@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { Post } from '@/lib/types'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
+import { downloadVideo } from '@/lib/instagram-download'
 
 // ─── Thumbnail ────────────────────────────────────────
 
@@ -557,12 +558,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
     setDownloading(true)
     setDownloadError(null)
     try {
-      const res = await fetch(`/api/download?url=${encodeURIComponent(post.url)}&platform=${post.platform ?? ''}`)
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error ?? 'Download failed')
-      }
-      const blob = await res.blob()
+      const blob = await downloadVideo(post.url, post.platform ?? '')
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
       a.download = `video_${post.platform ?? 'clip'}_${Date.now()}.mp4`

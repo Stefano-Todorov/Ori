@@ -18,6 +18,9 @@
       "128": "icons/icon128.png"
     }
   },
+  "externally_connectable": {
+    "matches": ["https://ori-nine.vercel.app/*"]
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -35,6 +38,11 @@
       "js": ["tiktok-bridge.js"],
       "run_at": "document_start",
       "world": "MAIN"
+    },
+    {
+      "matches": ["https://ori-nine.vercel.app/*"],
+      "js": ["webapp-bridge.js"],
+      "run_at": "document_idle"
     }
   ]
 }

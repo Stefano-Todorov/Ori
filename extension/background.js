@@ -237,7 +237,52 @@ async function handleMessage(msg) {
       return { ok: true }
     }
 
+    case 'FETCH_VIDEO_URL': {
+      // Called from the web app via externally_connectable
+      // Uses host_permissions to bypass CORS and call Instagram API
+      const { shortcode } = msg
+      if (!shortcode) throw new Error('No shortcode provided')
+
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+      let mediaId = BigInt(0)
+      for (const c of shortcode) mediaId = mediaId * BigInt(64) + BigInt(alphabet.indexOf(c))
+
+      // Try Instagram API (works from extension because of host_permissions)
+      try {
+        const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+          headers: { 'X-IG-App-ID': '936619743392459' },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const item = data?.items?.[0]
+          const videoUrl = item?.video_versions?.[0]?.url
+          if (videoUrl) return { videoUrl }
+        }
+      } catch { /* try next */ }
+
+      // Fallback: GraphQL
+      try {
+        const res = await fetch(`https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`, {
+          headers: { 'X-IG-App-ID': '936619743392459' },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const media = data?.graphql?.shortcode_media ?? data?.items?.[0]
+          const videoUrl = media?.video_url ?? media?.video_versions?.[0]?.url
+          if (videoUrl) return { videoUrl }
+        }
+      } catch { /* fall through */ }
+
+      throw new Error('Could not extract video URL')
+    }
+
     default:
       throw new Error(`Unknown message type: ${msg.type}`)
   }
 }
+
+// Handle messages from external web pages (via externally_connectable)
+chrome.runtime.onMessageExternal.addListener((msg, _sender, sendResponse) => {
+  handleMessage(msg).then(sendResponse).catch(err => sendResponse({ error: err.message }))
+  return true
+})
