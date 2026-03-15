@@ -57,88 +57,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'YouTube downloads are not supported. Use the "View original" link instead.' }, { status: 400 })
     }
 
-    // Instagram: extract video URL via multiple methods
-    if (platform === 'instagram' || url.includes('instagram.com')) {
-      const cleanUrl = normalizeInstagramUrl(url)
-      const shortcode = extractInstagramShortcode(cleanUrl)
-
-      // Method 1: Instagram GraphQL API (public, no auth needed)
-      if (shortcode) {
-        try {
-          const graphqlUrl = `https://www.instagram.com/p/${shortcode}/?__a=1&__d=dis`
-          const res = await fetch(graphqlUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-              Accept: '*/*',
-              'X-IG-App-ID': '936619743392459',
-            },
-            signal: AbortSignal.timeout(10000),
-          })
-          if (res.ok) {
-            const json = await res.json()
-            const media = json?.graphql?.shortcode_media
-              ?? json?.items?.[0]
-            const videoUrl = media?.video_url
-              ?? media?.video_versions?.[0]?.url
-            if (videoUrl) {
-              const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        } catch { /* try next method */ }
-
-        // Method 2: Instagram media endpoint (mobile API)
-        try {
-          const mediaRes = await fetch(`https://i.instagram.com/api/v1/media/${await shortcodeToMediaId(shortcode)}/info/`, {
-            headers: {
-              'User-Agent': 'Instagram 275.0.0.27.98 Android (33/13; 420dpi; 1080x2400; samsung; SM-G991B; o1s; exynos2100)',
-              'X-IG-App-ID': '936619743392459',
-            },
-            signal: AbortSignal.timeout(10000),
-          })
-          if (mediaRes.ok) {
-            const json = await mediaRes.json()
-            const item = json?.items?.[0]
-            const videoUrl = item?.video_versions?.[0]?.url
-            if (videoUrl) {
-              const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        } catch { /* try next method */ }
-      }
-
-      // Method 3: oEmbed + og:video (simplest, works for some public posts)
-      try {
-        const oembedRes = await fetch(`https://i.instagram.com/api/v1/oembed/?url=${encodeURIComponent(cleanUrl)}`, {
-          signal: AbortSignal.timeout(5000),
-        })
-        if (oembedRes.ok) {
-          // oEmbed won't give video URL directly, but confirms the post exists
-          // Try fetching the page with bot UA for og:video
-          const pageRes = await fetch(cleanUrl, {
-            headers: {
-              'User-Agent': 'facebookexternalhit/1.1',
-              Accept: 'text/html',
-            },
-            redirect: 'follow',
-            signal: AbortSignal.timeout(10000),
-          })
-          if (pageRes.ok) {
-            const html = await pageRes.text()
-            const videoMatch = html.match(/<meta property="og:video" content="([^"]+)"/)
-            if (videoMatch?.[1]) {
-              const streamResult = await streamVideo(videoMatch[1], 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        }
-      } catch { /* fall through */ }
-
-      return NextResponse.json({ error: 'Instagram download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
+    // Instagram: client sends the direct CDN video URL (extracted client-side with user's cookies)
+    // Also handles any direct video CDN URL (e.g. scontent-*.cdninstagram.com)
+    if (platform === 'instagram' || url.includes('instagram.com') || url.includes('cdninstagram.com')) {
+      const streamResult = await streamVideo(url, 'instagram')
+      if (streamResult) return streamResult
+      return NextResponse.json({ error: 'Instagram download failed. Could not fetch the video.' }, { status: 400 })
     }
 
-    return NextResponse.json({ error: 'Unsupported platform. Only TikTok and Instagram downloads are supported.' }, { status: 400 })
+    // Generic: try proxying the URL directly (for any direct video URL)
+    const streamResult = await streamVideo(url, platform || 'video')
+    if (streamResult) return streamResult
+    return NextResponse.json({ error: 'Download failed. Unsupported platform or URL.' }, { status: 400 })
   } catch {
     return NextResponse.json({ error: 'Download failed. Try again later.' }, { status: 500 })
   }
@@ -176,23 +106,3 @@ function extractTikTokId(url: string): string {
   return match?.[1] ?? ''
 }
 
-function normalizeInstagramUrl(url: string): string {
-  let clean = url.split('?')[0]
-  if (!clean.endsWith('/')) clean += '/'
-  return clean
-}
-
-function extractInstagramShortcode(url: string): string | null {
-  // Matches /p/SHORTCODE/, /reel/SHORTCODE/, /reels/SHORTCODE/, /tv/SHORTCODE/
-  const match = url.match(/\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/)
-  return match?.[2] ?? null
-}
-
-async function shortcodeToMediaId(shortcode: string): Promise<string> {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-  let mediaId = BigInt(0)
-  for (const char of shortcode) {
-    mediaId = mediaId * BigInt(64) + BigInt(alphabet.indexOf(char))
-  }
-  return mediaId.toString()
-}
