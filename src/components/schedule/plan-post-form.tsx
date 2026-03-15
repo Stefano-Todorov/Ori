@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { DatePicker } from '@/components/ui/date-picker'
 import { schedulePost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
-import { CalendarPlus } from 'lucide-react'
+import { CalendarPlus, ChevronDown, Search } from 'lucide-react'
 import type { ContentIdea, Platform } from '@/lib/types'
 
 interface Props {
@@ -17,6 +17,12 @@ const PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'youtube', label: 'YouTube' },
 ]
 
+const DIFFICULTY_COLORS: Record<string, string> = {
+  easy: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  hard: 'bg-red-500/10 text-red-600 dark:text-red-400',
+}
+
 export function PlanPostForm({ ideas }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -25,8 +31,34 @@ export function PlanPostForm({ ideas }: Props) {
   const [ideaId, setIdeaId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const selectedIdea = ideas.find(i => i.id === ideaId)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+        setSearch('')
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      setTimeout(() => searchRef.current?.focus(), 0)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [dropdownOpen])
+
+  const filteredIdeas = search
+    ? ideas.filter(i =>
+        i.idea.toLowerCase().includes(search.toLowerCase()) ||
+        i.video_type?.toLowerCase().includes(search.toLowerCase()) ||
+        i.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))
+      )
+    : ideas
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -73,19 +105,82 @@ export function PlanPostForm({ ideas }: Props) {
       <p className="text-sm font-bold text-foreground">Schedule a Post</p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Idea selector */}
-        <select
-          value={ideaId}
-          onChange={e => setIdeaId(e.target.value)}
-          className={`w-full h-9 px-3 text-sm ${inputClass} bg-muted dark:bg-[#1e1e2e]`}
-        >
-          <option value="">Select an idea...</option>
-          {ideas.map(idea => (
-            <option key={idea.id} value={idea.id}>
-              {idea.idea.slice(0, 60)}{idea.idea.length > 60 ? '...' : ''}
-            </option>
-          ))}
-        </select>
+        {/* Custom idea selector */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border dark:border-white/8 focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
+          >
+            <span className={selectedIdea ? 'text-foreground truncate pr-2' : 'text-muted-foreground'}>
+              {selectedIdea ? selectedIdea.idea.slice(0, 50) + (selectedIdea.idea.length > 50 ? '...' : '') : 'Select an idea...'}
+            </span>
+            <ChevronDown size={14} className={`text-muted-foreground shrink-0 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-xl shadow-black/20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+              {/* Search */}
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border dark:border-white/8">
+                <Search size={13} className="text-muted-foreground shrink-0" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Search ideas..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
+              </div>
+
+              {/* Ideas list */}
+              <div className="max-h-[240px] overflow-y-auto">
+                {filteredIdeas.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">No ideas found</p>
+                ) : (
+                  filteredIdeas.map(idea => (
+                    <button
+                      key={idea.id}
+                      type="button"
+                      onClick={() => {
+                        setIdeaId(idea.id)
+                        setDropdownOpen(false)
+                        setSearch('')
+                      }}
+                      className={`w-full text-left px-3 py-2.5 transition-colors border-b border-border/30 dark:border-white/[0.04] last:border-0 ${
+                        idea.id === ideaId
+                          ? 'bg-purple-500/10'
+                          : 'hover:bg-muted/40 dark:hover:bg-white/[0.03]'
+                      }`}
+                    >
+                      <p className="text-xs font-medium text-foreground leading-snug line-clamp-2">{idea.idea}</p>
+                      <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        {idea.difficulty && (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${DIFFICULTY_COLORS[idea.difficulty] ?? 'bg-muted text-muted-foreground'}`}>
+                            {idea.difficulty}
+                          </span>
+                        )}
+                        {idea.video_type && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                            {idea.video_type}
+                          </span>
+                        )}
+                        {idea.tags?.slice(0, 2).map(tag => (
+                          <span key={tag} className="text-[10px] text-muted-foreground bg-muted/50 dark:bg-white/[0.04] px-1.5 py-0.5 rounded-full">
+                            {tag}
+                          </span>
+                        ))}
+                        {(idea.tags?.length ?? 0) > 2 && (
+                          <span className="text-[10px] text-muted-foreground">+{idea.tags.length - 2}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         <DatePicker value={date} onChange={setDate} placeholder="Pick a date" />
 
