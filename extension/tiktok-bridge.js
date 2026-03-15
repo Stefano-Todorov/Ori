@@ -47,6 +47,17 @@
     if (data.items && Array.isArray(data.items)) {
       data.items.forEach(function(it) { if (it.id) newItems.push(parseItem(it)); });
     }
+    // Single video detail response: { itemInfo: { itemStruct: {...} } }
+    if (data.itemInfo && data.itemInfo.itemStruct && data.itemInfo.itemStruct.id) {
+      newItems.push(parseItem(data.itemInfo.itemStruct));
+    }
+    // Alternate single video: { item: {...} } or { itemStruct: {...} }
+    if (data.item && data.item.id && (data.item.stats || data.item.statsV2)) {
+      newItems.push(parseItem(data.item));
+    }
+    if (data.itemStruct && data.itemStruct.id && (data.itemStruct.stats || data.itemStruct.statsV2)) {
+      newItems.push(parseItem(data.itemStruct));
+    }
     // Some responses nest under data.data
     if (data.data && typeof data.data === 'object') {
       processApiResponse(data.data);
@@ -121,6 +132,10 @@
            url.includes('/api/creator/item_list') ||
            url.includes('/api/recommend/') ||
            url.includes('/api/challenge/item_list') ||
+           url.includes('/api/item/detail') ||
+           url.includes('/api/related/item_list') ||
+           url.includes('video/detail') ||
+           url.includes('detail/item') ||
            (url.includes('/api/') && url.includes('post'));
   }
 

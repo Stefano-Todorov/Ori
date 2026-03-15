@@ -33,6 +33,9 @@ function getThumbnail() {
   // Try twitter:image
   const twImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content')
   if (twImage) return twImage
+  // Try TikTok-specific thumbnail selectors
+  const ttThumb = document.querySelector('[class*="ImgPoster"] img, [class*="poster"] img, [data-e2e="browse-video"] img')?.getAttribute('src')
+  if (ttThumb) return ttThumb
   return null
 }
 
@@ -104,13 +107,33 @@ function extractTikTokStatsFromJson() {
     const universalEl = document.getElementById('__UNIVERSAL_DATA_FOR_REHYDRATION__')
     if (universalEl) {
       const data = JSON.parse(universalEl.textContent)
-      const detail = data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']
-      const itemStruct = detail?.itemInfo?.itemStruct
-      // Try statsV2 first, then stats
-      const result = parseTtStats(itemStruct?.statsV2) ?? parseTtStats(itemStruct?.stats)
-      if (result) {
-        console.log('[Orianna] TikTok UNIVERSAL stats:', itemStruct.statsV2 ?? itemStruct.stats)
-        return result
+      // Try multiple known paths — TikTok changes structure frequently
+      const paths = [
+        data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemInfo?.itemStruct,
+        data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.itemStruct,
+        data?.['__DEFAULT_SCOPE__']?.['webapp.video-detail']?.detail,
+        data?.defaultScope?.['webapp.video-detail']?.itemInfo?.itemStruct,
+      ]
+      for (const itemStruct of paths) {
+        if (!itemStruct) continue
+        const result = parseTtStats(itemStruct?.statsV2) ?? parseTtStats(itemStruct?.stats)
+        if (result) {
+          console.log('[Orianna] TikTok UNIVERSAL stats:', itemStruct.statsV2 ?? itemStruct.stats)
+          return result
+        }
+      }
+      // Deep scan as last resort for rehydration data
+      const videoIdMatch = window.location.href.match(/\/video\/(\d+)/)
+      const vid = videoIdMatch?.[1]
+      if (vid) {
+        const found = findTtItemById(data, vid, 0)
+        if (found) {
+          const result = parseTtStats(found.statsV2) ?? parseTtStats(found.stats)
+          if (result) {
+            console.log('[Orianna] TikTok UNIVERSAL deep-scan matched video ID', vid)
+            return result
+          }
+        }
       }
     }
 
@@ -178,8 +201,10 @@ function extractTikTok() {
   ])
 
   const savesRaw = trySelectors([
-    '[data-e2e="undefined-count"]',
     '[data-e2e="collect-count"]',
+    'strong[data-e2e="collect-count"]',
+    '[data-e2e="save-count"]',
+    'strong[data-e2e="save-count"]',
   ])
 
   const handleMatch = url.match(/tiktok\.com\/@([^/?]+)/)
@@ -1338,6 +1363,36 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'EXTRACT') {
     (async () => {
       const data = extractCurrentPage()
+
+      // For TikTok single videos, enrich with bridge data (intercepted API responses).
+      // The bridge runs in MAIN world and captures TikTok's fetch/XHR API calls,
+      // which is more reliable than DOM selectors or embedded JSON script tags
+      // (TikTok frequently changes/removes those).
+      if (data && data.platform === 'tiktok' && data.pageType === 'video') {
+        const videoIdMatch = data.url?.match(/\/video\/(\d+)/)
+        const videoId = videoIdMatch?.[1]
+        if (videoId) {
+          // Request bridge data if cache is empty
+          if (!ttMetricsCache.has(videoId)) {
+            await fetchTikTokMetrics()
+          }
+          const cached = ttMetricsCache.get(videoId)
+          if (cached) {
+            console.log('[Orianna] TikTok: enriching single video with bridge data', cached)
+            if (data.views == null) data.views = cached.views
+            if (data.likes == null) data.likes = cached.likes
+            if (data.comments == null) data.comments = cached.comments
+            if (data.shares == null) data.shares = cached.shares
+            if (data.saves == null) data.saves = cached.saves
+            if (!data.thumbnail && cached.thumb) data.thumbnail = cached.thumb
+            if (!data.caption && cached.caption) {
+              data.caption = cached.caption
+              data.hashtags = extractHashtags(cached.caption)
+            }
+          }
+        }
+      }
+
       // For Instagram posts/reels, ALWAYS call API for stats.
       // DOM selectors & og:description can return stale data from the previous post
       // during SPA navigation (Instagram doesn't do a full page reload).
