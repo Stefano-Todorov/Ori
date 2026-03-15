@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px; height: 800px; overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0a12; color: #fafafa; display: flex;
+  }
+  /* Real sidebar */
+  .sidebar { width: 240px; background: #0e0e18; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sb-brand { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .sb-brand h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+  .sb-brand p { font-size: 11px; color: #71717a; margin-top: 2px; }
+  .sb-nav { padding: 12px; flex: 1; }
+  .nav-i { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #71717a; margin-bottom: 2px; }
+  .nav-i.on { background: linear-gradient(to right, #9333ea, #a855f7); color: white; box-shadow: 0 4px 12px rgba(147,51,234,0.25); }
+  .sb-bottom { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .sb-signout { font-size: 13px; color: #71717a; padding: 10px 12px; }
+
+  /* Main */
+  .main { flex: 1; overflow: hidden; padding: 32px; }
+  .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .page-title { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .count-badge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #a855f7; }
+  .page-sub { font-size: 13px; color: #71717a; margin-top: 2px; }
+
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-box { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #52525b; font-size: 12px; width: 220px; }
+  .tb-btn { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid; cursor: pointer; }
+  .tb-btn.all { background: rgba(168,85,247,0.12); color: #a855f7; border-color: rgba(168,85,247,0.3); }
+  .tb-btn.status-new { background: rgba(96,165,250,0.12); color: #60a5fa; border-color: rgba(96,165,250,0.25); }
+  .tb-btn.status-rec { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.25); }
+  .tb-btn.status-edit { background: rgba(168,85,247,0.12); color: #a855f7; border-color: rgba(168,85,247,0.25); }
+  .tb-btn.status-posted { background: rgba(74,222,128,0.12); color: #4ade80; border-color: rgba(74,222,128,0.25); }
+  .tb-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .add-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border: none; }
+
+  /* Idea cards — matching real code */
+  .ideas-list { display: flex; flex-direction: column; gap: 0; }
+  .idea-card {
+    border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);
+    background: #1a1a2e; padding: 16px 18px; margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+  .idea-card:hover { border-color: rgba(255,255,255,0.12); background: #1e1e34; }
+  .idea-row { display: flex; align-items: flex-start; gap: 12px; }
+  .idea-checkbox {
+    width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+    background: #1a1a2e; border: 1.5px solid rgba(255,255,255,0.2);
+  }
+  .idea-checkbox.on { background: linear-gradient(to br, #9333ea, #a855f7); border-color: #a855f7; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
+  .idea-bar { width: 3px; align-self: stretch; border-radius: 4px; background: linear-gradient(to bottom, #9333ea, #c084fc); flex-shrink: 0; min-height: 60px; }
+  .idea-body { flex: 1; min-width: 0; }
+  .idea-title { font-weight: 700; font-size: 15px; color: white; line-height: 1.4; }
+  .idea-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; font-size: 11px; }
+  .diff-pill { padding: 1px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid; }
+  .diff-easy { background: rgba(74,222,128,0.12); color: #4ade80; border-color: rgba(74,222,128,0.25); }
+  .diff-med { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.25); }
+  .diff-hard { background: rgba(248,113,113,0.12); color: #f87171; border-color: rgba(248,113,113,0.25); }
+  .vtype-pill { padding: 1px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; background: rgba(255,255,255,0.05); color: #a1a1aa; border: 1px solid rgba(255,255,255,0.1); }
+  .via { color: #71717a; }
+  .via-handle { color: #a855f7; font-weight: 500; }
+  .via-plat { color: #52525b; }
+  .idea-url { font-size: 11px; color: rgba(168,85,247,0.7); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+  .idea-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+  .idea-tag { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: rgba(168,85,247,0.12); color: #a78bfa; border: 1px solid rgba(168,85,247,0.2); }
+
+  /* Content sections inside card */
+  .idea-sections { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .idea-section { border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); padding: 10px 12px; }
+  .idea-section-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #71717a; margin-bottom: 3px; }
+  .idea-section-text { font-size: 13px; color: #e4e4e7; line-height: 1.5; white-space: pre-wrap; }
+
+  /* Right side controls */
+  .idea-right { display: flex; align-items: flex-start; gap: 6px; flex-shrink: 0; }
+  .status-select { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; background: transparent; }
+  .ss-new { background: rgba(96,165,250,0.15); color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+  .ss-rec { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+  .ss-edit { background: rgba(168,85,247,0.15); color: #a855f7; border-color: rgba(168,85,247,0.3); }
+  .ss-posted { background: rgba(74,222,128,0.15); color: #4ade80; border-color: rgba(74,222,128,0.3); }
+  .icon-btn { padding: 6px; color: #71717a; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sb-brand"><h1>Orianna</h1><p>AI Content Coach</p></div>
+    <div class="sb-nav">
+      <div class="nav-i">Dashboard</div>
+      <div class="nav-i">AI Coach</div>
+      <div class="nav-i">Scripts</div>
+      <div class="nav-i">Competitors</div>
+      <div class="nav-i">Inspo</div>
+      <div class="nav-i on">Ideas</div>
+      <div class="nav-i">Schedule</div>
+      <div class="nav-i">Settings</div>
+    </div>
+    <div class="sb-bottom"><div class="sb-signout">Sign out</div></div>
+  </div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Ideas Board <span class="count-badge">12</span></div>
+        <div class="page-sub">Plan and track your content ideas</div>
+      </div>
+      <div class="add-btn">+ New Idea</div>
+    </div>
+    <div class="toolbar">
+      <div class="search-box">Search ideas...</div>
+      <div class="tb-btn all">All</div>
+      <div class="tb-btn status-new">New</div>
+      <div class="tb-btn status-rec">Recording</div>
+      <div class="tb-btn status-edit">Editing</div>
+      <div class="tb-btn status-posted">Posted</div>
+      <div class="tb-right">
+        <div class="tb-btn all">Group by status</div>
+        <div class="tb-btn all">Sort: Newest</div>
+      </div>
+    </div>
+    <div class="ideas-list">
+      <!-- Card 1 -->
+      <div class="idea-card">
+        <div class="idea-row">
+          <div class="idea-checkbox"></div>
+          <div class="idea-bar"></div>
+          <div class="idea-body">
+            <div class="idea-title">"3 things I stopped doing that doubled my productivity"</div>
+            <div class="idea-meta">
+              <span class="diff-pill diff-easy">easy</span>
+              <span class="vtype-pill">Talking head</span>
+              <span class="via">via extension:</span>
+              <span class="via-handle">@viral_creator</span>
+              <span class="via-plat">(TikTok)</span>
+            </div>
+            <div class="idea-tags">
+              <span class="idea-tag">listicle</span>
+              <span class="idea-tag">productivity</span>
+              <span class="idea-tag">morning</span>
+            </div>
+            <div class="idea-sections">
+              <div class="idea-section">
+                <div class="idea-section-label">Hook</div>
+                <div class="idea-section-text">Start with the shocking result, then reveal each habit one by one with quick cuts</div>
+              </div>
+            </div>
+          </div>
+          <div class="idea-right">
+            <span class="status-select ss-new">New &#9662;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="idea-card">
+        <div class="idea-row">
+          <div class="idea-checkbox on">&check;</div>
+          <div class="idea-bar"></div>
+          <div class="idea-body">
+            <div class="idea-title">"I tried the 5AM routine for 30 days — here's what happened"</div>
+            <div class="idea-meta">
+              <span class="diff-pill diff-med">medium</span>
+              <span class="vtype-pill">Vlog</span>
+              <span class="via">via</span>
+              <span class="via-handle">AI Coach suggestion</span>
+            </div>
+            <div class="idea-tags">
+              <span class="idea-tag">challenge</span>
+              <span class="idea-tag">lifestyle</span>
+            </div>
+            <div class="idea-sections">
+              <div class="idea-section">
+                <div class="idea-section-label">Hook</div>
+                <div class="idea-section-text">Show the before/after transformation in the first 2 seconds</div>
+              </div>
+            </div>
+          </div>
+          <div class="idea-right">
+            <span class="status-select ss-rec">Recording &#9662;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="idea-card">
+        <div class="idea-row">
+          <div class="idea-checkbox"></div>
+          <div class="idea-bar"></div>
+          <div class="idea-body">
+            <div class="idea-title">"POV: Your future self showing you the morning routine that changed everything"</div>
+            <div class="idea-meta">
+              <span class="diff-pill diff-easy">easy</span>
+              <span class="vtype-pill">Trend</span>
+              <span class="via">via extension:</span>
+              <span class="via-handle">@morning_hacks</span>
+              <span class="via-plat">(TikTok)</span>
+            </div>
+            <div class="idea-tags">
+              <span class="idea-tag">POV</span>
+              <span class="idea-tag">trending-audio</span>
+            </div>
+          </div>
+          <div class="idea-right">
+            <span class="status-select ss-edit">Editing &#9662;</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 -->
+      <div class="idea-card">
+        <div class="idea-row">
+          <div class="idea-checkbox"></div>
+          <div class="idea-bar"></div>
+          <div class="idea-body">
+            <div class="idea-title">"Unpopular opinion: you don't need a morning routine"</div>
+            <div class="idea-meta">
+              <span class="diff-pill diff-easy">easy</span>
+              <span class="vtype-pill">Talking head</span>
+            </div>
+            <div class="idea-tags">
+              <span class="idea-tag">hot-take</span>
+              <span class="idea-tag">engagement</span>
+            </div>
+            <div class="idea-sections">
+              <div class="idea-section">
+                <div class="idea-section-label">Hook</div>
+                <div class="idea-section-text">Controversial take with soft delivery — "I know this is going to upset people..."</div>
+              </div>
+            </div>
+          </div>
+          <div class="idea-right">
+            <span class="status-select ss-posted">Posted &#9662;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

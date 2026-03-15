@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px; height: 800px; overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0a12; color: #fafafa; display: flex;
+  }
+  .sidebar { width: 240px; background: #0e0e18; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sb-brand { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .sb-brand h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+  .sb-brand p { font-size: 11px; color: #71717a; margin-top: 2px; }
+  .sb-nav { padding: 12px; flex: 1; }
+  .nav-i { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #71717a; margin-bottom: 2px; }
+  .nav-i.on { background: linear-gradient(to right, #9333ea, #a855f7); color: white; box-shadow: 0 4px 12px rgba(147,51,234,0.25); }
+  .sb-bottom { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .sb-signout { font-size: 13px; color: #71717a; padding: 10px 12px; }
+
+  .main { flex: 1; overflow: hidden; padding: 32px; max-width: 960px; }
+  .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .page-title { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  .count-badge { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.3); color: #a855f7; }
+  .page-sub { font-size: 13px; color: #71717a; margin-top: 2px; }
+
+  /* Competitor card — matches real bg-card dark:bg-[#12121a] rounded-2xl */
+  .comp-card {
+    background: #12121a; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;
+    padding: 24px; margin-bottom: 16px;
+  }
+  .comp-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .comp-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg, #9333ea, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: white;
+    box-shadow: 0 2px 8px rgba(147,51,234,0.2);
+  }
+  .comp-info { flex: 1; }
+  .comp-name { font-size: 16px; font-weight: 700; color: #e4e4e7; }
+  .comp-meta { font-size: 12px; color: #71717a; margin-top: 1px; }
+  .comp-badges { display: flex; gap: 6px; }
+  .comp-tag { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+  .ideas-btn { font-size: 11px; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #4c1d95, #6d28d9); color: white; border: none; display: flex; align-items: center; gap: 4px; }
+
+  /* Post cards — matching post card style */
+  .posts-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .post-card {
+    background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+    overflow: hidden;
+  }
+  .post-thumb {
+    height: 140px; position: relative;
+    background: linear-gradient(135deg, #1e1e2e, #2a2a3e);
+  }
+  .post-views-badge {
+    position: absolute; bottom: 6px; left: 8px;
+    font-size: 10px; font-weight: 700; color: white;
+    background: rgba(0,0,0,0.65); padding: 2px 8px; border-radius: 6px;
+    display: flex; align-items: center; gap: 3px;
+  }
+  .post-eng-badge {
+    position: absolute; top: 6px; right: 6px;
+    font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 6px;
+    border: 1px solid;
+  }
+  .eng-high { background: rgba(74,222,128,0.15); border-color: rgba(74,222,128,0.25); color: #4ade80; }
+  .eng-med { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.25); color: #fbbf24; }
+  .post-info { padding: 10px 12px; }
+  .post-caption { font-size: 11px; color: #a1a1aa; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
+  .post-stats { display: flex; gap: 8px; font-size: 10px; color: #52525b; }
+  .post-stats b { color: #e4e4e7; font-weight: 700; }
+  .post-tags { display: flex; gap: 3px; margin-top: 6px; flex-wrap: wrap; }
+  .post-tag { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 8px; background: rgba(168,85,247,0.12); color: #a78bfa; border: 1px solid rgba(168,85,247,0.2); }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sb-brand"><h1>Orianna</h1><p>AI Content Coach</p></div>
+    <div class="sb-nav">
+      <div class="nav-i">Dashboard</div>
+      <div class="nav-i">AI Coach</div>
+      <div class="nav-i">Scripts</div>
+      <div class="nav-i on">Competitors</div>
+      <div class="nav-i">Inspo</div>
+      <div class="nav-i">Ideas</div>
+      <div class="nav-i">Schedule</div>
+      <div class="nav-i">Settings</div>
+    </div>
+    <div class="sb-bottom"><div class="sb-signout">Sign out</div></div>
+  </div>
+  <div class="main">
+    <div class="page-head">
+      <div>
+        <div class="page-title">Competitors <span class="count-badge">2</span></div>
+        <div class="page-sub">Track what's working in your niche</div>
+      </div>
+    </div>
+
+    <!-- Competitor 1 -->
+    <div class="comp-card">
+      <div class="comp-head">
+        <div class="comp-avatar">S</div>
+        <div class="comp-info">
+          <div class="comp-name">@style_guru</div>
+          <div class="comp-meta">TikTok &middot; 847K followers &middot; 234 posts</div>
+        </div>
+        <div class="comp-badges"><span class="comp-tag">lifestyle</span></div>
+        <div class="ideas-btn">Get AI Ideas</div>
+      </div>
+      <div class="posts-grid">
+        <div class="post-card">
+          <div class="post-thumb"><div class="post-views-badge">12.4M views</div><div class="post-eng-badge eng-high">8.2%</div></div>
+          <div class="post-info"><div class="post-caption">The one outfit hack that makes any basic tee look expensive</div><div class="post-stats"><b>840K</b> likes &middot; <b>12K</b> comments</div><div class="post-tags"><span class="post-tag">fashion</span><span class="post-tag">hack</span></div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#2d1b4e,#1a1a3e);"><div class="post-views-badge">8.7M views</div><div class="post-eng-badge eng-high">7.1%</div></div>
+          <div class="post-info"><div class="post-caption">3 perfumes that get compliments every single time</div><div class="post-stats"><b>620K</b> likes &middot; <b>8.4K</b> comments</div><div class="post-tags"><span class="post-tag">perfume</span></div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1e2a3e,#2a2a4e);"><div class="post-views-badge">6.1M views</div><div class="post-eng-badge eng-med">5.9%</div></div>
+          <div class="post-info"><div class="post-caption">POV: you finally found your aesthetic</div><div class="post-stats"><b>445K</b> likes &middot; <b>5.2K</b> comments</div><div class="post-tags"><span class="post-tag">POV</span><span class="post-tag">aesthetic</span></div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1a2e2a,#1e2e3e);"><div class="post-views-badge">4.9M views</div><div class="post-eng-badge eng-med">5.1%</div></div>
+          <div class="post-info"><div class="post-caption">Stop buying fast fashion. Here's what to do instead</div><div class="post-stats"><b>380K</b> likes &middot; <b>4.1K</b> comments</div><div class="post-tags"><span class="post-tag">sustainability</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Competitor 2 -->
+    <div class="comp-card">
+      <div class="comp-head">
+        <div class="comp-avatar" style="background:linear-gradient(135deg,#ec4899,#f472b6);">M</div>
+        <div class="comp-info">
+          <div class="comp-name">@morning_hacks</div>
+          <div class="comp-meta">Instagram &middot; 1.2M followers &middot; 187 posts</div>
+        </div>
+        <div class="comp-badges"><span class="comp-tag">productivity</span></div>
+        <div class="ideas-btn">Get AI Ideas</div>
+      </div>
+      <div class="posts-grid">
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1e293b,#334155);"><div class="post-views-badge">3.2M views</div><div class="post-eng-badge eng-med">6.8%</div></div>
+          <div class="post-info"><div class="post-caption">The 2-minute routine that changed my mornings forever</div><div class="post-stats"><b>210K</b> likes &middot; <b>3.8K</b> comments</div><div class="post-tags"><span class="post-tag">routine</span></div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1e293b,#3b3155);"><div class="post-views-badge">2.8M views</div><div class="post-eng-badge eng-med">6.2%</div></div>
+          <div class="post-info"><div class="post-caption">Why I wake up at 4:30AM (and you should too)</div><div class="post-stats"><b>190K</b> likes &middot; <b>2.9K</b> comments</div><div class="post-tags"><span class="post-tag">morning</span></div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1e293b,#2e3545);"><div class="post-views-badge">1.9M views</div></div>
+          <div class="post-info"><div class="post-caption">Phone settings that boost your productivity by 300%</div><div class="post-stats"><b>145K</b> likes &middot; <b>2.1K</b> comments</div></div>
+        </div>
+        <div class="post-card">
+          <div class="post-thumb" style="background:linear-gradient(135deg,#1e293b,#252d3e);"><div class="post-views-badge">1.4M views</div></div>
+          <div class="post-info"><div class="post-caption">My Sunday reset routine takes 20 minutes</div><div class="post-stats"><b>98K</b> likes &middot; <b>1.5K</b> comments</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

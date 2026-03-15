@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1280px; height: 800px; overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  /* TikTok-like background */
+  .tiktok-page { width: 100%; height: 100%; display: flex; background: #000; position: relative; }
+  .tiktok-center { position: relative; margin: 0 auto; display: flex; align-items: center; justify-content: center; width: 100%; }
+
+  .tiktok-video {
+    width: 400px; height: 100%; background: linear-gradient(170deg, #1a1a2e 0%, #16213e 40%, #0f3460 80%, #1a1a2e 100%);
+    position: relative;
+  }
+  .tiktok-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 20px 30px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  }
+  .tt-handle { font-size: 16px; font-weight: 700; color: white; margin-bottom: 8px; }
+  .tt-caption { font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.45; margin-bottom: 6px; }
+  .tt-tags { font-size: 13px; color: #a78bfa; }
+
+  .tt-side {
+    position: absolute; right: 40px; bottom: 140px;
+    display: flex; flex-direction: column; align-items: center; gap: 22px;
+  }
+  .tt-icon { text-align: center; }
+  .tt-icon-circle {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); backdrop-filter: blur(4px);
+    margin: 0 auto 5px;
+  }
+  .tt-icon span { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+  /* Exact extension popup matching popup.html */
+  .ext {
+    position: absolute; top: 40px; right: 60px;
+    width: 420px;
+    background: #0f0f13;
+    border-radius: 12px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
+    z-index: 10;
+    font-size: 13px; color: #fafafa;
+  }
+  .ext-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .ext-logo {
+    font-weight: 700; font-size: 18px; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .ext-header-right { display: flex; align-items: center; gap: 8px; }
+  .ext-email { font-size: 10px; color: #52525b; }
+  .ext-logout { font-size: 10px; color: #52525b; background: none; border: none; }
+
+  /* Detected card */
+  .detected {
+    margin: 12px 16px;
+    padding: 14px;
+    background: #1a1a2e;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+  }
+  .detected-row { display: flex; align-items: center; gap: 8px; }
+  .detected-handle { font-size: 14px; color: #fff; font-weight: 700; }
+  .platform-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+    color: #fff; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .platform-badge.tiktok { background: linear-gradient(135deg, #ff0050, #00f2ea); }
+  .competitor-tag {
+    font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    background: transparent; color: #2dd4bf; text-transform: uppercase;
+    letter-spacing: 0.04em; border: 1px solid rgba(45, 212, 191, 0.4);
+  }
+  .detected-caption {
+    font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 8px 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .stats-row { display: flex; gap: 12px; margin-top: 8px; align-items: center; }
+  .stat-num { font-size: 13px; font-weight: 700; color: #fff; }
+  .stat-num.stat-eng { color: #fbbf24; }
+  .stat-label { font-size: 10px; color: #52525b; margin-left: 2px; }
+
+  .hashtag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .hashtag { font-size: 10px; color: #a78bfa; background: rgba(124, 58, 237, 0.1); padding: 2px 6px; border-radius: 4px; }
+  .audio-row { font-size: 11px; color: #52525b; margin-top: 4px; }
+
+  /* Tags */
+  .selected-tags-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 18px 2px; }
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    background: rgba(124, 58, 237, 0.15); color: #a78bfa;
+    border: 1px solid rgba(124, 58, 237, 0.25);
+  }
+  .tag-remove { font-size: 12px; opacity: 0.7; }
+
+  /* Actions */
+  .ext-actions { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .btn {
+    width: 100%; border-radius: 10px; font-size: 14px; font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    border: none; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .save-row { display: flex; gap: 0; }
+  .save-main {
+    flex: 1; height: 48px; border-radius: 10px 0 0 10px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff; font-size: 14px; font-weight: 700; border: none;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    font-family: 'Inter', sans-serif;
+  }
+  .tag-dropdown-btn {
+    padding: 0 12px; height: 48px;
+    background: linear-gradient(135deg, #6d28d9, #9333ea);
+    color: #fff; border: none; border-left: 1px solid rgba(255,255,255,0.2);
+    border-radius: 0 10px 10px 0;
+    font-size: 12px; font-family: 'Inter', sans-serif;
+  }
+  .btn-secondary {
+    height: 46px; background: #5b21b6; color: #fff;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.2);
+  }
+  .btn-secondary-alt {
+    height: 44px;
+    background: linear-gradient(135deg, #4c1d95, #6d28d9);
+    color: #fff;
+  }
+  .btn-outline {
+    height: 44px; background: transparent; color: #a855f7;
+    border: 1.5px solid rgba(168,85,247,0.5);
+  }
+  .btn-ghost {
+    height: 44px; background: rgba(255,255,255,0.05); color: #a1a1aa;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Label at bottom-left */
+  .feature-label { position: absolute; bottom: 30px; left: 40px; z-index: 20; }
+  .feature-label .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: #a855f7; margin-bottom: 8px; }
+  .feature-label h2 { font-size: 28px; font-weight: 800; color: white; letter-spacing: -0.5px; text-shadow: 0 2px 20px rgba(0,0,0,0.8); }
+  .feature-label p { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; max-width: 300px; text-shadow: 0 1px 10px rgba(0,0,0,0.8); }
+</style>
+</head>
+<body>
+  <div class="tiktok-page">
+    <div class="tiktok-center">
+      <div class="tiktok-video">
+        <div class="tiktok-bottom">
+          <div class="tt-handle">@viral_creator</div>
+          <div class="tt-caption">This morning routine hack changed everything. Here's why you need to try it today...</div>
+          <div class="tt-tags">#morningroutine #productivity #lifehack</div>
+        </div>
+      </div>
+
+      <div class="tt-side">
+        <div class="tt-icon"><div class="tt-icon-circle"></div><span>1.8M</span></div>
+        <div class="tt-icon"><div class="tt-icon-circle"></div><span>142K</span></div>
+        <div class="tt-icon"><div class="tt-icon-circle"></div><span>2.1K</span></div>
+        <div class="tt-icon"><div class="tt-icon-circle"></div><span>Share</span></div>
+      </div>
+
+      <!-- Exact replica of real extension popup -->
+      <div class="ext">
+        <div class="ext-header">
+          <span class="ext-logo">Orianna</span>
+          <div class="ext-header-right">
+            <span class="ext-email">stefano@email.com</span>
+            <span class="ext-logout">Log out</span>
+          </div>
+        </div>
+        <div class="detected">
+          <div class="detected-row">
+            <span class="detected-handle">@viral_creator</span>
+            <span class="platform-badge tiktok">TikTok</span>
+            <span class="competitor-tag">Tracked</span>
+          </div>
+          <div class="detected-caption">This morning routine hack changed everything. Here's why you need to try it today...</div>
+          <div class="hashtag-row">
+            <span class="hashtag">#morningroutine</span>
+            <span class="hashtag">#productivity</span>
+            <span class="hashtag">#lifehack</span>
+          </div>
+          <div class="audio-row">original sound - viral_creator</div>
+          <div class="stats-row">
+            <span><span class="stat-num">1.8M</span><span class="stat-label">views</span></span>
+            <span><span class="stat-num">142K</span><span class="stat-label">likes</span></span>
+            <span><span class="stat-num">2.1K</span><span class="stat-label">comments</span></span>
+            <span><span class="stat-num">890</span><span class="stat-label">shares</span></span>
+            <span><span class="stat-num stat-eng">8.3%</span><span class="stat-label">eng</span></span>
+          </div>
+        </div>
+        <div class="selected-tags-row">
+          <span class="tag-pill">morning-routine <span class="tag-remove">&times;</span></span>
+          <span class="tag-pill">lifestyle <span class="tag-remove">&times;</span></span>
+        </div>
+        <div class="ext-actions">
+          <div class="save-row">
+            <button class="save-main">Save as Inspiration</button>
+            <button class="tag-dropdown-btn">Tags &#9660;</button>
+          </div>
+          <button class="btn btn-secondary">Get AI Video Ideas</button>
+          <button class="btn btn-secondary-alt">Create Ideas from Inspo</button>
+          <button class="btn btn-outline">Why did this do well?</button>
+          <button class="btn btn-ghost">Download Video</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-label">
+      <div class="badge">Chrome Extension</div>
+      <h2>Capture any video instantly</h2>
+      <p>Auto-detects posts with full metrics, hashtags, audio, and engagement rate.</p>
+    </div>
+  </div>
+</body>
+</html>

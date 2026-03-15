@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  body { width: 1280px; height: 800px; font-family: 'Inter', sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 400px; background: radial-gradient(ellipse, rgba(124,58,237,0.15) 0%, transparent 70%); }
+  .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 56px; }
+  .left { flex: 1; }
+  .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
+  h1 { font-size: 46px; font-weight: 900; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+  .grad { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { font-size: 18px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; max-width: 440px; }
+  .stats { display: flex; gap: 36px; margin-bottom: 32px; }
+  .stat-box {}
+  .stat-num { font-size: 40px; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { font-size: 13px; color: #6b7280; margin-top: 2px; }
+  .bullets { display: flex; flex-direction: column; gap: 14px; }
+  .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
+  .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
+  .right { width: 480px; flex-shrink: 0; }
+  .panel {
+    background: #13131d;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    padding: 20px;
+  }
+  .panel-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .panel-title { font-size: 16px; font-weight: 700; }
+  .panel-count { font-size: 13px; color: #a855f7; font-weight: 600; }
+  .detect-bar {
+    display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; font-size: 12px; color: #9ca3af;
+  }
+  .detect-icon { font-size: 16px; }
+  .select-bar { display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .select-btn { font-size: 11px; color: #a855f7; font-weight: 600; cursor: pointer; }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 14px; }
+  .grid-item {
+    height: 68px;
+    background: linear-gradient(135deg, #1a1a2e, #2a1a3e);
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .grid-item.sel { border: 2px solid #a855f7; }
+  .grid-item .ck {
+    position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 9px;
+  }
+  .grid-item .vw { position: absolute; bottom: 3px; left: 5px; font-size: 8px; color: rgba(255,255,255,0.7); font-weight: 600; }
+  .import-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 0 20px rgba(124,58,237,0.25);
+  }
+  .logo { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo svg { width: 20px; height: 20px; }
+  .logo span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="feature-num">Feature 04</div>
+      <h1>Import all your<br><span class="grad">bookmarks</span><br>at once</h1>
+      <p class="sub">Already saved posts on TikTok or Instagram? Orianna detects your bookmarks page and lets you import everything in one click.</p>
+      <div class="stats">
+        <div class="stat-box"><div class="stat-num">100+</div><div class="stat-label">Posts at once</div></div>
+        <div class="stat-box"><div class="stat-num">1</div><div class="stat-label">Click</div></div>
+      </div>
+      <div class="bullets">
+        <div class="bullet"><div class="bullet-dot">✓</div> Auto-detects bookmarks page</div>
+        <div class="bullet"><div class="bullet-dot">✓</div> Select all or pick specific posts</div>
+        <div class="bullet"><div class="bullet-dot">✓</div> Full metrics imported per post</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="panel">
+        <div class="panel-top">
+          <div class="panel-title">Bulk Import</div>
+          <div class="panel-count">15 selected</div>
+        </div>
+        <div class="detect-bar">
+          <span class="detect-icon">🎵</span>
+          Detected: TikTok Favorites &middot; 48 posts found
+        </div>
+        <div class="select-bar">
+          <span class="select-btn">✓ Check All</span>
+          <span class="select-btn">Uncheck All</span>
+        </div>
+        <div class="grid">
+          <div class="grid-item sel">🎬<div class="ck">✓</div><div class="vw">2.4M</div></div>
+          <div class="grid-item sel">🏋️<div class="ck">✓</div><div class="vw">1.8M</div></div>
+          <div class="grid-item sel">🍳<div class="ck">✓</div><div class="vw">945K</div></div>
+          <div class="grid-item sel">💪<div class="ck">✓</div><div class="vw">3.1M</div></div>
+          <div class="grid-item sel">🎤<div class="ck">✓</div><div class="vw">670K</div></div>
+          <div class="grid-item sel">📱<div class="ck">✓</div><div class="vw">1.2M</div></div>
+          <div class="grid-item sel">🎯<div class="ck">✓</div><div class="vw">890K</div></div>
+          <div class="grid-item sel">✨<div class="ck">✓</div><div class="vw">2.1M</div></div>
+          <div class="grid-item sel">🎵<div class="ck">✓</div><div class="vw">1.5M</div></div>
+          <div class="grid-item sel">🔥<div class="ck">✓</div><div class="vw">4.2M</div></div>
+          <div class="grid-item sel">💡<div class="ck">✓</div><div class="vw">780K</div></div>
+          <div class="grid-item sel">🚀<div class="ck">✓</div><div class="vw">1.9M</div></div>
+          <div class="grid-item sel">🎧<div class="ck">✓</div><div class="vw">560K</div></div>
+          <div class="grid-item sel">⚡<div class="ck">✓</div><div class="vw">2.8M</div></div>
+          <div class="grid-item sel">🌟<div class="ck">✓</div><div class="vw">1.1M</div></div>
+        </div>
+        <div class="import-btn">Import 15 posts to Swipe File</div>
+      </div>
+    </div>
+  </div>
+  <div class="logo">
+    <svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg>
+    <span>Orianna</span>
+  </div>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1400px; height: 560px; overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    background: #0a0a12;
+    display: flex; align-items: center;
+    position: relative;
+  }
+  body::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(168,85,247,0.04) 1px, transparent 0);
+    background-size: 32px 32px;
+  }
+  .glow1 { position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(147,51,234,0.15) 0%, transparent 70%); top: -100px; left: 80px; }
+  .glow2 { position: absolute; width: 400px; height: 400px; background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%); bottom: -80px; right: 200px; }
+
+  .left { position: relative; z-index: 1; padding: 0 80px; flex: 1; }
+  h1 {
+    font-size: 52px; font-weight: 800; letter-spacing: -2px; line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  h1 .white { color: #fafafa; }
+  h1 .purple { background: linear-gradient(to right, #a855f7, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .tagline { font-size: 14px; font-weight: 600; color: #71717a; margin-bottom: 16px; }
+  .sub { font-size: 17px; color: #a1a1aa; line-height: 1.6; max-width: 460px; margin-bottom: 28px; }
+  .features { display: flex; gap: 12px; flex-wrap: wrap; }
+  .feat {
+    font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: 24px;
+    background: rgba(168,85,247,0.1); color: #c084fc;
+    border: 1px solid rgba(168,85,247,0.2);
+  }
+
+  /* Right — mini dashboard mockup */
+  .right { position: relative; z-index: 1; padding-right: 60px; }
+  .mock {
+    width: 440px; background: #0e0e18; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 80px rgba(147,51,234,0.08);
+    display: flex;
+  }
+  .mock-sidebar {
+    width: 140px; background: #0a0a12; border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 10px;
+  }
+  .mock-logo {
+    font-size: 13px; font-weight: 800; padding: 0 8px 12px;
+    background: linear-gradient(to right, #a855f7, #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+  }
+  .mock-nav-item {
+    font-size: 10px; padding: 6px 8px; border-radius: 5px; color: #52525b;
+    margin-bottom: 2px;
+  }
+  .mock-nav-item.active {
+    background: linear-gradient(to right, #9333ea, #a855f7);
+    color: white; font-weight: 600;
+  }
+  .mock-content { flex: 1; padding: 16px; }
+  .mock-title { font-size: 12px; font-weight: 700; color: #e4e4e7; margin-bottom: 12px; }
+  .mock-cards { display: flex; flex-direction: column; gap: 8px; }
+  .mock-card {
+    background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .mock-card-status {
+    font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 8px;
+    display: inline-block; margin-bottom: 4px;
+  }
+  .mock-card-status.new { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .mock-card-status.rec { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .mock-card-status.edit { background: rgba(168,85,247,0.15); color: #a855f7; }
+  .mock-card-text { font-size: 9px; color: #a1a1aa; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <div class="glow1"></div>
+  <div class="glow2"></div>
+
+  <div class="left">
+    <h1><span class="white">Your AI coach for</span><br><span class="purple">short-form video</span></h1>
+    <div class="tagline">AI Content Coach</div>
+    <p class="sub">Capture competitor videos, generate AI scripts, build your ideas board, and plan your content calendar — all from one extension + dashboard.</p>
+    <div class="features">
+      <div class="feat">AI Video Ideas</div>
+      <div class="feat">Script Generator</div>
+      <div class="feat">Competitor Tracking</div>
+      <div class="feat">Swipe File</div>
+      <div class="feat">Content Calendar</div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="mock">
+      <div class="mock-sidebar">
+        <div class="mock-logo">Orianna</div>
+        <div class="mock-nav-item">Dashboard</div>
+        <div class="mock-nav-item">AI Coach</div>
+        <div class="mock-nav-item">Scripts</div>
+        <div class="mock-nav-item">Competitors</div>
+        <div class="mock-nav-item">Inspo</div>
+        <div class="mock-nav-item active">Ideas</div>
+        <div class="mock-nav-item">Schedule</div>
+      </div>
+      <div class="mock-content">
+        <div class="mock-title">Ideas Board</div>
+        <div class="mock-cards">
+          <div class="mock-card">
+            <div class="mock-card-status new">New</div>
+            <div class="mock-card-text">"3 things I stopped doing that doubled my productivity"</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-status rec">Recording</div>
+            <div class="mock-card-text">"I tried the 5AM routine for 30 days — here's what happened"</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-status edit">Editing</div>
+            <div class="mock-card-text">"Stop copying morning routines. Here's why."</div>
+          </div>
+          <div class="mock-card">
+            <div class="mock-card-status new">New</div>
+            <div class="mock-card-text">"Unpopular opinion: you don't need a morning routine"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

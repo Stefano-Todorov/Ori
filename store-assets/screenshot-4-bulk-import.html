@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px; height: 800px; overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0a12; color: #fafafa; display: flex;
+  }
+  .sidebar { width: 240px; background: #0e0e18; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sb-brand { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .sb-brand h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+  .sb-brand p { font-size: 11px; color: #71717a; margin-top: 2px; }
+  .sb-nav { padding: 12px; flex: 1; }
+  .nav-i { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #71717a; margin-bottom: 2px; }
+  .nav-i.on { background: linear-gradient(to right, #9333ea, #a855f7); color: white; box-shadow: 0 4px 12px rgba(147,51,234,0.25); }
+  .sb-bottom { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .sb-signout { font-size: 13px; color: #71717a; padding: 10px 12px; }
+
+  /* Main — coach chat matching real code */
+  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .page-head { padding: 24px 32px 0; }
+  .page-title { font-size: 24px; font-weight: 700; }
+
+  .chat { flex: 1; overflow: hidden; padding: 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+  .msg { display: flex; gap: 12px; }
+  .msg.user { justify-content: flex-end; }
+  .msg.ai { justify-content: flex-start; }
+
+  /* AI avatar — matches real: gradient purple square with "O" */
+  .ai-avatar {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(to br, #9333ea, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: white;
+    box-shadow: 0 2px 8px rgba(147,51,234,0.2);
+  }
+
+  /* User bubble — purple gradient, rounded-tr-sm */
+  .user-bubble {
+    max-width: 65%; border-radius: 16px 2px 16px 16px;
+    padding: 12px 16px;
+    background: linear-gradient(to right, #9333ea, #a855f7);
+    color: white; font-size: 14px; line-height: 1.6;
+    box-shadow: 0 4px 12px rgba(147,51,234,0.15);
+  }
+
+  /* AI bubble — dark card, rounded-tl-sm */
+  .ai-bubble {
+    max-width: 70%; border-radius: 2px 16px 16px 16px;
+    padding: 14px 18px;
+    background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06);
+    color: #e4e4e7; font-size: 14px; line-height: 1.7;
+  }
+  .ai-bubble strong { color: #fafafa; }
+  .ai-bubble em { color: #a855f7; font-style: normal; font-weight: 600; }
+  .ai-bubble ul { margin: 8px 0; padding-left: 20px; }
+  .ai-bubble li { margin-bottom: 6px; }
+
+  /* Chat input — matching real */
+  .chat-footer {
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 16px 32px;
+    background: #12121a;
+  }
+  .chat-input-row { display: flex; gap: 12px; align-items: flex-end; max-width: 900px; }
+  .chat-input {
+    flex: 1; padding: 12px 16px; border-radius: 12px; font-size: 13px;
+    background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
+    color: #52525b;
+  }
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(to right, #9333ea, #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(147,51,234,0.2);
+  }
+  .send-btn svg { width: 16px; height: 16px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sb-brand"><h1>Orianna</h1><p>AI Content Coach</p></div>
+    <div class="sb-nav">
+      <div class="nav-i">Dashboard</div>
+      <div class="nav-i on">AI Coach</div>
+      <div class="nav-i">Scripts</div>
+      <div class="nav-i">Competitors</div>
+      <div class="nav-i">Inspo</div>
+      <div class="nav-i">Ideas</div>
+      <div class="nav-i">Schedule</div>
+      <div class="nav-i">Settings</div>
+    </div>
+    <div class="sb-bottom"><div class="sb-signout">Sign out</div></div>
+  </div>
+  <div class="main">
+    <div class="page-head">
+      <div class="page-title">AI Coach</div>
+    </div>
+    <div class="chat">
+      <div class="msg user">
+        <div class="user-bubble">I'm running out of content ideas for my lifestyle niche. My last 3 videos underperformed. What should I try differently?</div>
+      </div>
+
+      <div class="msg ai">
+        <div class="ai-avatar">O</div>
+        <div class="ai-bubble">
+          Looking at your recent scripts and ideas, I see a pattern — you've been doing mostly <em>listicle-style</em> videos. Let's mix up the format to re-engage your audience:
+          <ul>
+            <li><strong>Try a "day in my life" format</strong> — your niche responds well to authentic, unscripted moments. Your competitor @style_guru's top video (12.4M views) used this format.</li>
+            <li><strong>Lead with controversy</strong> — "Unpopular opinion" hooks are performing 3x better in lifestyle right now. Something like: <em>"Stop copying morning routines. Here's why."</em></li>
+            <li><strong>Use a POV hook</strong> — I see 4 of your saved inspo posts use POV format. Your audience clearly resonates with it.</li>
+          </ul>
+          Want me to generate a full script for any of these directions?
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="user-bubble">Love the controversy angle. Generate a script for the "stop copying morning routines" idea</div>
+      </div>
+
+      <div class="msg ai">
+        <div class="ai-avatar">O</div>
+        <div class="ai-bubble">
+          Great choice! Here's a full script for that angle:
+          <br><br>
+          <strong>Hook:</strong> <em>"Everyone's copying the same morning routine and it's actually making them LESS productive."</em>
+          <br><br>
+          <strong>Body:</strong> The internet convinced us all that waking up at 5AM, cold plunging, and journaling is the secret. But here's the truth — your body has its own rhythm. Copying someone else's routine is like wearing someone else's prescription glasses.
+          <br><br>
+          <strong>CTA:</strong> "Comment YOUR wake-up time and I'll tell you if your routine matches your chronotype."
+          <br><br>
+          Want me to save this as an idea on your board?
+        </div>
+      </div>
+    </div>
+    <div class="chat-footer">
+      <div class="chat-input-row">
+        <div class="chat-input">Ask Orianna anything... (Enter to send, Shift+Enter for new line)</div>
+        <div class="send-btn">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
