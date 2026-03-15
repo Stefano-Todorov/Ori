@@ -91,14 +91,15 @@ async function fetchInstagramVideoViaApify(postUrl: string): Promise<string | nu
   }
 
   try {
-    // Run the Apify Instagram Post Scraper actor synchronously
+    // Run the Apify Instagram Scraper actor synchronously
     const res = await fetch(
-      'https://api.apify.com/v2/acts/apify~instagram-post-scraper/run-sync-get-dataset-items?token=' + token,
+      'https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=' + token,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           directUrls: [postUrl],
+          resultsType: 'posts',
           resultsLimit: 1,
         }),
         signal: AbortSignal.timeout(60000), // Apify can take a while
