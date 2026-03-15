@@ -1109,7 +1109,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="w-[70vw] h-[70vh] max-w-none overflow-y-auto bg-background border-border rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
+        <DialogContent className="!w-[70vw] !max-w-[70vw] h-[70vh] overflow-y-auto bg-background border-border rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
