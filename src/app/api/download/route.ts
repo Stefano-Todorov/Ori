@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'YouTube downloads are not supported. Use the "View original" link instead.' }, { status: 400 })
     }
 
-    // Instagram: use cobalt.tools API (open-source download service)
+    // Instagram: use Apify Instagram scraper
     if (platform === 'instagram' || url.includes('instagram.com') || url.includes('cdninstagram.com')) {
       // If it's already a direct CDN URL, just proxy it
       if (url.includes('cdninstagram.com') || url.includes('fbcdn.net')) {
@@ -65,79 +65,10 @@ export async function GET(req: NextRequest) {
         if (streamResult) return streamResult
       }
 
-      // Method 1: cobalt.tools API
-      try {
-        const cobaltRes = await fetch('https://api.cobalt.tools/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({ url }),
-          signal: AbortSignal.timeout(20000),
-        })
-        if (cobaltRes.ok) {
-          const data = await cobaltRes.json()
-          // cobalt returns { status: "redirect"|"tunnel", url: "..." }
-          if (data.url) {
-            const streamResult = await streamVideo(data.url, 'instagram')
-            if (streamResult) return streamResult
-          }
-          // Or it might return a picker with multiple options
-          if (data.picker?.[0]?.url) {
-            const streamResult = await streamVideo(data.picker[0].url, 'instagram')
-            if (streamResult) return streamResult
-          }
-        }
-      } catch { /* try next method */ }
-
-      // Method 2: saveig.app API
-      try {
-        const saveigRes = await fetch('https://v3.saveig.app/api/ajaxSearch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            Origin: 'https://saveig.app',
-            Referer: 'https://saveig.app/',
-          },
-          body: `q=${encodeURIComponent(url)}&t=media&lang=en`,
-          signal: AbortSignal.timeout(15000),
-        })
-        if (saveigRes.ok) {
-          const data = await saveigRes.json()
-          if (data.data) {
-            // Response contains HTML with download links
-            const dlMatch = data.data.match(/href="([^"]*(?:cdninstagram|fbcdn)[^"]*)"/)
-            if (dlMatch?.[1]) {
-              const videoUrl = decodeHtmlEntities(dlMatch[1])
-              const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        }
-      } catch { /* try next method */ }
-
-      // Method 3: Instagram embed page
-      const shortcode = extractInstagramShortcode(url)
-      if (shortcode) {
-        try {
-          const embedRes = await fetch(`https://www.instagram.com/p/${shortcode}/embed/`, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              Accept: 'text/html,application/xhtml+xml',
-            },
-            signal: AbortSignal.timeout(15000),
-          })
-          if (embedRes.ok) {
-            const html = await embedRes.text()
-            const videoUrl = extractVideoUrlFromEmbed(html)
-            if (videoUrl) {
-              const streamResult = await streamVideo(videoUrl, 'instagram')
-              if (streamResult) return streamResult
-            }
-          }
-        } catch { /* fall through */ }
+      const videoUrl = await fetchInstagramVideoViaApify(url)
+      if (videoUrl) {
+        const streamResult = await streamVideo(videoUrl, 'instagram')
+        if (streamResult) return streamResult
       }
 
       return NextResponse.json({ error: 'Instagram download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
@@ -149,6 +80,45 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Download failed. Unsupported platform or URL.' }, { status: 400 })
   } catch {
     return NextResponse.json({ error: 'Download failed. Try again later.' }, { status: 500 })
+  }
+}
+
+async function fetchInstagramVideoViaApify(postUrl: string): Promise<string | null> {
+  const token = process.env.APIFY_API_TOKEN
+  if (!token) {
+    console.error('APIFY_API_TOKEN not set')
+    return null
+  }
+
+  try {
+    // Run the Apify Instagram Post Scraper actor synchronously
+    const res = await fetch(
+      'https://api.apify.com/v2/acts/apify~instagram-post-scraper/run-sync-get-dataset-items?token=' + token,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          directUrls: [postUrl],
+          resultsLimit: 1,
+        }),
+        signal: AbortSignal.timeout(60000), // Apify can take a while
+      }
+    )
+
+    if (!res.ok) {
+      console.error('Apify error:', res.status, await res.text().catch(() => ''))
+      return null
+    }
+
+    const items = await res.json()
+    if (!Array.isArray(items) || items.length === 0) return null
+
+    const item = items[0]
+    // The actor returns videoUrl directly
+    return item.videoUrl ?? item.video_url ?? null
+  } catch (err) {
+    console.error('Apify fetch error:', err)
+    return null
   }
 }
 
@@ -183,61 +153,3 @@ function extractTikTokId(url: string): string {
   const match = url.match(/\/video\/(\d+)/)
   return match?.[1] ?? ''
 }
-
-function extractInstagramShortcode(url: string): string | null {
-  const match = url.match(/\/(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/)
-  return match?.[2] ?? null
-}
-
-
-function extractVideoUrlFromEmbed(html: string): string | null {
-  // Try multiple patterns that appear in Instagram embed pages
-
-  // Pattern 1: "video_url":"..." in embedded JSON
-  const videoUrlMatch = html.match(/"video_url":"([^"]+)"/)
-  if (videoUrlMatch?.[1]) {
-    return decodeUnicodeEscapes(videoUrlMatch[1])
-  }
-
-  // Pattern 2: data-video-url="..." attribute
-  const dataVideoMatch = html.match(/data-video-url="([^"]+)"/)
-  if (dataVideoMatch?.[1]) {
-    return decodeHtmlEntities(dataVideoMatch[1])
-  }
-
-  // Pattern 3: <video> source with src
-  const videoSrcMatch = html.match(/<video[^>]*\ssrc="([^"]+)"/)
-  if (videoSrcMatch?.[1]) {
-    return decodeHtmlEntities(videoSrcMatch[1])
-  }
-
-  // Pattern 4: source tag inside video
-  const sourceMatch = html.match(/<source[^>]*\ssrc="([^"]+)"[^>]*type="video/)
-  if (sourceMatch?.[1]) {
-    return decodeHtmlEntities(sourceMatch[1])
-  }
-
-  // Pattern 5: "video_versions":[{"url":"..."}]
-  const versionsMatch = html.match(/"video_versions":\[.*?"url":"([^"]+)"/)
-  if (versionsMatch?.[1]) {
-    return decodeUnicodeEscapes(versionsMatch[1])
-  }
-
-  return null
-}
-
-function decodeUnicodeEscapes(str: string): string {
-  return str.replace(/\\u([\da-fA-F]{4})/g, (_, hex) =>
-    String.fromCharCode(parseInt(hex, 16))
-  ).replace(/\\\//g, '/')
-}
-
-function decodeHtmlEntities(str: string): string {
-  return str
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-}
-
