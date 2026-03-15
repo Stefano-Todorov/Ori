@@ -887,7 +887,13 @@ function render() {
     })
     // Create from Inspo
     document.getElementById('create-inspo-btn')?.addEventListener('click', () => {
-      setState({ showCreateInspo: !state.showCreateInspo })
+      const opening = !state.showCreateInspo
+      const patch = { showCreateInspo: opening }
+      // Carry over any tags selected in the main tag picker
+      if (opening && state.selectedTags.length > 0 && state.createInspoTags.length === 0) {
+        patch.createInspoTags = [...state.selectedTags]
+      }
+      setState(patch)
     })
     document.getElementById('add-another-btn')?.addEventListener('click', () => {
       setState({ createInspoItems: [...state.createInspoItems, ''] })
