@@ -45,7 +45,7 @@ export function ConnectedAccounts({ accounts }: Props) {
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <div>
         <p className="text-sm font-bold text-foreground">Connected Accounts</p>
         <p className="text-xs text-muted-foreground mt-0.5">Connect your social media accounts to schedule and publish posts</p>

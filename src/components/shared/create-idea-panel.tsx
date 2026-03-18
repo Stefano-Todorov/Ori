@@ -181,7 +181,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
           return (
             <div className={`grid gap-2 ${stats.length > 3 ? 'grid-cols-5' : 'grid-cols-3'}`}>
               {stats.map(({ label, value, icon: Icon }) => (
-                <div key={label} className="text-center p-2 rounded-lg bg-muted/50 dark:bg-[#12121a] border border-border dark:border-white/6">
+                <div key={label} className="text-center p-2 rounded-lg bg-muted/50 border border-border dark:border-white/6">
                   <Icon size={11} className="mx-auto mb-0.5 text-muted-foreground" />
                   <p className="text-xs font-bold text-foreground">{formatNumber(value)}</p>
                   <p className="text-[8px] uppercase tracking-wide text-muted-foreground">{label}</p>

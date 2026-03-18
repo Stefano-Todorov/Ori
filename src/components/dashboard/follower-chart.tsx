@@ -64,7 +64,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
   const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-foreground">Follower Growth</p>
         <div className="flex gap-1.5">

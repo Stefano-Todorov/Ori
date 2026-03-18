@@ -75,7 +75,7 @@ export function AnalyticsCharts({ posts }: Props) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <p className="text-sm font-bold text-foreground">Views Over Time</p>
         {viewsData.length < 2 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
@@ -97,7 +97,7 @@ export function AnalyticsCharts({ posts }: Props) {
         )}
       </div>
 
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <p className="text-sm font-bold text-foreground">Avg Views by Platform</p>
         {platformData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">No platform data yet.</p>

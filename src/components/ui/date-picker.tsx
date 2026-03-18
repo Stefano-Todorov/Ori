@@ -98,7 +98,7 @@ export function DatePicker({ value, onChange, className = '', placeholder = 'Sel
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border dark:border-white/8 focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
+        className="flex items-center gap-2 w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
       >
         <Calendar size={14} className="text-muted-foreground shrink-0" />
         <span className={displayValue ? 'text-foreground' : 'text-muted-foreground'}>
@@ -158,7 +158,7 @@ export function DatePicker({ value, onChange, className = '', placeholder = 'Sel
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-1 border-t border-border dark:border-white/8">
+          <div className="flex items-center justify-between pt-1 border-t border-border">
             <button type="button" onClick={clear} className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors px-1 py-0.5">
               Clear
             </button>

@@ -107,7 +107,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             autoFocus
-            className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
           />
         </div>
 
@@ -138,7 +138,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
           />
         </div>
 
@@ -151,7 +151,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             placeholder="@username"
             value={handle}
             onChange={(e) => setHandle(e.target.value)}
-            className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
           />
         </div>
 

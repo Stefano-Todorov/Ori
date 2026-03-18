@@ -312,7 +312,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
           {/* Difficulty */}
           <div className="space-y-2.5">
             <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Difficulty</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {(['easy', 'medium', 'hard'] as const).map((d) => (
                 <button
                   key={d}

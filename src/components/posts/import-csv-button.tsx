@@ -124,7 +124,7 @@ export function ImportCsvButton() {
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Platform</label>
                 <Select value={platform} onValueChange={(v) => { setPlatform(v); setShowHowTo(true) }}>
-                  <SelectTrigger className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg">
+                  <SelectTrigger className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg">
                     <SelectValue placeholder="Select platform" />
                   </SelectTrigger>
                   <SelectContent>
@@ -136,7 +136,7 @@ export function ImportCsvButton() {
               </div>
 
               {howTo && (
-                <div className="rounded-xl border border-border dark:border-white/8 bg-muted/40 dark:bg-[#1a1a2e] overflow-hidden">
+                <div className="rounded-xl border border-border bg-muted/40 dark:bg-[#1a1a2e] overflow-hidden">
                   <button
                     type="button"
                     className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 dark:hover:bg-[#1e1e38] transition-colors"

@@ -100,7 +100,7 @@ export function CoachChat({ initialHistory }: Props) {
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center text-center px-6" style={{ minHeight: 'calc(100vh - 140px)', paddingBottom: 40 }}>
+          <div className="flex flex-col items-center justify-center text-center px-4 sm:px-6 pb-10" style={{ minHeight: 'calc(100vh - 140px)' }}>
             {/* Avatar */}
             <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center mb-5">
               <img src="/brand/emoticon.svg" alt="" className="w-6 h-6" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = 'O' }} />
@@ -126,7 +126,7 @@ export function CoachChat({ initialHistory }: Props) {
           </div>
         ) : (
           /* ── Chat messages ── */
-          <div className="p-6 space-y-6">
+          <div className="p-4 sm:p-6 space-y-6">
             {messages.map((msg, i) => (
               <div
                 key={i}
@@ -142,7 +142,7 @@ export function CoachChat({ initialHistory }: Props) {
                 )}
                 <div
                   className={cn(
-                    'max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed',
+                    'max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed',
                     msg.role === 'user'
                       ? 'bg-purple-600 text-white rounded-tr-sm'
                       : 'bg-muted dark:bg-white/[0.04] border border-border dark:border-white/[0.06] text-foreground rounded-tl-sm'
@@ -161,7 +161,7 @@ export function CoachChat({ initialHistory }: Props) {
       </div>
 
       {/* ── Input bar ── */}
-      <div className="px-6 py-4 border-t border-border bg-background">
+      <div className="px-4 sm:px-6 py-4 border-t border-border bg-background">
         <div className="relative max-w-3xl mx-auto">
           <textarea
             ref={inputRef}

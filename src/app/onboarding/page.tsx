@@ -32,7 +32,7 @@ export default function OnboardingPage() {
   const [platforms, setPlatforms] = useState<string[]>([])
   const [postingTarget, setPostingTarget] = useState(3)
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   function togglePlatform(id: string) {
     setPlatforms((prev) =>
@@ -92,7 +92,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <div>
             <p className="text-lg font-bold text-foreground">{STEPS[step].title}</p>
             <p className="text-sm text-muted-foreground mt-0.5">{STEPS[step].description}</p>
@@ -152,7 +152,7 @@ export default function OnboardingPage() {
                     className={`flex items-center justify-between p-4 rounded-xl transition-all duration-150 text-left ${
                       platforms.includes(p.id)
                         ? 'bg-purple-500/10 border-2 border-purple-500 shadow-md shadow-purple-500/10'
-                        : 'border border-border dark:border-white/8 hover:border-purple-500/40 hover:bg-muted/50'
+                        : 'border border-border hover:border-purple-500/40 hover:bg-muted/50'
                     }`}
                   >
                     <span className={`font-medium ${platforms.includes(p.id) ? 'text-foreground' : 'text-muted-foreground'}`}>{p.label}</span>
@@ -178,7 +178,7 @@ export default function OnboardingPage() {
                       className={`py-3 rounded-xl font-bold transition-all duration-150 ${
                         postingTarget === t
                           ? 'bg-purple-600 text-white border border-transparent'
-                          : 'border border-border dark:border-white/8 text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                          : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
                       }`}
                     >
                       {t}x

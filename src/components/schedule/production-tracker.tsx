@@ -440,7 +440,7 @@ function EditIdeaDialog({
             <button
               onClick={handleSave}
               disabled={isPending || !form.idea.trim()}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-bold disabled:opacity-50 hover:brightness-110 transition-all"
+              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
             >
               {isPending ? 'Saving...' : 'Save'}
             </button>

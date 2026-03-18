@@ -104,7 +104,7 @@ export function ScheduleCalendar({ scheduledPosts }: Props) {
   }, [view, year, month, currentDate])
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-bold text-foreground">Calendar</p>
         <div className="flex items-center gap-1 bg-muted/50 dark:bg-white/[0.04] rounded-lg p-0.5">

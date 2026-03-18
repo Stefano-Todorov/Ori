@@ -18,11 +18,11 @@ interface Props {
 
 export function TopPosts({ posts }: Props) {
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <p className="text-sm font-bold text-foreground">Top Performing Posts</p>
       <div className="space-y-1">
         {posts.map((post, i) => (
-          <div key={post.id} className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/50 dark:hover:bg-white/[0.03] transition-colors">
+          <div key={post.id} className="flex items-center gap-2 sm:gap-4 p-3 rounded-xl hover:bg-muted/50 dark:hover:bg-white/[0.03] transition-colors">
             <span className="text-lg font-bold text-muted-foreground/30 w-6 shrink-0 text-center">
               {i + 1}
             </span>
@@ -41,7 +41,7 @@ export function TopPosts({ posts }: Props) {
                 {post.caption ?? post.title ?? post.url ?? 'No caption'}
               </p>
             </div>
-            <div className="flex gap-5 text-sm shrink-0">
+            <div className="flex flex-wrap gap-3 sm:gap-5 text-sm shrink-0">
               <div className="text-right">
                 <p className="font-bold text-foreground">{formatNumber(post.views)}</p>
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide">views</p>
