@@ -26,7 +26,7 @@ export function SettingsTabs({ profile }: { profile: Profile | null }) {
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="flex gap-1 p-1 rounded-xl bg-muted/50 dark:bg-white/[0.03] border border-border dark:border-white/8 w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-muted/50 dark:bg-white/[0.03] border border-border w-fit">
         {TABS.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -36,7 +36,7 @@ export function SettingsTabs({ profile }: { profile: Profile | null }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 isActive
-                  ? 'bg-background dark:bg-[#12121a] text-foreground shadow-sm border border-border dark:border-white/10'
+                  ? 'bg-background text-foreground shadow-sm border border-border dark:border-white/10'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >

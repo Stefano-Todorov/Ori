@@ -32,7 +32,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
   const [showHistory, setShowHistory] = useState(false)
   const [historyPlatform, setHistoryPlatform] = useState<Platform | 'all'>('all')
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -52,7 +52,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <p className="text-sm font-bold text-foreground">Add Followers</p>
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex gap-1.5">
@@ -63,7 +63,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
               onClick={() => setPlatform(p.key)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                 platform === p.key
-                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
               }`}
             >
@@ -84,7 +84,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-9 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-9 rounded-xl bg-purple-600 text-white text-sm font-bold transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? 'Saving...' : 'Save'}
         </button>

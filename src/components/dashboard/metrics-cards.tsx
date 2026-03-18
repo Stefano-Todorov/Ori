@@ -33,7 +33,7 @@ export function MetricsCards({ totalPosts, totalViews, totalLikes, avgEngagement
       {CARDS.map((card, i) => {
         const Icon = card.icon
         return (
-          <div key={card.title} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-5 space-y-3 transition-all duration-150 hover:border-purple-500/20 hover:shadow-lg hover:shadow-purple-500/5">
+          <div key={card.title} className="bg-card border border-border rounded-xl p-5 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
                 {card.title}

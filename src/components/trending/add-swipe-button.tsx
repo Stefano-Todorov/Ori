@@ -80,7 +80,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200"
+        className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all duration-200"
       >
         <Plus size={16} />
         Add video
@@ -121,7 +121,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
                 onClick={() => setPlatform(p)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium capitalize transition-all duration-150 ${
                   platform === p
-                    ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                    ? 'bg-purple-600 text-white border border-transparent'
                     : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
                 }`}
               >
@@ -163,7 +163,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             <button
               onClick={handleSave}
               disabled={!url.trim() || loading}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-l-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-5 py-2 rounded-l-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <><Loader2 size={13} className="animate-spin" /> Fetching...</> : 'Save'}
             </button>

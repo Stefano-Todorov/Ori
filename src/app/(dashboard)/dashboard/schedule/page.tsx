@@ -31,7 +31,7 @@ export default async function SchedulePage() {
   const pipelineIdeas = ideas.filter(i => i.production_status !== 'new' || i.status !== 'new')
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Schedule</h1>
         <p className="text-muted-foreground mt-1">Plan your posts and track production</p>

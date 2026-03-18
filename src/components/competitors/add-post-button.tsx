@@ -112,7 +112,7 @@ export function AddPostButton({ handle, platform, allTags = [] }: Props) {
                 <button
                   onClick={handleFetchAndSave}
                   disabled={!url.trim() || fetching || isPending}
-                  className="h-9 px-4 rounded-l-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="h-9 px-4 rounded-l-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {fetching || isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
                   {fetching ? 'Fetching...' : isPending ? 'Saving...' : 'Add'}

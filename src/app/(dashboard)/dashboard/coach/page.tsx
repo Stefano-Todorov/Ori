@@ -15,10 +15,10 @@ export default async function CoachPage() {
     .limit(50)
 
   return (
-    <div className="flex flex-col h-full" style={{ background: '#0a0a0f' }}>
-      <div className="px-6 pt-6 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, color: 'white' }}>AI Coach</h1>
-        <p style={{ color: '#9ca3af', fontSize: 15, marginTop: 4 }}>
+    <div className="flex flex-col h-full bg-background">
+      <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-border">
+        <h1 className="text-2xl font-bold text-foreground">AI Coach</h1>
+        <p className="text-muted-foreground text-[15px] mt-1">
           Your AI marketing manager — strategy, content ideas, competitor analysis, and growth.
         </p>
       </div>

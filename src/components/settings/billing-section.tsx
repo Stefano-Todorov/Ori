@@ -98,7 +98,7 @@ export function BillingSection() {
   return (
     <div className="space-y-6">
       {/* Current plan banner */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-card dark:bg-[#12121a] border border-border dark:border-white/8">
+      <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
         <div className="flex items-center gap-3">
           <Crown size={18} className={currentTier === 'studio' ? 'text-amber-500' : currentTier === 'pro' ? 'text-purple-500' : currentTier === 'creator' ? 'text-blue-500' : 'text-muted-foreground'} />
           <div>
@@ -132,7 +132,7 @@ export function BillingSection() {
             <div
               key={tier.slug}
               className={`rounded-xl border p-4 space-y-3 transition-all ${tierAccent(tier.slug)} ${
-                isCurrent ? 'ring-2 ring-purple-500/30 bg-purple-500/[0.03]' : 'bg-card dark:bg-[#12121a]'
+                isCurrent ? 'ring-2 ring-purple-500/30 bg-purple-500/[0.03]' : 'bg-card'
               }`}
             >
               <div>
@@ -195,7 +195,7 @@ export function BillingSection() {
                     tier.slug === 'studio'
                       ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-black hover:brightness-110'
                       : tier.slug === 'pro'
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/20 hover:brightness-110'
+                      ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20 hover:bg-purple-700'
                       : 'bg-blue-500 text-white hover:bg-blue-400'
                   }`}
                 >
@@ -216,7 +216,7 @@ export function BillingSection() {
 
       {/* Current usage */}
       {usageData && currentTier !== 'explorer' && (
-        <div className="rounded-xl border border-border dark:border-white/8 bg-card dark:bg-[#12121a] p-4 space-y-3">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">This month&apos;s usage</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {FEATURE_ROWS.map(({ key, label }) => {

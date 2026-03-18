@@ -65,12 +65,12 @@ export function SettingsForm({ profile }: Props) {
     router.refresh()
   }
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   return (
     <div className="space-y-5">
       {/* Appearance */}
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <p className="text-sm font-bold text-foreground">Appearance</p>
         <div className="space-y-2">
           <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Theme</label>
@@ -85,7 +85,7 @@ export function SettingsForm({ profile }: Props) {
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium capitalize transition-all duration-150 ${
                     theme === t
                       ? 'bg-purple-500/10 border-2 border-purple-500 text-foreground shadow-md shadow-purple-500/10'
-                      : 'border border-border dark:border-white/8 text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                      : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
                   }`}
                 >
                   <Icon size={14} />
@@ -98,7 +98,7 @@ export function SettingsForm({ profile }: Props) {
       </div>
 
       {/* Profile */}
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <p className="text-sm font-bold text-foreground">Profile</p>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -121,7 +121,7 @@ export function SettingsForm({ profile }: Props) {
       </div>
 
       {/* Content preferences */}
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <p className="text-sm font-bold text-foreground">Content preferences</p>
         <div className="space-y-4">
           <div className="space-y-2.5">
@@ -134,7 +134,7 @@ export function SettingsForm({ profile }: Props) {
                   onClick={() => togglePlatform(p.id)}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                     platforms.includes(p.id)
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                      ? 'bg-purple-600 text-white border border-transparent'
                       : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
                   }`}
                 >
@@ -153,8 +153,8 @@ export function SettingsForm({ profile }: Props) {
                   onClick={() => setPostingTarget(t)}
                   className={`w-12 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
                     postingTarget === t
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
-                      : 'border border-border dark:border-white/8 text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                      ? 'bg-purple-600 text-white border border-transparent'
+                      : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
                   }`}
                 >
                   {t}x
@@ -172,7 +172,7 @@ export function SettingsForm({ profile }: Props) {
         className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
           saved
             ? 'bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30'
-            : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5'
+            : 'bg-purple-600 text-white hover:bg-purple-700'
         } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {loading ? 'Saving...' : saved ? 'Saved!' : 'Save changes'}

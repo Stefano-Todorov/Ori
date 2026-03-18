@@ -164,7 +164,7 @@ function MultiSelect({
             onClick={() => toggle(opt)}
             className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
               selected.includes(opt)
-                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                ? 'bg-purple-600 text-white border border-transparent'
                 : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
             }`}
           >
@@ -261,7 +261,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
   return (
     <div className="space-y-6">
       {/* ─── Generator Card ─── */}
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-7 border-t-2 border-t-purple-600 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+      <div className="bg-card border border-border rounded-2xl p-7 border-t-2 border-t-purple-600 shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2.5 mb-1">
@@ -280,7 +280,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && generate(false)}
-              className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+              className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
             />
           </div>
 
@@ -290,7 +290,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
               placeholder="e.g. controversial take, storytime"
               value={angle}
               onChange={(e) => setAngle(e.target.value)}
-              className="bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+              className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
             />
           </div>
 
@@ -344,7 +344,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
               <button
                 onClick={() => generate(false)}
                 disabled={!topic.trim() || loading}
-                className="flex-1 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                className="flex-1 h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <><Loader2 size={16} className="animate-spin" />Generating...</>
@@ -368,7 +368,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
       </div>
 
       {result && (
-        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-5">
+        <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
           {/* ─── Title row ─── */}
           <div className="flex items-center gap-3 flex-wrap">
             <h3 className="font-bold text-lg flex-1 truncate text-foreground leading-tight">{result.script.topic}</h3>
@@ -405,7 +405,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 ${
                 ideaSaved
                   ? 'bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30'
-                  : 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
               <Bookmark size={13} />
@@ -522,7 +522,7 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
                 {result.script.hashtags.map((tag) => (
                   <span
                     key={tag}
-                    className="text-xs px-2.5 py-1 rounded-full bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/8 text-muted-foreground transition-all duration-150 hover:border-purple-500 hover:text-foreground"
+                    className="text-xs px-2.5 py-1 rounded-full bg-muted/50 dark:bg-white/[0.04] border border-border text-muted-foreground transition-all duration-150 hover:border-purple-500 hover:text-foreground"
                   >
                     #{tag}
                   </span>

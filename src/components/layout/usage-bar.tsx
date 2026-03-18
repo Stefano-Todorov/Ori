@@ -41,7 +41,7 @@ export function UsageBar() {
       <div className="p-3 border-t border-border">
         <Link
           href="/dashboard/settings?tab=billing"
-          className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-600/10 to-purple-500/10 border border-purple-500/20 hover:border-purple-500/40 transition-all group"
+          className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-muted/50 border border-border hover:border-purple-500/30 transition-colors group"
         >
           <Sparkles size={14} className="text-purple-500 shrink-0" />
           <div className="flex-1 min-w-0">

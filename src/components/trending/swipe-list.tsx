@@ -291,7 +291,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
 
   if (posts.length === 0 && archivedPosts.length === 0) {
     return (
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
+      <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-2">
         <p className="font-bold text-foreground">No inspo saved yet</p>
         <p className="text-sm text-muted-foreground">Save videos that inspire you — add a URL above or use the Chrome extension while browsing.</p>
       </div>
@@ -764,7 +764,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
               return (
             <div className={`grid gap-3 ${cols}`}>
               {colorStats.map(({ label, display, icon: Icon, color }) => (
-                <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
+                <div key={label} className="text-center p-2.5 rounded-lg bg-background border border-border dark:border-white/6">
                   <Icon size={12} className={`mx-auto mb-1 ${color}`} />
                   <p className={`text-sm font-bold ${color}`}>{display}</p>
                   <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
@@ -775,7 +775,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             })()}
 
             {/* Notes */}
-            <div className="rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6 p-3">
+            <div className="rounded-lg bg-background border border-border dark:border-white/6 p-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1.5">Notes</p>
               <InlineNotes
                 initialValue={post.ai_notes ?? ''}
@@ -791,7 +791,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-semibold shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-all"
               >
                 <Sparkles size={12} />
                 Get Ideas

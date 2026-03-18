@@ -15,7 +15,7 @@ export default function CleanupPage() {
   }
 
   return (
-    <div className="p-8 max-w-md space-y-4">
+    <div className="p-4 sm:p-6 md:p-8 max-w-md space-y-4">
       <h1 className="text-xl font-bold">Cleanup Posts</h1>
       <p className="text-sm text-muted-foreground">
         Delete all posts that have 0 views, 0 likes, and 0 comments (broken saves from before the extraction fix).

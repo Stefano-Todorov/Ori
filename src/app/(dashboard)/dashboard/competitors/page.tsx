@@ -69,7 +69,7 @@ export default async function CompetitorsPage() {
   return (
     <div className="relative">
       {/* Add competitor button floats in the header area */}
-      <div className="absolute top-8 right-8 z-10">
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-10">
         <AddCompetitorButton />
       </div>
       <CompetitorsClient

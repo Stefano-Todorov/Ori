@@ -295,7 +295,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
           <button
             onClick={saveAll}
             disabled={!forms.some(f => !f.saved && f.idea.trim())}
-            className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="w-full h-11 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {forms.some(f => f.saving) ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
             {forms.filter(f => !f.saved && f.idea.trim()).length > 1 ? `Save ${forms.filter(f => !f.saved && f.idea.trim()).length} ideas` : 'Save idea'}
@@ -440,7 +440,7 @@ function IdeaFormInline({ form, allTags, urlLocked, onChange, onSave }: {
       <button
         onClick={onSave}
         disabled={!form.idea.trim() || form.saving}
-        className="w-full mt-1 h-10 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+        className="w-full mt-1 h-10 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {form.saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
         Save idea

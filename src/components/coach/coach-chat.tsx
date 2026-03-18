@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Loader2, ArrowRight } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 import type { CoachMessage } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -14,11 +14,11 @@ interface DisplayMessage {
   content: string
 }
 
-const SUGGESTIONS: { icon: string; text: string }[] = [
-  { icon: '🔍', text: 'Analyze my competitors and find content gaps' },
-  { icon: '✍️', text: 'Write me 5 hook ideas for my next video' },
-  { icon: '📅', text: 'Build me a content calendar for this week' },
-  { icon: '🚀', text: 'How should I market my product on social?' },
+const SUGGESTIONS = [
+  'Analyze my competitors and find content gaps',
+  'Write me 5 hook ideas for my next video',
+  'Build me a content calendar for this week',
+  'How should I market my product on social?',
 ]
 
 export function CoachChat({ initialHistory }: Props) {
@@ -99,98 +99,27 @@ export function CoachChat({ initialHistory }: Props) {
     <div className="flex flex-col flex-1 overflow-hidden">
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          /* ── Empty state with glows ── */
-          <div
-            className="flex flex-col items-center justify-center text-center px-6"
-            style={{
-              minHeight: 'calc(100vh - 140px)',
-              paddingBottom: 40,
-              background: `
-                radial-gradient(ellipse 60% 50% at 50% 40%, rgba(124,58,237,0.18), transparent 70%),
-                radial-gradient(ellipse 30% 25% at 50% 60%, rgba(168,85,247,0.06), transparent)
-              `,
-            }}
-          >
+          /* ── Empty state ── */
+          <div className="flex flex-col items-center justify-center text-center px-6" style={{ minHeight: 'calc(100vh - 140px)', paddingBottom: 40 }}>
             {/* Avatar */}
-            <div
-              className="flex items-center justify-center rounded-full mb-4"
-              style={{
-                width: 56,
-                height: 56,
-                background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                animation: 'coach-pulse 3s ease-in-out infinite',
-              }}
-            >
-              <span style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>✦</span>
+            <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center mb-5">
+              <img src="/brand/emoticon.svg" alt="" className="w-6 h-6" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.textContent = 'O' }} />
             </div>
 
-            {/* Title */}
-            <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-              <span style={{ color: 'white' }}>Hey, I&apos;m </span>
-              <span
-                style={{
-                  background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                Orianna
-              </span>
-            </h2>
-            <p
-              style={{
-                color: '#9ca3af',
-                fontSize: 14,
-                maxWidth: 400,
-                lineHeight: 1.5,
-                marginBottom: 24,
-              }}
-            >
-              Your AI marketing manager — I know your niche, competitors, and goals. Ask me anything.
+            <h2 className="text-xl font-semibold text-foreground mb-1">What can I help with?</h2>
+            <p className="text-sm text-muted-foreground max-w-sm mb-8">
+              I know your niche, competitors, and goals. Ask me anything about your content strategy.
             </p>
 
             {/* Suggestion cards */}
-            <div
-              className="grid grid-cols-1 sm:grid-cols-2 w-full"
-              style={{ maxWidth: 520, gap: 10 }}
-            >
-              {SUGGESTIONS.map((s) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
+              {SUGGESTIONS.map((text) => (
                 <button
-                  key={s.text}
-                  onClick={() => sendMessage(s.text)}
-                  className="group relative text-left"
-                  style={{
-                    background: '#1a1a2e',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    borderRadius: 12,
-                    padding: '12px 16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'rgba(124,58,237,0.4)'
-                    el.style.background = '#1e1e38'
-                    el.style.boxShadow = '0 0 20px rgba(124,58,237,0.1)'
-                    el.style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'rgba(255,255,255,0.07)'
-                    el.style.background = '#1a1a2e'
-                    el.style.boxShadow = 'none'
-                    el.style.transform = 'translateY(0)'
-                  }}
+                  key={text}
+                  onClick={() => sendMessage(text)}
+                  className="text-left px-4 py-3 rounded-xl border border-border dark:border-white/[0.07] bg-card dark:bg-white/[0.03] text-sm text-foreground hover:bg-muted dark:hover:bg-white/[0.06] hover:border-border transition-colors"
                 >
-                  <span style={{ fontSize: 14, display: 'block', marginBottom: 6 }}>{s.icon}</span>
-                  <span style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500, lineHeight: '1.4' }}>
-                    {s.text}
-                  </span>
-                  <ArrowRight
-                    size={14}
-                    className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ color: '#7c3aed' }}
-                  />
+                  {text}
                 </button>
               ))}
             </div>
@@ -207,31 +136,17 @@ export function CoachChat({ initialHistory }: Props) {
                 )}
               >
                 {msg.role === 'assistant' && (
-                  <div
-                    className="flex items-center justify-center shrink-0"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-                      boxShadow: '0 0 0 3px rgba(124,58,237,0.15)',
-                    }}
-                  >
-                    <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>✦</span>
+                  <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center shrink-0 text-white text-[11px] font-semibold">
+                    O
                   </div>
                 )}
                 <div
                   className={cn(
                     'max-w-[75%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed',
                     msg.role === 'user'
-                      ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-tr-sm shadow-md shadow-purple-500/15'
-                      : 'rounded-tl-sm'
+                      ? 'bg-purple-600 text-white rounded-tr-sm'
+                      : 'bg-muted dark:bg-white/[0.04] border border-border dark:border-white/[0.06] text-foreground rounded-tl-sm'
                   )}
-                  style={msg.role === 'assistant' ? {
-                    background: '#1a1a2e',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    color: '#e2e8f0',
-                  } : undefined}
                 >
                   {msg.content}
                   {msg.role === 'assistant' && streaming && i === messages.length - 1 && (
@@ -246,92 +161,34 @@ export function CoachChat({ initialHistory }: Props) {
       </div>
 
       {/* ── Input bar ── */}
-      <div
-        style={{
-          padding: '16px 24px',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
-          background: '#0a0a0f',
-        }}
-      >
+      <div className="px-6 py-4 border-t border-border bg-background">
         <div className="relative max-w-3xl mx-auto">
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Orianna anything..."
+            placeholder="Ask anything..."
             rows={1}
-            style={{
-              width: '100%',
-              background: '#1a1a2e',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 12,
-              padding: '14px 50px 14px 16px',
-              color: 'white',
-              fontSize: 14,
-              resize: 'none',
-              outline: 'none',
-              minHeight: 48,
-              maxHeight: 128,
-              overflowY: 'hidden',
-              transition: 'border-color 0.2s, box-shadow 0.2s',
-              lineHeight: '1.5',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = '#7c3aed'
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,58,237,0.15)'
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
+            className="w-full bg-muted dark:bg-white/[0.04] border border-border dark:border-white/[0.08] rounded-xl py-3.5 pl-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-colors"
+            style={{ minHeight: 48, maxHeight: 128 }}
           />
           <button
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || streaming}
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #a855f7)',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.disabled) {
-                e.currentTarget.style.filter = 'brightness(1.15)'
-                e.currentTarget.style.transform = 'translateY(-50%) scale(1.05)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.filter = 'none'
-              e.currentTarget.style.transform = 'translateY(-50%)'
-            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-700 flex items-center justify-center text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {streaming ? (
-              <Loader2 size={16} className="animate-spin" style={{ color: 'white' }} />
+              <Loader2 size={14} className="animate-spin" />
             ) : (
-              <Send size={16} style={{ color: 'white' }} />
+              <Send size={14} />
             )}
           </button>
         </div>
-        <p style={{ fontSize: 11, color: '#4b5563', textAlign: 'center', marginTop: 6 }}>
-          Press Enter to send &middot; Shift+Enter for new line
+        <p className="text-[11px] text-muted-foreground text-center mt-1.5">
+          Enter to send &middot; Shift+Enter for new line
         </p>
       </div>
-
-      {/* Pulse animation for avatar */}
-      <style jsx global>{`
-        @keyframes coach-pulse {
-          0%, 100% { box-shadow: 0 0 0 6px rgba(124,58,237,0.15), 0 0 40px rgba(124,58,237,0.3); }
-          50% { box-shadow: 0 0 0 8px rgba(124,58,237,0.2), 0 0 60px rgba(124,58,237,0.45); }
-        }
-        textarea::placeholder {
-          color: #6b7280;
-        }
-      `}</style>
     </div>
   )
 }

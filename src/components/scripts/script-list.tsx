@@ -75,7 +75,7 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-5">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
       {/* ─── Title row ─── */}
       <div className="flex items-center gap-3 flex-wrap">
         <h3 className="font-bold text-lg flex-1 truncate text-foreground leading-tight">{script.topic}</h3>
@@ -178,7 +178,7 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
             {script.hashtags.map((tag) => (
               <span
                 key={tag}
-                className="text-xs px-2.5 py-1 rounded-full bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/8 text-muted-foreground transition-all duration-150 hover:border-purple-500 hover:text-foreground"
+                className="text-xs px-2.5 py-1 rounded-full bg-muted/50 dark:bg-white/[0.04] border border-border text-muted-foreground transition-all duration-150 hover:border-purple-500 hover:text-foreground"
               >
                 #{tag}
               </span>
@@ -212,7 +212,7 @@ export function ScriptList({ scripts: initialScripts }: Props) {
               onClick={() => setFilter(d)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                 filter === d
-                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
               }`}
             >

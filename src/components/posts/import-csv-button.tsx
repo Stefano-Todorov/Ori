@@ -114,7 +114,7 @@ export function ImportCsvButton() {
               </p>
               <button
                 onClick={handleClose}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all"
+                className="px-5 py-2 rounded-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all"
               >
                 Done
               </button>
@@ -194,7 +194,7 @@ export function ImportCsvButton() {
               <button
                 onClick={handleImport}
                 disabled={!file || !platform || loading}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Importing...' : 'Import'}
               </button>

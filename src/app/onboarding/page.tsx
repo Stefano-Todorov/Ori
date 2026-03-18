@@ -177,7 +177,7 @@ export default function OnboardingPage() {
                       onClick={() => setPostingTarget(t)}
                       className={`py-3 rounded-xl font-bold transition-all duration-150 ${
                         postingTarget === t
-                          ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20 border border-transparent'
+                          ? 'bg-purple-600 text-white border border-transparent'
                           : 'border border-border dark:border-white/8 text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
                       }`}
                     >
@@ -210,7 +210,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={() => setStep(step + 1)}
                   disabled={!canProceed}
-                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="flex-1 h-11 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Continue
                 </button>
@@ -218,7 +218,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={handleFinish}
                   disabled={loading}
-                  className="flex-1 h-11 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  className="flex-1 h-11 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Setting up...' : "Let's go!"}
                 </button>

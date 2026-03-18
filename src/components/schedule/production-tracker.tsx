@@ -352,11 +352,11 @@ function EditIdeaDialog({
     })
   }
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   return (
     <Dialog open={!!idea} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-[520px] bg-card dark:bg-[#12121a] border-border dark:border-white/10 max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
         </DialogHeader>
@@ -520,7 +520,7 @@ export function ProductionTracker({ ideas }: Props) {
 
   return (
     <>
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-foreground">Production Pipeline</p>
           <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>

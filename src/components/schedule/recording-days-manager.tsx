@@ -34,7 +34,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
   const [newNotes, setNewNotes] = useState('')
   const [expandedDay, setExpandedDay] = useState<string | null>(null)
 
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border dark:border-white/8 rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
 
   function handleAddDay(e: React.FormEvent) {
     e.preventDefault()
@@ -79,7 +79,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
     new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <p className="text-sm font-bold text-foreground">Recording Days</p>
 
       {/* Add new recording day */}
@@ -89,7 +89,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
         <button
           type="submit"
           disabled={isPending || !newDate}
-          className="h-9 px-3 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold shrink-0 disabled:opacity-50 hover:brightness-110 transition-all"
+          className="h-9 px-3 rounded-xl bg-purple-600 text-white text-sm font-bold shrink-0 disabled:opacity-50 hover:bg-purple-700 transition-all"
         >
           <Plus size={16} />
         </button>
@@ -106,7 +106,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
           const unassigned = availableIdeas.filter(i => !assignedIds.has(i.id))
 
           return (
-            <div key={day.id} className="border border-border dark:border-white/8 rounded-xl overflow-hidden">
+            <div key={day.id} className="border border-border rounded-xl overflow-hidden">
               <div
                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/30 dark:hover:bg-white/[0.02] transition-colors"
                 onClick={() => setExpandedDay(isExpanded ? null : day.id)}
@@ -132,7 +132,7 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
               </div>
 
               {isExpanded && (
-                <div className="border-t border-border dark:border-white/8 p-3 space-y-2">
+                <div className="border-t border-border p-3 space-y-2">
                   {/* Assigned ideas */}
                   {day.ideas.map(idea => (
                     <div key={idea.id} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-muted/30 dark:bg-white/[0.02]">

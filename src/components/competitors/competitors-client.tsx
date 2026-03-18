@@ -120,7 +120,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
   return (
-    <div className="p-8 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
@@ -138,7 +138,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
       {/* Competitor cards */}
       {groups.length === 0 && orphanedHandles.length === 0 && (
-        <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
+        <div className="bg-card border border-border dark:border-white/8 rounded-2xl p-12 text-center space-y-2">
           <p className="font-bold text-foreground">No competitors yet</p>
           <p className="text-sm text-muted-foreground">Add a competitor to start tracking their content and get AI-generated ideas from their top posts.</p>
         </div>
@@ -150,7 +150,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
         ))}
 
         {orphanedHandles.map(handle => (
-          <div key={handle} className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+          <div key={handle} className="bg-card border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
             <div className="flex items-center gap-2">
               <span className="text-base font-semibold text-muted-foreground">@{handle}</span>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-gray-400 text-gray-500">account removed</span>
@@ -231,7 +231,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl overflow-hidden">
+    <div className="bg-card border border-border dark:border-white/8 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="p-5">
         <div className="flex items-center gap-3">
@@ -262,7 +262,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
                 onClick={() => setLinkMenuOpen(!linkMenuOpen)}
                 className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold transition-all ${
                   comps.length > 1
-                    ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-sm shadow-purple-500/20 hover:brightness-110'
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
                     : 'border border-border dark:border-white/10 text-muted-foreground hover:text-purple-500 hover:border-purple-500/40'
                 }`}
               >
@@ -956,7 +956,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
               return (
                 <div className={`grid gap-3 ${cols}`}>
                   {colorStats.map(({ label, display, icon: Icon, color }) => (
-                    <div key={label} className="text-center p-2.5 rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6">
+                    <div key={label} className="text-center p-2.5 rounded-lg bg-background border border-border dark:border-white/6">
                       <Icon size={12} className={`mx-auto mb-1 ${color}`} />
                       <p className={`text-sm font-bold ${color}`}>{display}</p>
                       <p className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</p>
@@ -967,7 +967,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
             })()}
 
             {/* Post notes */}
-            <div className="rounded-lg bg-background dark:bg-[#12121a] border border-border dark:border-white/6 p-3">
+            <div className="rounded-lg bg-background border border-border dark:border-white/6 p-3">
               <p className="text-[11px] font-bold uppercase tracking-wider text-purple-500 dark:text-purple-400 mb-1.5">Notes</p>
               <InlineNotes
                 initialValue={post.ai_notes ?? ''}
@@ -980,7 +980,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
               <button
                 onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-xs font-semibold shadow-sm shadow-purple-500/20 hover:brightness-110 transition-all"
+                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-all"
               >
                 <Sparkles size={12} />
                 Get Ideas

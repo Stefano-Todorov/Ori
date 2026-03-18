@@ -90,7 +90,7 @@ export function PlanPostForm({ ideas }: Props) {
 
   if (ideas.length === 0) {
     return (
-      <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2">
+      <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2">
         <CalendarPlus size={24} className="text-muted-foreground" />
         <p className="text-sm font-bold text-foreground">Schedule a Post</p>
         <p className="text-xs text-muted-foreground">
@@ -101,7 +101,7 @@ export function PlanPostForm({ ideas }: Props) {
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <p className="text-sm font-bold text-foreground">Schedule a Post</p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -110,7 +110,7 @@ export function PlanPostForm({ ideas }: Props) {
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border dark:border-white/8 focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
+            className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
           >
             <span className={selectedIdea ? 'text-foreground truncate pr-2' : 'text-muted-foreground'}>
               {selectedIdea ? selectedIdea.idea.slice(0, 50) + (selectedIdea.idea.length > 50 ? '...' : '') : 'Select an idea...'}
@@ -121,7 +121,7 @@ export function PlanPostForm({ ideas }: Props) {
           {dropdownOpen && (
             <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card dark:bg-[#1a1a2e] border border-border dark:border-white/10 rounded-xl shadow-xl shadow-black/20 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
               {/* Search */}
-              <div className="flex items-center gap-2 px-3 py-2 border-b border-border dark:border-white/8">
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
                 <Search size={13} className="text-muted-foreground shrink-0" />
                 <input
                   ref={searchRef}
@@ -192,7 +192,7 @@ export function PlanPostForm({ ideas }: Props) {
               onClick={() => setPlatform(prev => prev === p.key ? '' : p.key)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
                 platform === p.key
-                  ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md shadow-purple-500/20'
+                  ? 'bg-purple-600 text-white'
                   : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
               }`}
             >
@@ -207,7 +207,7 @@ export function PlanPostForm({ ideas }: Props) {
         <button
           type="submit"
           disabled={isPending || !ideaId}
-          className="w-full h-9 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-9 rounded-xl bg-purple-600 text-white text-sm font-bold transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? 'Scheduling...' : 'Schedule'}
         </button>

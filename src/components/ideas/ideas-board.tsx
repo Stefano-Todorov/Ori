@@ -577,7 +577,7 @@ function IdeaCard({
                   <button
                     onClick={handleSchedule}
                     disabled={!scheduleDate || scheduling || scheduled}
-                    className="mt-3 w-full h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 bg-gradient-to-r from-purple-600 to-purple-500 hover:brightness-110 text-white shadow-sm shadow-purple-500/20"
+                    className="mt-3 w-full h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-40 bg-purple-600 hover:bg-purple-700 text-white"
                   >
                     {scheduled ? <><Check size={12} /> Scheduled!</> : scheduling ? 'Scheduling...' : 'Schedule'}
                   </button>
@@ -890,7 +890,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         </div>
         <button
           onClick={() => setAddOpen(true)}
-          className="h-9 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center gap-1.5 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(124,58,237,0.4)]"
+          className="h-9 px-4 rounded-lg bg-purple-600 text-white text-sm font-bold flex items-center gap-1.5 transition-all duration-200 hover:bg-purple-700"
         >
           <Plus size={16} />
           New idea
@@ -1100,7 +1100,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
           <button
             onClick={handleAdd}
             disabled={!addForm.idea.trim() || adding}
-            className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="w-full mt-3 h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {adding ? 'Saving...' : 'Save idea'}
           </button>
@@ -1131,7 +1131,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
           <button
             onClick={handleEdit}
             disabled={!editForm.idea.trim() || saving}
-            className="w-full mt-3 h-12 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="w-full mt-3 h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save changes'}
           </button>

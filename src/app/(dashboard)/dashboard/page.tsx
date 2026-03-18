@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   ])
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8">
       {/* ─── Header ─── */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -66,7 +66,7 @@ export default async function DashboardPage() {
         <div className="flex gap-3">
           <Link
             href="/dashboard/coach"
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-purple-500 text-white text-sm font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 hover:-translate-y-0.5 transition-all duration-200"
+            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors"
           >
             <Sparkles size={14} />
             Ask Orianna

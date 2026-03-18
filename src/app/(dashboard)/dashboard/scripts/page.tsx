@@ -18,7 +18,7 @@ export default async function ScriptsPage() {
   ])
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-4 sm:p-6 md:p-8 space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Script Generator</h1>
         <p className="text-muted-foreground mt-1">

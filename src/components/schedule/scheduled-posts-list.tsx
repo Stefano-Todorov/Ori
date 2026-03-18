@@ -42,7 +42,7 @@ export function ScheduledPostsList({ posts }: Props) {
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-3">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-3">
       <p className="text-sm font-bold text-foreground">Planned Posts</p>
       <div className="space-y-2">
         {posts.map(post => {

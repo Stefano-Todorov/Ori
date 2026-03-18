@@ -64,7 +64,7 @@ export function KanbanBoard({ ideas }: Props) {
   }
 
   return (
-    <div className="bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-bold text-foreground">Production Board</p>
         <div className="flex gap-1">
@@ -113,7 +113,7 @@ export function KanbanBoard({ ideas }: Props) {
                     draggable
                     onDragStart={e => handleDragStart(e, idea.id)}
                     onDragEnd={() => setDraggingId(null)}
-                    className={`group bg-card dark:bg-[#12121a] border border-border dark:border-white/8 rounded-lg p-2.5 cursor-grab active:cursor-grabbing transition-all hover:border-purple-500/30 ${
+                    className={`group bg-card border border-border rounded-lg p-2.5 cursor-grab active:cursor-grabbing transition-colors hover:border-border ${
                       draggingId === idea.id ? 'opacity-40' : ''
                     }`}
                   >
