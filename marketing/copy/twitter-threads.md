@@ -23,7 +23,7 @@ Orianna fixes this with 6 tools in one dashboard:
 2. Script Generator — hook, body, CTA, hashtags in seconds
 3. Ideas Board — visual kanban for every video idea
 4. Competitor Research — import and analyze any creator
-5. Swipe File — save trending videos with a Chrome extension
+5. Saved Inspo Videos — save trending videos with a Chrome extension
 6. Content Calendar — plan and track your pipeline
 
 **Tweet 4:**
@@ -37,7 +37,7 @@ It's not ChatGPT with a wrapper. It reads your niche, past scripts, saved inspir
 **Tweet 5:**
 The Chrome extension is how you capture inspiration:
 
-See a video on TikTok or Instagram → click Orianna → saved to your swipe file with full metrics.
+See a video on TikTok or Instagram → click Orianna → saved to your saved inspo videos with full metrics.
 
 Then from the dashboard, turn any saved video into your own content idea.
 
@@ -93,7 +93,7 @@ Free: ori-nine.vercel.app
 **Tweet E:**
 Just shipped: Orianna's Chrome extension
 
-See a viral TikTok → one click → saved to your swipe file with full metrics
+See a viral TikTok → one click → saved to your saved inspo videos with full metrics
 
 Then turn it into your own content idea from the dashboard.
 

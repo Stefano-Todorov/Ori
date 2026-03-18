@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1280px; height: 800px; font-family: Inter, sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; top: -100px; left: -50px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
+  .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 56px; }
+  .left { flex: 1; }
+  .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
+  h1 { font-size: 44px; font-weight: 900; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+  .grad { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { font-size: 18px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; max-width: 440px; }
+  .bullets { display: flex; flex-direction: column; gap: 14px; }
+  .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
+  .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
+  .right { width: 520px; flex-shrink: 0; }
+  .logo-bottom { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo-bottom svg { width: 20px; height: 20px; }
+  .logo-bottom span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .chat { width: 520px; height: 620px; background: #0f0f13; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden; }
+  .chat-header { padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .chat-title { font-size: 20px; font-weight: 700; }
+  .chat-sub { font-size: 12px; color: #71717a; margin-top: 2px; }
+  .chat-body { flex: 1; overflow: hidden; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .msg { max-width: 85%; display: flex; gap: 10px; }
+  .msg-user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-ai { align-self: flex-start; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .avatar-ai { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+  .avatar-ai svg { width: 18px; height: 18px; }
+  .bubble { padding: 12px 16px; border-radius: 16px; font-size: 13px; line-height: 1.6; }
+  .bubble-user { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+  .bubble-ai { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); color: #d1d5db; border-bottom-left-radius: 4px; }
+  .bubble-ai strong { color: #fff; }
+  .bubble-ai .tip { display: block; margin-top: 8px; padding: 8px 10px; background: rgba(124,58,237,0.08); border-radius: 8px; font-size: 12px; color: #a78bfa; }
+  .chat-input { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+  .chat-input input { flex: 1; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 16px; font-size: 13px; color: #fff; font-family: Inter, sans-serif; outline: none; }
+  .chat-input input::placeholder { color: #52525b; }
+  .send-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #a855f7); border: none; display: flex; align-items: center; justify-content: center; }
+  .send-btn svg { width: 16px; height: 16px; fill: white; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="feature-num">AI Coach</div>
+      <h1>Your personal<br><span class="grad">content coach</span></h1>
+      <p class="sub">Chat with an AI coach that knows your niche, goals, competitors, and content history. Get personalized strategy advice anytime.</p>
+      <div class="bullets">
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Knows your niche &amp; content style</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Analyzes your saved scripts &amp; ideas</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Suggests hooks, topics &amp; strategies</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Always available, zero judgment</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="chat">
+        <div class="chat-header">
+          <div class="chat-title">AI Coach</div>
+          <div class="chat-sub">Powered by Claude &mdash; knows your content &amp; goals</div>
+        </div>
+        <div class="chat-body">
+          <div class="msg msg-user">
+            <div class="bubble bubble-user">I want to grow faster on TikTok. My videos get views but not many followers. What am I doing wrong?</div>
+          </div>
+          <div class="msg msg-ai">
+            <div class="avatar avatar-ai"><svg viewBox="0 0 64 64"><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="white"/></svg></div>
+            <div class="bubble bubble-ai">
+              Great question! Looking at your saved content, I notice a few things:<br><br>
+              <strong>1. Your hooks are strong</strong> &mdash; that's why you're getting views. But your CTAs are missing or weak.<br><br>
+              <strong>2. No "follow" trigger</strong> &mdash; viewers watch but don't have a reason to follow. Try adding a series format like "Part 1/5" to create anticipation.<br><br>
+              <strong>3. Profile optimization</strong> &mdash; make sure your bio clearly states what viewers get by following.
+              <span class="tip">&#128161; Try ending your next video with: "Follow me for part 2 tomorrow"</span>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input placeholder="Ask your coach anything..." />
+          <button class="send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo-bottom"><svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg><span>Orianna</span></div>
+</body>
+</html>

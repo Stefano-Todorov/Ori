@@ -18,6 +18,11 @@ const assets = [
   { file: 'ss3-analyze-1280x800.html', out: 'ss3-analyze-1280x800.png', w: 1280, h: 800 },
   { file: 'ss4-bulk-import-1280x800.html', out: 'ss4-bulk-import-1280x800.png', w: 1280, h: 800 },
   { file: 'ss5-competitors-1280x800.html', out: 'ss5-competitors-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss1-extension-1280x800.html', out: 'ss1-extension-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss2-ai-coach-1280x800.html', out: 'ss2-ai-coach-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss3-competitors-1280x800.html', out: 'ss3-competitors-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss4-script-generator-1280x800.html', out: 'ss4-script-generator-1280x800.png', w: 1280, h: 800 },
+  { file: 'ss5-ideas-board-1280x800.html', out: 'ss5-ideas-board-1280x800.png', w: 1280, h: 800 },
 ];
 
 const browser = await puppeteer.launch({ headless: true });

@@ -11,7 +11,7 @@ Orianna is your AI content coach — it researches your niche, generates ready-t
 Here's what it does:
 - Generates video scripts with hooks, body, CTAs & hashtags
 - Tracks your competitors and shows what's working
-- Saves trending videos to a swipe file (Chrome extension)
+- Saves trending videos to a saved inspo videos (Chrome extension)
 - Plans your content calendar so you stay consistent
 - AI coach that actually knows YOUR niche
 
@@ -75,13 +75,13 @@ Link in bio to try it free.
 **Caption:**
 See a viral video? One click.
 
-Orianna's Chrome extension saves any TikTok or Instagram video to your swipe file — with full metrics (views, likes, comments, engagement rate).
+Orianna's Chrome extension saves any TikTok or Instagram video to your saved inspo videos — with full metrics (views, likes, comments, engagement rate).
 
 Then turn any saved video into your own content idea from the dashboard.
 
 Stop bookmarking. Start building a real inspiration library.
 
-#swipefile #contentinspiration #chromeextension #tiktoktools #instagramtools
+#savedinspo #contentinspiration #chromeextension #tiktoktools #instagramtools
 
 ---
 
@@ -139,7 +139,7 @@ After Orianna:
 - Content calendar planned out
 - Competitor research on autopilot
 - Professional scripts in seconds
-- Organized swipe file I actually use
+- Organized saved inspo videos I actually use
 
 Free tool. Link in bio. You're welcome.
 

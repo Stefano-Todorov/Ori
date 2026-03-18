@@ -26,7 +26,7 @@ Orianna is an AI content coach that handles the planning so you can focus on cre
 
 **Competitor Research** — Track any creator across TikTok and Instagram. Import their top posts, see engagement metrics, and generate ideas adapted to your style.
 
-**Chrome Extension** — Save any trending video to your swipe file while you browse. One click captures the video with full metrics. Then turn it into your own content idea from the dashboard.
+**Chrome Extension** — Save any trending video to your saved inspo videos while you browse. One click captures the video with full metrics. Then turn it into your own content idea from the dashboard.
 
 **Content Calendar** — Plan recording days, assign ideas to dates, and see your production pipeline on one screen.
 

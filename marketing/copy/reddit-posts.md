@@ -99,7 +99,7 @@ ori-nine.vercel.app
 I've been using Orianna lately — it's a free AI content coach that generates scripts and tracks competitors. The AI is actually personalized to your niche which is the main differentiator from just using ChatGPT. ori-nine.vercel.app
 
 **When someone asks "how do you come up with content ideas":**
-I built a system around competitor research + a swipe file. I track what's working in my niche, save viral videos I like, and then use AI to adapt those formats to my style. Built a tool for this actually — Orianna (ori-nine.vercel.app) — the script generator is the feature I use most.
+I built a system around competitor research + a saved inspo videos. I track what's working in my niche, save viral videos I like, and then use AI to adapt those formats to my style. Built a tool for this actually — Orianna (ori-nine.vercel.app) — the script generator is the feature I use most.
 
 **When someone asks "how do you stay consistent":**
 Two things changed everything for me: 1) batch planning — I sit down once a week and plan all my content, and 2) having a tool that generates ideas when I'm stuck. I use Orianna for both — it has an ideas board + calendar + AI that gives me personalized suggestions. Free tool: ori-nine.vercel.app

@@ -17,7 +17,7 @@ export interface TierConfig {
     competitor_ideas: number
     competitors: number       // max tracked competitors
     downloads: number         // per month
-    swipe_saves: number       // per month
+    swipe_saves: number       // saved inspo videos per month
   }
   features: {
     ai_enabled: boolean

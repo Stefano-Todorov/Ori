@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1280px; height: 800px; font-family: Inter, sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; top: -100px; right: -50px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
+  .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 56px; }
+  .left { flex: 1; }
+  .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
+  h1 { font-size: 44px; font-weight: 900; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+  .grad { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { font-size: 18px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; max-width: 440px; }
+  .bullets { display: flex; flex-direction: column; gap: 14px; }
+  .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
+  .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
+  .right { width: 420px; flex-shrink: 0; display: flex; justify-content: center; }
+  .logo-bottom { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo-bottom svg { width: 20px; height: 20px; }
+  .logo-bottom span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .popup { width: 400px; background: #0f0f13; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(124,58,237,0.1); font-size: 13px; }
+  .p-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .p-logo { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 18px; letter-spacing: -0.5px; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .p-logo svg { width: 20px; height: 20px; -webkit-text-fill-color: initial; }
+  .p-email { font-size: 10px; color: #52525b; }
+  .detected { margin: 12px 16px; padding: 14px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+  .detected-row { display: flex; align-items: center; gap: 8px; }
+  .detected-handle { font-size: 14px; color: #fff; font-weight: 700; }
+  .platform-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; }
+  .platform-badge.instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+  .competitor-tag { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 20px; color: #2dd4bf; border: 1px solid rgba(45,212,191,0.4); }
+  .detected-caption { font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 8px 0; }
+  .stats-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; font-size: 13px; }
+  .sn { font-weight: 700; color: #fff; }
+  .sn.eng { color: #fbbf24; }
+  .sl { font-size: 10px; color: #52525b; margin-left: 2px; }
+  .hashtag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .hashtag { font-size: 10px; color: #a78bfa; background: rgba(124,58,237,0.1); padding: 2px 6px; border-radius: 4px; }
+  .actions { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .btn { width: 100%; border-radius: 10px; font-size: 14px; font-weight: 700; font-family: Inter, sans-serif; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .save-row { display: flex; gap: 0; }
+  .save-main-btn { flex: 1; border-radius: 10px 0 0 10px !important; }
+  .btn-primary { height: 48px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; box-shadow: 0 4px 20px rgba(124,58,237,0.4); }
+  .tag-dropdown-btn { padding: 0 12px; background: linear-gradient(135deg, #6d28d9, #9333ea); color: #fff; border: none; border-left: 1px solid rgba(255,255,255,0.2); border-radius: 0 10px 10px 0; font-size: 12px; }
+  .selected-tags-row { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0; }
+  .tag-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.25); }
+  .btn-secondary { height: 44px; background: #5b21b6; color: #fff; }
+  .btn-outline { height: 44px; background: transparent; color: #a855f7; border: 1.5px solid rgba(168,85,247,0.5); }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="feature-num">Chrome Extension</div>
+      <h1>Capture any video<br>as <span class="grad">inspiration</span></h1>
+      <p class="sub">One click saves any TikTok or Instagram video with full metrics, engagement rate, hashtags, and audio info.</p>
+      <div class="bullets">
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Auto-detects posts while browsing</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Full metrics &amp; engagement rate</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Tag and organize your saved inspo videos</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Works on TikTok &amp; Instagram</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="popup">
+        <div class="p-header">
+          <span class="p-logo"><svg viewBox="0 0 64 64"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
+          <span class="p-email">stefano@email.com</span>
+        </div>
+        <div class="detected">
+          <div class="detected-row">
+            <span class="platform-badge instagram">Instagram</span>
+            <span class="detected-handle">@skincare.guru</span>
+            <span class="competitor-tag">Tracked</span>
+          </div>
+          <div class="detected-caption">"My nighttime skincare routine that cleared my acne in 2 weeks"</div>
+          <div class="stats-row">
+            <div>&#128065; <span class="sn">1.8M</span><span class="sl"> views</span></div>
+            <div>&#10084;&#65039; <span class="sn">142K</span><span class="sl"> likes</span></div>
+            <div>&#128172; <span class="sn">2.1K</span><span class="sl"> comments</span></div>
+            <div>&#9889; <span class="sn eng">8.3%</span><span class="sl"> eng</span></div>
+          </div>
+          <div class="hashtag-row">
+            <span class="hashtag">#skincare</span>
+            <span class="hashtag">#routine</span>
+            <span class="hashtag">#acne</span>
+            <span class="hashtag">#glowup</span>
+          </div>
+        </div>
+        <div class="actions">
+          <div class="save-row">
+            <button class="btn btn-primary save-main-btn">Save as Inspiration</button>
+            <button class="tag-dropdown-btn">Tags &#9660;</button>
+          </div>
+          <div class="selected-tags-row">
+            <span class="tag-pill">skincare <span style="opacity:0.5">&times;</span></span>
+            <span class="tag-pill">routine <span style="opacity:0.5">&times;</span></span>
+          </div>
+          <button class="btn btn-secondary">Get AI Video Ideas</button>
+          <button class="btn btn-outline">Why Did It Do Well?</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo-bottom"><svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg><span>Orianna</span></div>
+</body>
+</html>

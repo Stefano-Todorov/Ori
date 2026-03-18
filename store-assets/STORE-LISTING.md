@@ -10,7 +10,7 @@ AI-powered content coaching for TikTok & Instagram. Capture inspo, generate vide
 Orianna is your AI content coach that lives right in your browser. While you browse TikTok and Instagram, Orianna works alongside you — capturing inspiration, analyzing what makes videos go viral, and generating personalized content ideas tailored to your niche.
 
 **Save Any Video as Inspiration**
-See a video you love? One click saves it to your personal swipe file with full metrics — views, likes, comments, engagement rate. Tag videos for easy recall later.
+See a video you love? One click saves it to your saved inspo videos with full metrics — views, likes, comments, engagement rate. Tag videos for easy recall later.
 
 **AI-Powered Video Ideas**
 Don't just save — create. Orianna analyzes competitor content and generates original video ideas matched to your style, niche, and audience. Get hooks, CTAs, and full concept breakdowns instantly.

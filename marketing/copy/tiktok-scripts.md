@@ -16,7 +16,7 @@ Film these yourself to promote Orianna authentically.
 You tell it your niche and it:
 - Generates full video scripts with hooks and CTAs
 - Tracks your competitors and shows what's working
-- Saves trending videos to a swipe file
+- Saves trending videos to a saved inspo videos
 - Plans your content calendar
 
 And the AI coach actually remembers your past content — so it gives you personalized advice, not generic tips.
@@ -36,7 +36,7 @@ It's free. I'll drop the link."
 **Hook:** "Here's how I plan an entire week of content in 10 minutes."
 
 **Body:**
-"Step 1: I open Orianna and check my swipe file — these are trending videos I saved this week with one click.
+"Step 1: I open Orianna and check my saved inspo videos — these are trending videos I saved this week with one click.
 
 Step 2: I pick 3 videos and hit 'Create Idea' — Orianna generates original video ideas based on what's trending but adapted to MY niche.
 
@@ -115,7 +115,7 @@ Nothing falls through the cracks anymore. And the AI generates new ideas wheneve
 [Screen record on TikTok:]
 "Now when I see a video that catches my eye, I click the Orianna extension.
 
-One click saves it to my swipe file — with the views, likes, comments, everything.
+One click saves it to my saved inspo videos — with the views, likes, comments, everything.
 
 Then from the dashboard I can turn any saved video into my own content idea.
 

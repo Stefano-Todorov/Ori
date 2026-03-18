@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1280px; height: 800px; font-family: Inter, sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; top: -80px; right: -80px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
+  .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 48px; }
+  .left { flex: 1; }
+  .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
+  h1 { font-size: 44px; font-weight: 900; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+  .grad { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { font-size: 18px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; max-width: 440px; }
+  .bullets { display: flex; flex-direction: column; gap: 14px; }
+  .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
+  .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
+  .right { width: 540px; flex-shrink: 0; }
+  .logo-bottom { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo-bottom svg { width: 20px; height: 20px; }
+  .logo-bottom span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .panel { width: 540px; background: #0f0f13; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 60px rgba(0,0,0,0.6); overflow: hidden; }
+  .panel-header { padding: 18px 22px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px; }
+  .panel-title { font-size: 20px; font-weight: 700; }
+  .tag-filters { display: flex; gap: 6px; margin-left: auto; }
+  .tag-btn { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: none; cursor: pointer; }
+  .tag-btn-active { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+  .tag-btn-inactive { background: transparent; color: #52525b; border: 1px solid rgba(255,255,255,0.06); }
+
+  .ideas-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .idea-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 16px; display: flex; gap: 12px; position: relative; }
+  .idea-accent { position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #7c3aed, #a855f7); }
+  .idea-body { flex: 1; min-width: 0; padding-left: 6px; }
+  .idea-title { font-size: 14px; font-weight: 600; color: #e4e4e7; margin-bottom: 6px; line-height: 1.4; }
+  .idea-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .status-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .status-new { background: rgba(124,58,237,0.12); color: #a78bfa; }
+  .status-recording { background: rgba(251,191,36,0.12); color: #fbbf24; }
+  .status-editing { background: rgba(168,85,247,0.12); color: #c084fc; }
+  .status-posted { background: rgba(74,222,128,0.12); color: #4ade80; }
+  .type-badge { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.04); color: #71717a; }
+  .diff-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .diff-easy { background: rgba(74,222,128,0.1); color: #4ade80; }
+  .diff-med { background: rgba(251,191,36,0.1); color: #fbbf24; }
+  .diff-hard { background: rgba(239,68,68,0.1); color: #f87171; }
+  .idea-source { font-size: 9px; color: #52525b; }
+  .idea-tags { display: flex; gap: 4px; }
+  .tag-pill { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 20px; background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .idea-hook { font-size: 11px; color: #71717a; font-style: italic; margin-top: 4px; padding: 6px 10px; background: rgba(124,58,237,0.04); border-radius: 6px; }
+  .idea-actions { display: flex; gap: 4px; flex-shrink: 0; align-self: flex-start; margin-top: 2px; }
+  .idea-actions button { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #71717a; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="feature-num">Idea Board</div>
+      <h1>All your ideas,<br><span class="grad">organized</span></h1>
+      <p class="sub">Every idea in one place. Track production status, schedule recording days, and never run out of content to create.</p>
+      <div class="bullets">
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Tag, filter &amp; organize ideas</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Track status: new &rarr; recording &rarr; posted</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Schedule ideas to recording days</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> AI-generated or manually created</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Ideas</div>
+          <div class="tag-filters">
+            <span class="tag-btn tag-btn-active">All</span>
+            <span class="tag-btn tag-btn-inactive">fitness</span>
+            <span class="tag-btn tag-btn-inactive">skincare</span>
+            <span class="tag-btn tag-btn-inactive">hooks</span>
+          </div>
+        </div>
+        <div class="ideas-list">
+          <div class="idea-card">
+            <div class="idea-accent"></div>
+            <div class="idea-body">
+              <div class="idea-title">React to popular fitness myths and debunk them with science</div>
+              <div class="idea-meta">
+                <span class="status-badge status-recording">Recording</span>
+                <span class="type-badge">Reaction</span>
+                <span class="diff-badge diff-easy">Easy</span>
+                <span class="idea-source">via extension: @fitnesscreator</span>
+              </div>
+              <div class="idea-tags">
+                <span class="tag-pill">fitness</span>
+                <span class="tag-pill">hooks</span>
+              </div>
+              <div class="idea-hook">"Everyone says eat 6 meals a day. Here's why that's complete BS."</div>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-accent"></div>
+            <div class="idea-body">
+              <div class="idea-title">My 5-minute morning skincare routine with drugstore products</div>
+              <div class="idea-meta">
+                <span class="status-badge status-new">New</span>
+                <span class="type-badge">Talking head</span>
+                <span class="diff-badge diff-easy">Easy</span>
+                <span class="idea-source">via AI coach</span>
+              </div>
+              <div class="idea-tags">
+                <span class="tag-pill">skincare</span>
+                <span class="tag-pill">routine</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-accent"></div>
+            <div class="idea-body">
+              <div class="idea-title">POV: you finally found a workout split that actually works</div>
+              <div class="idea-meta">
+                <span class="status-badge status-editing">Editing</span>
+                <span class="type-badge">Trend</span>
+                <span class="diff-badge diff-med">Medium</span>
+              </div>
+              <div class="idea-tags">
+                <span class="tag-pill">fitness</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-accent"></div>
+            <div class="idea-body">
+              <div class="idea-title">3 signs your protein powder is actually garbage</div>
+              <div class="idea-meta">
+                <span class="status-badge status-posted">Posted</span>
+                <span class="type-badge">Educational</span>
+                <span class="diff-badge diff-easy">Easy</span>
+              </div>
+              <div class="idea-tags">
+                <span class="tag-pill">fitness</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo-bottom"><svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg><span>Orianna</span></div>
+</body>
+</html>

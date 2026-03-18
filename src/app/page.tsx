@@ -30,7 +30,7 @@ const features = [
   },
   {
     icon: '🔥',
-    title: 'Swipe File',
+    title: 'Saved Inspo Videos',
     description: 'Save trending videos while you scroll with our Chrome extension. Build a personal library of inspiration you can turn into content.',
     details: ['One-click save from TikTok & IG', 'Full metrics captured automatically', 'Generate ideas from any saved post'],
   },
@@ -608,7 +608,7 @@ export default function LandingPage() {
                   Save inspiration while you scroll
                 </h2>
                 <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.7, margin: '0 0 24px' }}>
-                  See a viral video on TikTok or Instagram? One click saves it to your swipe file with full metrics — views, likes, comments, engagement rate. Then turn it into your own content idea from the dashboard.
+                  See a viral video on TikTok or Instagram? One click saves it to your saved inspo videos with full metrics — views, likes, comments, engagement rate. Then turn it into your own content idea from the dashboard.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
                   {['Save any video with one click', 'Full metrics captured automatically', 'Turn saved posts into original ideas', 'Track competitors effortlessly'].map((item, i) => (
@@ -654,7 +654,7 @@ export default function LandingPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <div style={{ flex: 1, background: 'linear-gradient(135deg, #7c3aed, #9333ea)', borderRadius: 8, padding: '10px 0', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
-                      Save to Swipe File
+                      Save Inspo Video
                     </div>
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 0', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
                       Create Idea
@@ -753,7 +753,7 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Get started with the basics. No AI, no credit card.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['5 competitors tracked', '15 downloads/month', '10 swipe saves/month', 'Content calendar', 'Chrome extension (save only)', 'Ideas board'].map((item, i) => (
+                {['5 competitors tracked', '15 downloads/month', '10 inspo saves/month', 'Content calendar', 'Chrome extension (save only)', 'Ideas board'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -778,7 +778,7 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI features to start creating smarter content.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['15 AI coach messages/mo', '5 script generations/mo', '5 idea generations/mo', '15 competitors tracked', '30 downloads/month', '30 swipe saves/month', 'Chrome extension (save only)'].map((item, i) => (
+                {['15 AI coach messages/mo', '5 script generations/mo', '5 idea generations/mo', '15 competitors tracked', '30 downloads/month', '30 inspo saves/month', 'Chrome extension (save only)'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -806,7 +806,7 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>For serious creators who want to grow fast.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['100 AI coach messages/mo', '30 script generations/mo', '30 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited swipe saves', 'Full Chrome extension'].map((item, i) => (
+                {['100 AI coach messages/mo', '30 script generations/mo', '30 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#a855f7', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -831,7 +831,7 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlimited everything. For teams and power creators.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['Unlimited AI coach', 'Unlimited scripts', 'Unlimited idea generation', 'Unlimited competitors', 'Unlimited downloads', 'Unlimited swipe saves', 'Full Chrome extension'].map((item, i) => (
+                {['Unlimited AI coach', 'Unlimited scripts', 'Unlimited idea generation', 'Unlimited competitors', 'Unlimited downloads', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}

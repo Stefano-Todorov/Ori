@@ -18,7 +18,7 @@ const FEATURE_ROWS: { key: string; label: string }[] = [
   { key: 'competitor_ideas', label: 'Competitor ideas' },
   { key: 'competitors', label: 'Competitors tracked' },
   { key: 'downloads', label: 'Video downloads' },
-  { key: 'swipe_saves', label: 'Swipe file saves' },
+  { key: 'swipe_saves', label: 'Saved inspo videos' },
 ]
 
 function formatLimit(val: number): string {

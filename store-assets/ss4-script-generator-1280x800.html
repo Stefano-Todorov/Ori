@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1280px; height: 800px; font-family: Inter, sans-serif; background: #0a0a0f; color: white; overflow: hidden; position: relative; }
+  .glow { position: absolute; bottom: -100px; left: -50px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%); }
+  .content { position: relative; z-index: 1; display: flex; align-items: center; height: 100%; padding: 56px 64px; gap: 48px; }
+  .left { flex: 1; }
+  .feature-num { font-size: 13px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px; }
+  h1 { font-size: 44px; font-weight: 900; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 18px; }
+  .grad { background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { font-size: 18px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; max-width: 440px; }
+  .bullets { display: flex; flex-direction: column; gap: 14px; }
+  .bullet { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #d1d5db; }
+  .bullet-dot { width: 28px; height: 28px; border-radius: 8px; background: rgba(124,58,237,0.12); display: flex; align-items: center; justify-content: center; color: #a855f7; font-size: 13px; flex-shrink: 0; }
+  .right { width: 540px; flex-shrink: 0; }
+  .logo-bottom { position: absolute; bottom: 28px; left: 64px; display: flex; align-items: center; gap: 8px; z-index: 2; }
+  .logo-bottom svg { width: 20px; height: 20px; }
+  .logo-bottom span { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, #7c3aed, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .panel { width: 540px; background: #0f0f13; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 24px 60px rgba(0,0,0,0.6); overflow: hidden; }
+  .script-card { background: #12121a; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; margin: 14px 16px; padding: 18px; }
+  .script-top { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .script-title { font-size: 15px; font-weight: 700; flex: 1; }
+  .diff-badge { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .diff-easy { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .diff-med { background: rgba(251,191,36,0.15); color: #fbbf24; }
+  .dur-badge { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: rgba(124,58,237,0.15); color: #a78bfa; }
+
+  .hook-section { background: rgba(124,58,237,0.08); border-left: 3px solid #7c3aed; border-radius: 0 10px 10px 0; padding: 12px 14px; margin-bottom: 12px; }
+  .hook-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #a78bfa; margin-bottom: 6px; }
+  .hook-text { font-size: 14px; font-style: italic; color: #e4e4e7; line-height: 1.5; }
+  .hook-why { font-size: 11px; color: #71717a; margin-top: 6px; }
+
+  .section { margin-bottom: 10px; }
+  .sec-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .sec-intro { background: rgba(59,130,246,0.1); color: #60a5fa; }
+  .sec-main { background: rgba(124,58,237,0.1); color: #a78bfa; }
+  .sec-outro { background: rgba(45,212,191,0.1); color: #2dd4bf; }
+  .sec-text { font-size: 12px; color: #a1a1aa; line-height: 1.6; }
+
+  .cta-section { background: rgba(45,212,191,0.06); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .cta-emoji { font-size: 16px; }
+  .cta-text { font-size: 12px; color: #2dd4bf; font-weight: 600; }
+
+  .hashtags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .hashtag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); color: #71717a; }
+
+  .alt-hooks { padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.04); }
+  .alt-label { font-size: 10px; font-weight: 700; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .alt-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .alt-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(124,58,237,0.15); color: #a78bfa; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .alt-text { font-size: 11px; color: #a1a1aa; font-style: italic; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="content">
+    <div class="left">
+      <div class="feature-num">AI Script Generator</div>
+      <h1>Generate full<br><span class="grad">video scripts</span></h1>
+      <p class="sub">AI writes complete scripts with hooks, body, CTAs, hashtags, and filming tips. Tailored to your niche and style.</p>
+      <div class="bullets">
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Choose hook &amp; CTA styles</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Full script with filming tips</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Multiple alternative hooks</div>
+        <div class="bullet"><div class="bullet-dot">&#10003;</div> Save scripts &amp; turn into ideas</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="panel">
+        <div class="script-card">
+          <div class="script-top">
+            <span class="script-title">Morning routine for clear skin</span>
+            <span class="diff-badge diff-easy">Easy</span>
+            <span class="dur-badge">45-60s</span>
+          </div>
+
+          <div class="hook-section">
+            <div class="hook-label">Hook</div>
+            <div class="hook-text">"I cleared my skin in 2 weeks by changing just ONE thing in my morning routine"</div>
+            <div class="hook-why">&#128161; Creates curiosity gap &mdash; viewers want to know the "one thing"</div>
+          </div>
+
+          <div class="section">
+            <div class="sec-label sec-intro">Intro</div>
+            <div class="sec-text">Start close-up on your face. "I used to spend $200 a month on skincare products and nothing worked..."</div>
+          </div>
+
+          <div class="section">
+            <div class="sec-label sec-main">Main Point</div>
+            <div class="sec-text">Walk through the simple 3-step routine. Show each product. "Step 1: Gentle cleanser. Not the fancy stuff. Just CeraVe..."</div>
+          </div>
+
+          <div class="section">
+            <div class="sec-label sec-outro">Outro</div>
+            <div class="sec-text">"The secret isn't expensive products &mdash; it's consistency. Try this for 2 weeks and tell me your results."</div>
+          </div>
+
+          <div class="cta-section">
+            <span class="cta-emoji">&#128172;</span>
+            <span class="cta-text">Comment your biggest skin struggle below</span>
+          </div>
+
+          <div class="hashtags">
+            <span class="hashtag">#skincare</span>
+            <span class="hashtag">#morningroutine</span>
+            <span class="hashtag">#clearskin</span>
+            <span class="hashtag">#skincaretips</span>
+            <span class="hashtag">#glowup</span>
+          </div>
+
+          <div class="alt-hooks">
+            <div class="alt-label">Alternative Hooks</div>
+            <div class="alt-item"><span class="alt-num">1</span><span class="alt-text">"Dermatologists don't want you to know this"</span></div>
+            <div class="alt-item"><span class="alt-num">2</span><span class="alt-text">"POV: your morning routine actually works"</span></div>
+            <div class="alt-item"><span class="alt-num">3</span><span class="alt-text">"Stop buying expensive skincare. Here's why."</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="logo-bottom"><svg viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#g)"/></svg><span>Orianna</span></div>
+</body>
+</html>

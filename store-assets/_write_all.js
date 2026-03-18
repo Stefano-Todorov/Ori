@@ -158,7 +158,7 @@ const ss1 = wrap('', `
   <p class="sub">One click captures any TikTok or Instagram video with full metrics, engagement rate, hashtags, and audio info.</p>
   <div class="bullets">
     <div class="bullet"><div class="bullet-dot">\u2713</div> Full metrics captured automatically</div>
-    <div class="bullet"><div class="bullet-dot">\u2713</div> Tag and organize your swipe file</div>
+    <div class="bullet"><div class="bullet-dot">\u2713</div> Tag and organize your saved inspo videos</div>
     <div class="bullet"><div class="bullet-dot">\u2713</div> Engagement rate calculated instantly</div>
     <div class="bullet"><div class="bullet-dot">\u2713</div> Works on TikTok &amp; Instagram</div>
   </div>
