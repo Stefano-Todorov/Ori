@@ -7,7 +7,7 @@ export default async function MyVideosPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: posts }, { data: ideas }, { data: profile }] = await Promise.all([
+  const [{ data: posts }, { data: ideas }, { data: scripts }, { data: profile }] = await Promise.all([
     supabase
       .from('posts')
       .select('*')
@@ -21,6 +21,12 @@ export default async function MyVideosPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase
+      .from('scripts')
+      .select('id, topic, hook, body, cta, eval_score, eval_tags, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
       .from('profiles')
       .select('last_synced_at')
       .eq('user_id', user.id)
@@ -32,6 +38,7 @@ export default async function MyVideosPage() {
       <MyVideosList
         posts={posts ?? []}
         ideas={ideas ?? []}
+        scripts={scripts ?? []}
         lastSyncedAt={(profile?.last_synced_at as Record<string, string>) ?? {}}
       />
     </div>

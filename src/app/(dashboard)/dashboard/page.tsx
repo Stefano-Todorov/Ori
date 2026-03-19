@@ -6,6 +6,7 @@ import { FollowerChart } from '@/components/dashboard/follower-chart'
 import { AddFollowersForm } from '@/components/dashboard/add-followers-form'
 import { KanbanBoard } from '@/components/dashboard/kanban-board'
 import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar'
+import { InsightsPanel } from '@/components/dashboard/insights-panel'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -81,6 +82,9 @@ export default async function DashboardPage() {
         </div>
         <AddFollowersForm activePlatforms={profile?.platforms} snapshots={followerSnapshots ?? []} />
       </div>
+
+      {/* ─── Performance Insights ─── */}
+      <InsightsPanel />
 
       {/* ─── Kanban Board ─── */}
       <KanbanBoard ideas={productionIdeas ?? []} />
