@@ -224,6 +224,12 @@ async function handleMessage(msg) {
       })
     }
 
+    case 'SYNC_MY_VIDEOS': {
+      const { platform, follower_count, posts } = msg
+      if (!posts || posts.length === 0) return { synced: 0, new: 0, updated: 0, suggested_links: [] }
+      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts })
+    }
+
     case 'SYNC_TAGS': {
       return apiPost('/api/extension/sync-tags', { tags: msg.tags })
     }

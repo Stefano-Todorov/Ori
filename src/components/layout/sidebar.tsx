@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   CalendarClock,
+  Play,
   GripVertical,
   X,
 } from 'lucide-react'
@@ -36,6 +37,7 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/scripts', label: 'Scripts', icon: FileText },
   { href: '/dashboard/competitors', label: 'Competitors', icon: Users },
   { href: '/dashboard/inspo', label: 'Inspo', icon: Bookmark },
+  { href: '/dashboard/my-videos', label: 'My Videos', icon: Play },
   { href: '/dashboard/ideas', label: 'Ideas', icon: Lightbulb },
   { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarClock },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

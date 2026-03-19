@@ -14,6 +14,8 @@ export interface Profile {
   posting_target: number
   telegram_chat_id: string | null
   onboarding_completed: boolean
+  auto_sync_own_profile: boolean
+  last_synced_at: Record<string, string>
   created_at: string
   updated_at: string
 }
@@ -46,6 +48,7 @@ export interface Post {
   competitor_handle: string | null
   is_trending: boolean
   tags: string[]
+  linked_idea_id: string | null
   imported_at: string
   created_at: string
 }
@@ -111,6 +114,7 @@ export interface ContentIdea {
   tags: string[]
   status: 'new' | 'in_progress' | 'done' | 'archived'
   production_status: ProductionStatus
+  linked_post_id: string | null
   created_at: string
 }
 

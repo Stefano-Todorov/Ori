@@ -725,6 +725,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       tags: [],
       status: 'new',
       production_status: 'new',
+      linked_post_id: null,
       created_at: new Date().toISOString(),
     }, ...prev])
     setAddForm(emptyForm())

@@ -1505,6 +1505,133 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
+  // ─── EXTRACT_OWN_PROFILE: scrape profile posts + follower count for sync ──
+  if (msg.type === 'EXTRACT_OWN_PROFILE') {
+    (async () => {
+      const host = window.location.hostname
+      let platform = null
+      let handle = null
+      let followerCount = null
+      let posts = []
+
+      if (host.includes('tiktok.com')) {
+        platform = 'tiktok'
+        const handleMatch = window.location.href.match(/tiktok\.com\/@([^/?]+)/)
+        handle = handleMatch?.[1] ?? null
+
+        // Scrape follower count
+        const followerEl = document.querySelector('[data-e2e="followers-count"], [title*="Follower"] strong, [class*="follower"] strong')
+        if (followerEl) followerCount = parseNumber(followerEl.textContent)
+        if (!followerCount) {
+          // Fallback: try header stats (followers is typically the 2nd stat)
+          const stats = document.querySelectorAll('[data-e2e="followers-count"], h2[data-e2e] strong, [class*="CountInfo"] strong')
+          if (stats.length >= 2) followerCount = parseNumber(stats[1]?.textContent)
+        }
+
+        // Fetch TikTok metrics from bridge
+        await fetchTikTokMetrics()
+
+        // Get grid items
+        const grid = findGridAndItems()
+        if (grid && grid.items) {
+          const limit = msg.limit ?? 50
+          const itemsToProcess = grid.items.slice(0, limit)
+
+          for (const item of itemsToProcess) {
+            const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
+            const href = link?.href ?? ''
+            if (!href) continue
+
+            const videoId = href.match(/\/video\/(\d+)/)?.[1]
+              || href.match(/\/photo\/(\d+)/)?.[1]
+              || item.getAttribute('data-video-id')
+            const cached = videoId ? ttMetricsCache.get(videoId) : null
+
+            let thumb = cached?.thumb || ''
+            if (!thumb) {
+              const imgs = item.querySelectorAll('img')
+              for (const img of imgs) {
+                const src = img.src || img.getAttribute('data-src') || ''
+                if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
+              }
+            }
+
+            posts.push({
+              url: href,
+              caption: cached?.caption || null,
+              views: cached?.views ?? getViewsFromItem(item) ?? 0,
+              likes: cached?.likes ?? 0,
+              comments: cached?.comments ?? 0,
+              shares: cached?.shares ?? 0,
+              saves: cached?.saves ?? 0,
+              hashtags: extractHashtags(cached?.caption || ''),
+              thumbnail: thumb || null,
+              posted_at: null,
+            })
+          }
+        }
+      } else if (host.includes('instagram.com')) {
+        platform = 'instagram'
+        const pathMatch = window.location.href.match(/instagram\.com\/([a-zA-Z0-9._]+)(?:\/reels)?\/?/)
+        handle = pathMatch?.[1] ?? null
+
+        // Scrape follower count from meta or header
+        const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || ''
+        const followerMatch = metaDesc.match(/([\d,.]+[KMB]?)\s*Followers/i)
+        if (followerMatch) followerCount = parseNumber(followerMatch[1])
+        if (!followerCount) {
+          // Try header element
+          const headerStats = document.querySelectorAll('header li span, header ul li span')
+          for (const el of headerStats) {
+            if (el.textContent.toLowerCase().includes('follower')) {
+              const numEl = el.querySelector('span') || el
+              followerCount = parseNumber(numEl.textContent)
+              break
+            }
+          }
+        }
+
+        // Get grid links
+        const links = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
+        const seen = new Set()
+        const limit = msg.limit ?? 50
+        let count = 0
+
+        // Try to get IG metrics from API cache
+        const igMetrics = await fetchInstagramMetrics([...links].slice(0, limit))
+
+        for (const link of links) {
+          if (count >= limit) break
+          const href = link.href
+          if (seen.has(href)) continue
+          seen.add(href)
+          count++
+
+          const m = href.match(/\/(reel|p)\/([^/?]+)/)
+          const sc = m?.[2]
+          const cached = igMetricsCache.get(sc)
+          const metrics = igMetrics?.get(link)
+
+          posts.push({
+            url: href,
+            caption: cached?.caption || null,
+            views: metrics?.views ?? cached?.views ?? 0,
+            likes: metrics?.likes ?? cached?.likes ?? 0,
+            comments: metrics?.comments ?? cached?.comments ?? 0,
+            shares: 0,
+            saves: cached?.saves ?? 0,
+            hashtags: extractHashtags(cached?.caption || ''),
+            thumbnail: metrics?.thumb ?? cached?.thumb ?? null,
+            posted_at: null,
+          })
+        }
+      }
+
+      sendResponse({ platform, handle, follower_count: followerCount, posts })
+    })()
+    return true
+  }
+
   if (msg.type === 'GET_SORTED_METRICS') {
     (async () => {
       const grid = findGridAndItems()

@@ -30,9 +30,12 @@ export function SettingsForm({ profile }: Props) {
   const [goals, setGoals] = useState(profile?.goals ?? '')
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [postingTarget, setPostingTarget] = useState(profile?.posting_target ?? 3)
+  const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const lastSyncedAt = (profile?.last_synced_at ?? {}) as Record<string, string>
 
   function togglePlatform(id: string) {
     setPlatforms((prev) =>
@@ -51,6 +54,7 @@ export function SettingsForm({ profile }: Props) {
       goals: goals || null,
       platforms,
       posting_target: postingTarget,
+      auto_sync_own_profile: autoSync,
     })
 
     if (result?.error) {
@@ -162,6 +166,36 @@ export function SettingsForm({ profile }: Props) {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Sync */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <p className="text-sm font-bold text-foreground">Extension Sync</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-foreground">Auto-sync on profile visit</p>
+              <p className="text-xs text-muted-foreground">Automatically sync your videos when you visit your own profile page</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAutoSync(!autoSync)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${autoSync ? 'bg-purple-600' : 'bg-muted border border-border'}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoSync ? 'translate-x-5' : ''}`} />
+            </button>
+          </div>
+          {Object.entries(lastSyncedAt).length > 0 && (
+            <div className="space-y-1.5">
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Last synced</label>
+              {Object.entries(lastSyncedAt).map(([platform, timestamp]) => (
+                <p key={platform} className="text-sm text-muted-foreground">
+                  {platform.charAt(0).toUpperCase() + platform.slice(1)}: {new Date(timestamp).toLocaleString()}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

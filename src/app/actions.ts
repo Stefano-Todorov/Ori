@@ -231,6 +231,7 @@ export async function updateProfile(fields: {
   platforms?: string[]
   posting_target?: number
   telegram_chat_id?: string | null
+  auto_sync_own_profile?: boolean
 }) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -715,4 +716,49 @@ export async function removeIdeaFromRecordingDay(recordingDayId: string, content
     .eq('recording_day_id', recordingDayId)
     .eq('content_idea_id', contentIdeaId)
   revalidatePath('/dashboard/schedule')
+}
+
+// ─── My Videos: Idea-Video Linking ───────────────────────────────────────────
+
+export async function linkVideoToIdea(postId: string, ideaId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Set both sides of the bidirectional link
+  const [postResult, ideaResult] = await Promise.all([
+    supabase.from('posts').update({ linked_idea_id: ideaId }).eq('id', postId).eq('user_id', user.id),
+    supabase.from('content_ideas').update({ linked_post_id: postId }).eq('id', ideaId).eq('user_id', user.id),
+  ])
+
+  if (postResult.error) return { error: postResult.error.message }
+  if (ideaResult.error) return { error: ideaResult.error.message }
+
+  revalidatePath('/dashboard/my-videos')
+  revalidatePath('/dashboard/ideas')
+  return { error: null }
+}
+
+export async function unlinkVideoFromIdea(postId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Get the linked idea first
+  const { data: post } = await supabase
+    .from('posts')
+    .select('linked_idea_id')
+    .eq('id', postId)
+    .eq('user_id', user.id)
+    .single()
+
+  await supabase.from('posts').update({ linked_idea_id: null }).eq('id', postId).eq('user_id', user.id)
+
+  if (post?.linked_idea_id) {
+    await supabase.from('content_ideas').update({ linked_post_id: null }).eq('id', post.linked_idea_id).eq('user_id', user.id)
+  }
+
+  revalidatePath('/dashboard/my-videos')
+  revalidatePath('/dashboard/ideas')
+  return { error: null }
 }

@@ -84,9 +84,13 @@ async function init() {
 
   let competitors = []
   let allTags = []
+  let socialAccounts = []
+  let autoSyncEnabled = true
   try {
     const ctx = await chrome.runtime.sendMessage({ type: 'GET_CONTEXT' })
     competitors = ctx.competitors ?? []
+    socialAccounts = ctx.socialAccounts ?? []
+    autoSyncEnabled = ctx.profile?.auto_sync_own_profile ?? true
     const serverTags = ctx.allTags ?? []
     // Merge server tags with locally cached tags so tags survive post deletion
     const cached = await chrome.storage.local.get('inspoTags')
@@ -129,7 +133,22 @@ async function init() {
     return
   }
 
-  setState({ view, postData, competitors, matchedCompetitor, allTags })
+  // Check if this is the user's OWN profile
+  const isOwnProfile = postData?.pageType === 'profile' && postData?.handle &&
+    socialAccounts.some(a => a.platform === postData.platform && a.username?.toLowerCase() === postData.handle.toLowerCase())
+
+  setState({ view, postData, competitors, matchedCompetitor, allTags, socialAccounts, autoSyncEnabled, isOwnProfile })
+
+  // Auto-sync if on own profile and enabled
+  if (isOwnProfile && autoSyncEnabled) {
+    const syncKey = `lastSync_${postData.platform}`
+    const stored = await chrome.storage.local.get(syncKey)
+    const lastSync = stored[syncKey] ? new Date(stored[syncKey]).getTime() : 0
+    const oneHourAgo = Date.now() - 60 * 60 * 1000
+    if (lastSync < oneHourAgo) {
+      handleSyncMyVideos()
+    }
+  }
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -410,6 +429,45 @@ async function handleAddCompetitor() {
 }
 
 
+async function handleSyncMyVideos() {
+  if (!state.postData?.handle || !state.postData?.platform) return
+  setState({ saving: 'syncing-videos', errors: {}, messages: {}, syncResult: null })
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    const result = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT_OWN_PROFILE', limit: 50 })
+
+    if (!result || !result.posts || result.posts.length === 0) {
+      setState({ saving: null, errors: { sync: 'No posts found on this profile page. Try scrolling down to load more videos.' } })
+      return
+    }
+
+    const syncResult = await chrome.runtime.sendMessage({
+      type: 'SYNC_MY_VIDEOS',
+      platform: result.platform,
+      follower_count: result.follower_count,
+      posts: result.posts,
+    })
+
+    if (syncResult.error) {
+      setState({ saving: null, errors: { sync: syncResult.error } })
+      return
+    }
+
+    // Store last sync timestamp
+    const syncKey = `lastSync_${result.platform}`
+    await chrome.storage.local.set({ [syncKey]: new Date().toISOString() })
+
+    setState({
+      saving: null,
+      syncResult,
+      messages: { sync: `Synced ${syncResult.synced} videos (${syncResult.new} new, ${syncResult.updated} updated)` },
+    })
+  } catch (err) {
+    setState({ saving: null, errors: { sync: err.message || 'Sync failed' } })
+  }
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n) {
@@ -634,7 +692,17 @@ function render() {
         ${mc && !mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase()) ? `<span style="font-size:10px;color:#a78bfa;margin-left:auto">Tracked on ${mc.platforms.map(pl => pl.charAt(0).toUpperCase() + pl.slice(1)).join(', ')}</span>` : ''}
       </div>
 
-      ${!mc || !mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase()) ? `
+      ${state.isOwnProfile ? `
+        <div class="profile-actions">
+          <button class="btn btn-primary" id="sync-my-videos-btn" ${state.saving === 'syncing-videos' ? 'disabled' : ''}>
+            ${state.saving === 'syncing-videos' ? '<span class="spinner"></span> Syncing...' : '🔄 Sync My Videos'}
+          </button>
+          ${state.messages.sync ? `<div class="success-msg">${state.messages.sync}</div>` : ''}
+          ${state.errors.sync ? `<div class="error-msg">${state.errors.sync}</div>` : ''}
+        </div>
+      ` : ''}
+
+      ${!state.isOwnProfile && (!mc || !mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase())) ? `
         <div class="profile-actions">
           <button class="btn btn-outline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''}>
             ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : mc ? `Also track on ${p.platform}` : `Track @${p.handle} as Competitor`}
@@ -684,6 +752,7 @@ function render() {
 
     // Wire events
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+    document.getElementById('sync-my-videos-btn')?.addEventListener('click', handleSyncMyVideos)
     document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
     document.getElementById('sort-btn')?.addEventListener('click', handleSort)
     document.getElementById('export-btn')?.addEventListener('click', handleExportCSV)
