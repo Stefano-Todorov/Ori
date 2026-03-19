@@ -1197,6 +1197,32 @@ async function fetchInstagramMetrics(items) {
                 if (!feedData.more_available || !nextMaxId) break
               }
               console.log('[Orianna] Cached', igMetricsCache.size, 'posts from feed API')
+
+              // Also fetch reels — feed endpoint often excludes them
+              try {
+                let reelsMaxId = null
+                for (let page = 0; page < 3; page++) {
+                  const reelsUrl = `https://www.instagram.com/api/v1/clips/user/?target_user_id=${userId}&page_size=50${reelsMaxId ? `&max_id=${reelsMaxId}` : ''}`
+                  const reelsRes = await fetchWithRetry(reelsUrl, {
+                    method: 'POST',
+                    headers: { ...igHeaders, 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `target_user_id=${userId}&page_size=50${reelsMaxId ? `&max_id=${reelsMaxId}` : ''}`
+                  })
+                  if (!reelsRes) break
+                  const reelsData = await reelsRes.json()
+                  const reelItems = reelsData?.items ?? []
+                  for (const ri of reelItems) {
+                    const node = ri?.media
+                    if (node) cacheMediaNode(node)
+                  }
+                  const pagingInfo = reelsData?.paging_info
+                  reelsMaxId = pagingInfo?.max_id
+                  if (!pagingInfo?.more_available || !reelsMaxId) break
+                }
+                console.log('[Orianna] Total cached after reels:', igMetricsCache.size)
+              } catch (err) {
+                console.log('[Orianna] Reels API error:', err.message)
+              }
             }
           }
         } catch (err) {
