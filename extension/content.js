@@ -1156,8 +1156,8 @@ async function fetchInstagramMetrics(items) {
     }
     console.log('[Orianna] Found', igMetricsCache.size, 'posts from embedded data')
 
-    // Method 2: If still empty, try API
-    if (igMetricsCache.size === 0) {
+    // Method 2: Try API if we have few posts (embedded data often only has ~12)
+    if (igMetricsCache.size < 50) {
       const handle = window.location.pathname.match(/\/([a-zA-Z0-9._]+)/)?.[1]
       if (handle) {
         try {
