@@ -590,6 +590,27 @@ export async function createIdeaFromInspo(postId: string) {
   return { idea, error: null }
 }
 
+export async function updateSocialHandles(handles: { platform: Platform; username: string }[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  for (const { platform, username } of handles) {
+    const clean = username.replace(/^@/, '').trim()
+    // Delete existing entry for this platform first, then insert if non-empty
+    await supabase.from('social_accounts').delete()
+      .eq('user_id', user.id).eq('platform', platform)
+    if (clean) {
+      await supabase.from('social_accounts').insert({
+        user_id: user.id, platform, username: clean,
+      })
+    }
+  }
+
+  revalidatePath('/dashboard/settings')
+  return { error: null }
+}
+
 export async function disconnectAccount(platform: Platform) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

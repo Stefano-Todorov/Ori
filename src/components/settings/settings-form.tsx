@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import type { Profile } from '@/lib/types'
-import { updateProfile } from '@/app/actions'
+import { updateProfile, updateSocialHandles } from '@/app/actions'
+import type { Platform } from '@/lib/types'
 import { Sun, Moon, Monitor } from 'lucide-react'
 
 const PLATFORMS = [
@@ -19,9 +20,10 @@ const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon }
 
 interface Props {
   profile: Profile | null
+  socialAccounts: { platform: string; username: string | null }[]
 }
 
-export function SettingsForm({ profile }: Props) {
+export function SettingsForm({ profile, socialAccounts }: Props) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [name, setName] = useState(profile?.name ?? '')
@@ -30,6 +32,9 @@ export function SettingsForm({ profile }: Props) {
   const [goals, setGoals] = useState(profile?.goals ?? '')
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [postingTarget, setPostingTarget] = useState(profile?.posting_target ?? 3)
+  const [tiktokHandle, setTiktokHandle] = useState(socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '')
+  const [instagramHandle, setInstagramHandle] = useState(socialAccounts.find(a => a.platform === 'instagram')?.username ?? '')
+  const [youtubeHandle, setYoutubeHandle] = useState(socialAccounts.find(a => a.platform === 'youtube')?.username ?? '')
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -47,18 +52,26 @@ export function SettingsForm({ profile }: Props) {
     setLoading(true)
     setError(null)
 
-    const result = await updateProfile({
-      name: name || null,
-      niche: niche || null,
-      sub_niche: subNiche || null,
-      goals: goals || null,
-      platforms,
-      posting_target: postingTarget,
-      auto_sync_own_profile: autoSync,
-    })
+    const [profileResult, handlesResult] = await Promise.all([
+      updateProfile({
+        name: name || null,
+        niche: niche || null,
+        sub_niche: subNiche || null,
+        goals: goals || null,
+        platforms,
+        posting_target: postingTarget,
+        auto_sync_own_profile: autoSync,
+      }),
+      updateSocialHandles([
+        { platform: 'tiktok' as Platform, username: tiktokHandle },
+        { platform: 'instagram' as Platform, username: instagramHandle },
+        { platform: 'youtube' as Platform, username: youtubeHandle },
+      ]),
+    ])
 
-    if (result?.error) {
-      setError(result.error)
+    const err = profileResult?.error || handlesResult?.error
+    if (err) {
+      setError(err)
       setLoading(false)
       return
     }
@@ -120,6 +133,37 @@ export function SettingsForm({ profile }: Props) {
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Goals</label>
             <Textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder="Your content goals..." className={inputClass} />
+          </div>
+        </div>
+      </div>
+
+      {/* Your Accounts */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <div>
+          <p className="text-sm font-bold text-foreground">Your Accounts</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Enter your usernames so the extension knows which profiles are yours</p>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">TikTok</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+              <Input value={tiktokHandle} onChange={(e) => setTiktokHandle(e.target.value)} placeholder="your_tiktok" className={`${inputClass} pl-7`} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Instagram</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+              <Input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="your_instagram" className={`${inputClass} pl-7`} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">YouTube</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+              <Input value={youtubeHandle} onChange={(e) => setYoutubeHandle(e.target.value)} placeholder="your_channel" className={`${inputClass} pl-7`} />
+            </div>
           </div>
         </div>
       </div>

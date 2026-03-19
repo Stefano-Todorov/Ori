@@ -14,7 +14,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
-export function SettingsTabs({ profile }: { profile: Profile | null }) {
+export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | null; socialAccounts: { platform: string; username: string | null }[] }) {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<TabId>('profile')
 
@@ -48,7 +48,7 @@ export function SettingsTabs({ profile }: { profile: Profile | null }) {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'profile' && <SettingsForm profile={profile} />}
+      {activeTab === 'profile' && <SettingsForm profile={profile} socialAccounts={socialAccounts} />}
       {activeTab === 'billing' && <BillingSection />}
     </div>
   )
