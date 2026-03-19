@@ -1129,6 +1129,16 @@ async function fetchWithRetry(url, opts, retries = 1) {
   return null
 }
 
+// Convert Instagram shortcode to numeric media ID
+function shortcodeToMediaId(shortcode) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+  let id = BigInt(0)
+  for (const char of shortcode) {
+    id = id * BigInt(64) + BigInt(alphabet.indexOf(char))
+  }
+  return id.toString()
+}
+
 async function fetchInstagramMetrics(items) {
   const igHeaders = { 'X-IG-App-ID': '936619743392459' }
 
@@ -1210,6 +1220,7 @@ async function fetchInstagramMetrics(items) {
   }
 
   // Fallback: fetch individual post info for unmatched shortcodes
+  // The info endpoint needs numeric media IDs, not shortcodes
   if (unmatched.length > 0) {
     const toFetch = unmatched.slice(0, 30)
     console.log('[Orianna] Fetching', toFetch.length, 'individual posts...')
@@ -1218,8 +1229,9 @@ async function fetchInstagramMetrics(items) {
       const batch = toFetch.slice(i, i + 5)
       await Promise.all(batch.map(async ({ item, shortcode }) => {
         try {
+          const mediaId = shortcodeToMediaId(shortcode)
           const res = await fetchWithRetry(
-            `https://www.instagram.com/api/v1/media/${shortcode}/info/`,
+            `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
             { headers: igHeaders },
             0
           )
