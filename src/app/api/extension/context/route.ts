@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')
-      .select('niche, sub_niche, goals, inspo_tags, auto_sync_own_profile, last_synced_at')
+      .select('niche, sub_niche, goals, auto_sync_own_profile, last_synced_at')
       .eq('user_id', user.id)
       .single(),
     supabase
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Collect unique tags from profile saved tags + post tags
-  const profileTags: string[] = profile?.inspo_tags ?? []
+  const profileTags: string[] = []
   const allTags = [...new Set([...profileTags, ...(tagPosts ?? []).flatMap((p: { tags: string[] }) => p.tags ?? [])])].sort()
 
   return NextResponse.json({
