@@ -5,15 +5,14 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import type { Profile } from '@/lib/types'
+import type { Profile, Platform } from '@/lib/types'
 import { updateProfile, updateSocialHandles } from '@/app/actions'
-import type { Platform } from '@/lib/types'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon, Monitor, RefreshCw } from 'lucide-react'
 
-const PLATFORMS = [
-  { id: 'tiktok', label: 'TikTok' },
-  { id: 'instagram', label: 'Instagram' },
-  { id: 'youtube', label: 'YouTube Shorts' },
+const PLATFORMS: { id: Platform; label: string; dotColor: string; placeholder: string }[] = [
+  { id: 'tiktok', label: 'TikTok', dotColor: 'bg-pink-500', placeholder: 'your_tiktok' },
+  { id: 'instagram', label: 'Instagram', dotColor: 'bg-purple-500', placeholder: 'your_instagram' },
+  { id: 'youtube', label: 'YouTube Shorts', dotColor: 'bg-red-500', placeholder: 'your_channel' },
 ]
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon }
@@ -21,6 +20,16 @@ const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon }
 interface Props {
   profile: Profile | null
   socialAccounts: { platform: string; username: string | null }[]
+}
+
+function timeAgo(date: string): string {
+  const diff = Date.now() - new Date(date).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  return `${days}d ago`
 }
 
 export function SettingsForm({ profile, socialAccounts }: Props) {
@@ -32,9 +41,11 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
   const [goals, setGoals] = useState(profile?.goals ?? '')
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [postingTarget, setPostingTarget] = useState(profile?.posting_target ?? 3)
-  const [tiktokHandle, setTiktokHandle] = useState(socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '')
-  const [instagramHandle, setInstagramHandle] = useState(socialAccounts.find(a => a.platform === 'instagram')?.username ?? '')
-  const [youtubeHandle, setYoutubeHandle] = useState(socialAccounts.find(a => a.platform === 'youtube')?.username ?? '')
+  const [handles, setHandles] = useState<Record<string, string>>({
+    tiktok: socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '',
+    instagram: socialAccounts.find(a => a.platform === 'instagram')?.username ?? '',
+    youtube: socialAccounts.find(a => a.platform === 'youtube')?.username ?? '',
+  })
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -46,6 +57,10 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
     setPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     )
+  }
+
+  function updateHandle(platform: string, value: string) {
+    setHandles(prev => ({ ...prev, [platform]: value }))
   }
 
   async function handleSave() {
@@ -62,11 +77,9 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
         posting_target: postingTarget,
         auto_sync_own_profile: autoSync,
       }),
-      updateSocialHandles([
-        { platform: 'tiktok' as Platform, username: tiktokHandle },
-        { platform: 'instagram' as Platform, username: instagramHandle },
-        { platform: 'youtube' as Platform, username: youtubeHandle },
-      ]),
+      updateSocialHandles(
+        PLATFORMS.map(p => ({ platform: p.id, username: handles[p.id] ?? '' }))
+      ),
     ])
 
     const err = profileResult?.error || handlesResult?.error
@@ -122,13 +135,15 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
             <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Display name</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className={inputClass} />
           </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Main niche</label>
-            <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g. Fitness, Comedy, Finance" className={inputClass} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Sub-niche</label>
-            <Input value={subNiche} onChange={(e) => setSubNiche(e.target.value)} placeholder="e.g. Calisthenics" className={inputClass} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Main niche</label>
+              <Input value={niche} onChange={(e) => setNiche(e.target.value)} placeholder="e.g. Fitness, Comedy" className={inputClass} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Sub-niche</label>
+              <Input value={subNiche} onChange={(e) => setSubNiche(e.target.value)} placeholder="e.g. Calisthenics" className={inputClass} />
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Goals</label>
@@ -137,109 +152,105 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
         </div>
       </div>
 
-      {/* Your Accounts */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+      {/* Platforms & Accounts */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-5">
         <div>
-          <p className="text-sm font-bold text-foreground">Your Accounts</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Enter your usernames so the extension knows which profiles are yours</p>
+          <p className="text-sm font-bold text-foreground">Platforms & Accounts</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Select your platforms and enter your usernames for extension sync</p>
         </div>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">TikTok</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
-              <Input value={tiktokHandle} onChange={(e) => setTiktokHandle(e.target.value)} placeholder="your_tiktok" className={`${inputClass} pl-7`} />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Instagram</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
-              <Input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="your_instagram" className={`${inputClass} pl-7`} />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">YouTube</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
-              <Input value={youtubeHandle} onChange={(e) => setYoutubeHandle(e.target.value)} placeholder="your_channel" className={`${inputClass} pl-7`} />
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Content preferences */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <p className="text-sm font-bold text-foreground">Content preferences</p>
-        <div className="space-y-4">
-          <div className="space-y-2.5">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Active platforms</label>
-            <div className="flex gap-2 flex-wrap">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => togglePlatform(p.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
-                    platforms.includes(p.id)
-                      ? 'bg-purple-600 text-white border border-transparent'
-                      : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2.5">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Posts per week target</label>
-            <div className="flex gap-2">
-              {[1, 3, 5, 7, 14].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setPostingTarget(t)}
-                  className={`w-12 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
-                    postingTarget === t
-                      ? 'bg-purple-600 text-white border border-transparent'
-                      : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
-                  }`}
-                >
-                  {t}x
-                </button>
-              ))}
-            </div>
+        <div className="space-y-3">
+          {PLATFORMS.map((p) => {
+            const isActive = platforms.includes(p.id)
+            const synced = lastSyncedAt[p.id]
+
+            return (
+              <div
+                key={p.id}
+                className={`rounded-xl border p-4 transition-all duration-150 ${
+                  isActive
+                    ? 'border-purple-500/30 bg-purple-500/[0.03]'
+                    : 'border-border bg-muted/30 dark:bg-white/[0.02]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Platform toggle */}
+                  <button
+                    type="button"
+                    onClick={() => togglePlatform(p.id)}
+                    className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${isActive ? 'bg-purple-600' : 'bg-muted border border-border'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isActive ? 'translate-x-4' : ''}`} />
+                  </button>
+
+                  {/* Platform name + dot */}
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <div className={`w-2 h-2 rounded-full ${p.dotColor}`} />
+                    <span className={`text-sm font-medium ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {p.label}
+                    </span>
+                  </div>
+
+                  {/* Handle input (only when active) */}
+                  {isActive && (
+                    <div className="relative flex-1 max-w-[220px]">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">@</span>
+                      <Input
+                        value={handles[p.id] ?? ''}
+                        onChange={(e) => updateHandle(p.id, e.target.value)}
+                        placeholder={p.placeholder}
+                        className={`${inputClass} pl-6 h-8 text-xs`}
+                      />
+                    </div>
+                  )}
+
+                  {/* Last synced badge */}
+                  {isActive && synced && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto shrink-0">
+                      <RefreshCw size={10} />
+                      {timeAgo(synced)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Posting target */}
+        <div className="space-y-2.5 pt-1">
+          <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Posts per week target</label>
+          <div className="flex gap-2">
+            {[1, 3, 5, 7, 14].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setPostingTarget(t)}
+                className={`w-12 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
+                  postingTarget === t
+                    ? 'bg-purple-600 text-white border border-transparent'
+                    : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                }`}
+              >
+                {t}x
+              </button>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Sync */}
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <p className="text-sm font-bold text-foreground">Extension Sync</p>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-foreground">Auto-sync on profile visit</p>
-              <p className="text-xs text-muted-foreground">Automatically sync your videos when you visit your own profile page</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAutoSync(!autoSync)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${autoSync ? 'bg-purple-600' : 'bg-muted border border-border'}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${autoSync ? 'translate-x-5' : ''}`} />
-            </button>
+        {/* Auto-sync toggle */}
+        <div className="flex items-center justify-between pt-1 border-t border-border">
+          <div className="pt-3">
+            <p className="text-sm text-foreground">Auto-sync on profile visit</p>
+            <p className="text-xs text-muted-foreground">Sync your videos automatically when you visit your own profile</p>
           </div>
-          {Object.entries(lastSyncedAt).length > 0 && (
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Last synced</label>
-              {Object.entries(lastSyncedAt).map(([platform, timestamp]) => (
-                <p key={platform} className="text-sm text-muted-foreground">
-                  {platform.charAt(0).toUpperCase() + platform.slice(1)}: {new Date(timestamp).toLocaleString()}
-                </p>
-              ))}
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setAutoSync(!autoSync)}
+            className={`relative w-9 h-5 rounded-full transition-colors shrink-0 mt-3 ${autoSync ? 'bg-purple-600' : 'bg-muted border border-border'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${autoSync ? 'translate-x-4' : ''}`} />
+          </button>
         </div>
       </div>
 
