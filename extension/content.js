@@ -1209,24 +1209,31 @@ async function fetchInstagramMetrics(items) {
     }
   }
 
-  // Fallback: fetch individual post info for unmatched shortcodes (up to 5)
-  if (unmatched.length > 0 && unmatched.length <= 10) {
-    console.log('[Orianna] Fetching', Math.min(unmatched.length, 5), 'individual posts...')
-    for (const { item, shortcode } of unmatched.slice(0, 5)) {
-      try {
-        const res = await fetchWithRetry(
-          `https://www.instagram.com/api/v1/media/${shortcode}/info/`,
-          { headers: igHeaders },
-          0  // no retry for individual posts to stay fast
-        )
-        if (res) {
-          const data = await res.json()
-          const nodes = extractMediaNodes(data)
-          nodes.forEach(cacheMediaNode)
-          const cached = igMetricsCache.get(shortcode)
-          if (cached) metricsMap.set(item, cached)
-        }
-      } catch {}
+  // Fallback: fetch individual post info for unmatched shortcodes
+  if (unmatched.length > 0) {
+    const toFetch = unmatched.slice(0, 30)
+    console.log('[Orianna] Fetching', toFetch.length, 'individual posts...')
+    // Batch in groups of 5 to avoid rate limits
+    for (let i = 0; i < toFetch.length; i += 5) {
+      const batch = toFetch.slice(i, i + 5)
+      await Promise.all(batch.map(async ({ item, shortcode }) => {
+        try {
+          const res = await fetchWithRetry(
+            `https://www.instagram.com/api/v1/media/${shortcode}/info/`,
+            { headers: igHeaders },
+            0
+          )
+          if (res) {
+            const data = await res.json()
+            const nodes = extractMediaNodes(data)
+            nodes.forEach(cacheMediaNode)
+            const cached = igMetricsCache.get(shortcode)
+            if (cached) metricsMap.set(item, cached)
+          }
+        } catch {}
+      }))
+      // Small delay between batches to avoid rate limiting
+      if (i + 5 < toFetch.length) await new Promise(r => setTimeout(r, 300))
     }
   }
 
