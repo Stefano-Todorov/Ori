@@ -1635,28 +1635,47 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'GET_SORTED_METRICS') {
     (async () => {
       const grid = findGridAndItems()
-      if (!grid) {
+      const host = window.location.hostname
+      const isInstagram = host.includes('instagram.com')
+
+      if (!grid && !isInstagram) {
         sendResponse({ error: 'No video grid found on this page' })
         return
       }
 
-      const { items, platform } = grid
+      const items = grid?.items ?? []
+      const platform = grid?.platform ?? (isInstagram ? 'instagram' : null)
       const sortBy = msg.sortBy ?? 'views'
       let posts = []
 
       if (platform === 'instagram') {
-        // Instagram: fetch metrics from API, thumbnails from API cache
-        const igMetrics = await fetchInstagramMetrics(items)
-        posts = items.map(link => {
-          const href = link.href
-          const m = href.match(/\/(reel|p)\/([^/?]+)/)
+        // Instagram: fetch metrics from API — this populates igMetricsCache with ALL posts
+        // Pass whatever DOM items we found (may be few/none due to virtualized grid)
+        await fetchInstagramMetrics(items)
+
+        // Build posts from the full cache, not just DOM elements
+        // (Instagram virtualizes the grid, so most posts aren't in the DOM)
+        const seenShortcodes = new Set()
+        posts = []
+
+        // First add DOM-visible items (they may have thumbnails from the page)
+        for (const link of items) {
+          const m = link.href.match(/\/(reel|p)\/([^/?]+)/)
           const sc = m?.[2]
-          const metrics = igMetrics.get(link) ?? { views: null, likes: null, comments: null, thumb: null }
-          // Prefer API thumbnail, fall back to DOM img
+          if (!sc) continue
+          seenShortcodes.add(sc)
+          const cached = igMetricsCache.get(sc) ?? {}
           const domImg = link.querySelector('img')
-          const thumb = metrics.thumb ?? igMetricsCache.get(sc)?.thumb ?? domImg?.src ?? ''
-          return { href, thumb, views: metrics.views, likes: metrics.likes, comments: metrics.comments }
-        })
+          const thumb = cached.thumb ?? domImg?.src ?? ''
+          posts.push({ href: link.href, thumb, views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
+        }
+
+        // Then add all cached posts not already included (from API fetch)
+        for (const [sc, cached] of igMetricsCache) {
+          if (seenShortcodes.has(sc)) continue
+          const href = `https://www.instagram.com/reel/${sc}/`
+          posts.push({ href, thumb: cached.thumb ?? '', views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
+        }
       } else if (platform === 'tiktok') {
         // TikTok: try to get likes/comments from embedded page data or API
         await fetchTikTokMetrics()
