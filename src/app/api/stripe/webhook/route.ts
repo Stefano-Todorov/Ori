@@ -6,11 +6,11 @@ import type { TierSlug } from '@/lib/tiers'
 // Map Stripe price IDs to tier slugs
 function tierFromPriceId(priceId: string): TierSlug {
   const map: Record<string, TierSlug> = {
-    [process.env.STRIPE_PRICE_CREATOR ?? '']: 'creator',
+    [process.env.STRIPE_PRICE_PLUS ?? '']: 'plus',
     [process.env.STRIPE_PRICE_PRO ?? '']: 'pro',
-    [process.env.STRIPE_PRICE_STUDIO ?? '']: 'studio',
+    [process.env.STRIPE_PRICE_MAX ?? '']: 'max',
   }
-  return map[priceId] ?? 'explorer'
+  return map[priceId] ?? 'starter'
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       await supabase
         .from('profiles')
         .update({
-          subscription_tier: 'explorer',
+          subscription_tier: 'starter',
           stripe_subscription_id: null,
         })
         .eq('stripe_customer_id', customerId)
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       // Downgrade to free on payment failure
       await supabase
         .from('profiles')
-        .update({ subscription_tier: 'explorer' })
+        .update({ subscription_tier: 'starter' })
         .eq('stripe_customer_id', customerId)
 
       break

@@ -29,19 +29,19 @@ function formatLimit(val: number): string {
 
 function tierAccent(slug: TierSlug): string {
   switch (slug) {
-    case 'explorer': return 'border-border dark:border-white/10'
-    case 'creator': return 'border-blue-500/30'
+    case 'starter': return 'border-border dark:border-white/10'
+    case 'plus': return 'border-blue-500/30'
     case 'pro': return 'border-purple-500/30'
-    case 'studio': return 'border-amber-500/30'
+    case 'max': return 'border-amber-500/30'
   }
 }
 
 function tierBadgeColor(slug: TierSlug): string {
   switch (slug) {
-    case 'explorer': return 'bg-muted text-muted-foreground'
-    case 'creator': return 'bg-blue-500/15 text-blue-500'
+    case 'starter': return 'bg-muted text-muted-foreground'
+    case 'plus': return 'bg-blue-500/15 text-blue-500'
     case 'pro': return 'bg-purple-500/15 text-purple-500'
-    case 'studio': return 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+    case 'max': return 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
   }
 }
 
@@ -85,7 +85,7 @@ export function BillingSection() {
     }
   }
 
-  const currentTier = (usageData?.tier ?? 'explorer') as TierSlug
+  const currentTier = (usageData?.tier ?? 'starter') as TierSlug
 
   if (loading) {
     return (
@@ -100,19 +100,19 @@ export function BillingSection() {
       {/* Current plan banner */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
         <div className="flex items-center gap-3">
-          <Crown size={18} className={currentTier === 'studio' ? 'text-amber-500' : currentTier === 'pro' ? 'text-purple-500' : currentTier === 'creator' ? 'text-blue-500' : 'text-muted-foreground'} />
+          <Crown size={18} className={currentTier === 'max' ? 'text-amber-500' : currentTier === 'pro' ? 'text-purple-500' : currentTier === 'plus' ? 'text-blue-500' : 'text-muted-foreground'} />
           <div>
             <p className="text-sm font-semibold text-foreground">
               Current plan: <span className="capitalize">{currentTier}</span>
             </p>
-            {currentTier !== 'explorer' && (
+            {currentTier !== 'starter' && (
               <p className="text-xs text-muted-foreground">
                 ${TIER_LIST.find(t => t.slug === currentTier)?.price}/month
               </p>
             )}
           </div>
         </div>
-        {currentTier !== 'explorer' && (
+        {currentTier !== 'starter' && (
           <button
             onClick={handlePortal}
             disabled={portalLoading}
@@ -192,7 +192,7 @@ export function BillingSection() {
                   onClick={() => handleCheckout(tier)}
                   disabled={checkoutLoading === tier.slug}
                   className={`w-full h-9 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${
-                    tier.slug === 'studio'
+                    tier.slug === 'max'
                       ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-black hover:brightness-110'
                       : tier.slug === 'pro'
                       ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20 hover:bg-purple-700'
@@ -204,7 +204,7 @@ export function BillingSection() {
                   ) : (
                     <span className="flex items-center justify-center gap-1.5">
                       <Sparkles size={12} />
-                      {currentTier === 'explorer' ? 'Upgrade' : 'Switch'}
+                      {currentTier === 'starter' ? 'Upgrade' : 'Switch'}
                     </span>
                   )}
                 </button>
@@ -215,7 +215,7 @@ export function BillingSection() {
       </div>
 
       {/* Current usage */}
-      {usageData && currentTier !== 'explorer' && (
+      {usageData && currentTier !== 'starter' && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">This month&apos;s usage</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

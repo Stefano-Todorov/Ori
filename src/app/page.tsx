@@ -63,7 +63,7 @@ const steps = [
 const faqs = [
   {
     q: 'Is Orianna really free?',
-    a: 'Yes — the Explorer plan is free forever with competitor tracking, downloads, scheduling, and the Chrome extension. AI features like the coach, script generator, and idea generation start at $3.99/month on the Creator plan.',
+    a: 'Yes — the Starter plan is free forever with competitor tracking, inspo saves, scheduling, and the Chrome extension. AI features like the coach, script generator, and idea generation start at $5.99/month on the Plus plan.',
   },
   {
     q: 'What platforms does it support?',
@@ -742,18 +742,18 @@ export default function LandingPage() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-            {/* Explorer */}
+            {/* Starter */}
             <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Explorer</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Starter</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                   <span style={{ fontSize: 40, fontWeight: 800 }}>$0</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Get started with the basics. No AI, no credit card.</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Explore the platform. No AI, no credit card.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['5 competitors tracked', '15 downloads/month', '10 inspo saves/month', 'Content calendar', 'Chrome extension (save only)', 'Ideas board'].map((item, i) => (
+                {['5 competitors tracked', 'Unlimited inspo saves', 'Content calendar', 'Ideas board', 'Chrome extension (save only)'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -767,18 +767,18 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Creator */}
+            {/* Plus */}
             <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', transitionDelay: '0.1s' }}>
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Creator</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Plus</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$3.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$5.99</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI features to start creating smarter content.</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI to start creating smarter content.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['15 AI coach messages/mo', '5 script generations/mo', '5 idea generations/mo', '15 competitors tracked', '30 downloads/month', '30 inspo saves/month', 'Chrome extension (save only)'].map((item, i) => (
+                {['10 AI coach messages/mo', '3 script generations/mo', '5 idea generations/mo', '10 competitors tracked', '30 downloads/month', 'Unlimited inspo saves'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -787,7 +787,7 @@ export default function LandingPage() {
               </ul>
               <Link href="/signup">
                 <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
-                  Start creating
+                  Get Plus
                 </span>
               </Link>
             </div>
@@ -800,13 +800,13 @@ export default function LandingPage() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#a855f7', marginBottom: 4 }}>Pro</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$9.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$14.99</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>For serious creators who want to grow fast.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['100 AI coach messages/mo', '30 script generations/mo', '30 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {['150 AI coach messages/mo', '40 script generations/mo', '40 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#a855f7', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -820,18 +820,18 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Studio */}
+            {/* Max */}
             <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column', transitionDelay: '0.3s' }}>
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Studio</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Max</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$29.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>$39.99</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlimited everything. For teams and power creators.</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Maximum power for teams and top creators.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['Unlimited AI coach', 'Unlimited scripts', 'Unlimited idea generation', 'Unlimited competitors', 'Unlimited downloads', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {['400 AI coach messages/mo', '150 script generations/mo', '150 idea generations/mo', '100 competitors tracked', '500 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -840,7 +840,7 @@ export default function LandingPage() {
               </ul>
               <Link href="/signup">
                 <span className="btn-ghost" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
-                  Go unlimited
+                  Go Max
                 </span>
               </Link>
             </div>

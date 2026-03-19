@@ -2,7 +2,7 @@
 // Single source of truth for all tier limits and features.
 // Every route that needs to check limits imports from here.
 
-export type TierSlug = 'explorer' | 'creator' | 'pro' | 'studio'
+export type TierSlug = 'starter' | 'plus' | 'pro' | 'max'
 
 export interface TierConfig {
   slug: TierSlug
@@ -27,9 +27,9 @@ export interface TierConfig {
 }
 
 export const TIERS: Record<TierSlug, TierConfig> = {
-  explorer: {
-    slug: 'explorer',
-    name: 'Explorer',
+  starter: {
+    slug: 'starter',
+    name: 'Starter',
     price: 0,
     stripePriceId: null,
     limits: {
@@ -39,8 +39,8 @@ export const TIERS: Record<TierSlug, TierConfig> = {
       competitor_analyze: 0,
       competitor_ideas: 0,
       competitors: 5,
-      downloads: 15,
-      swipe_saves: 10,
+      downloads: 0,
+      swipe_saves: -1, // unlimited
     },
     features: {
       ai_enabled: false,
@@ -48,20 +48,20 @@ export const TIERS: Record<TierSlug, TierConfig> = {
       scheduling: true,
     },
   },
-  creator: {
-    slug: 'creator',
-    name: 'Creator',
-    price: 3.99,
-    stripePriceId: process.env.STRIPE_PRICE_CREATOR ?? null,
+  plus: {
+    slug: 'plus',
+    name: 'Plus',
+    price: 5.99,
+    stripePriceId: process.env.STRIPE_PRICE_PLUS ?? null,
     limits: {
-      coach_messages: 15,
-      script_generations: 5,
+      coach_messages: 10,
+      script_generations: 3,
       idea_generations: 5,
-      competitor_analyze: 5,
-      competitor_ideas: 5,
-      competitors: 15,
+      competitor_analyze: 3,
+      competitor_ideas: 3,
+      competitors: 10,
       downloads: 30,
-      swipe_saves: 30,
+      swipe_saves: -1,
     },
     features: {
       ai_enabled: true,
@@ -72,17 +72,17 @@ export const TIERS: Record<TierSlug, TierConfig> = {
   pro: {
     slug: 'pro',
     name: 'Pro',
-    price: 9.99,
+    price: 14.99,
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
     limits: {
-      coach_messages: 100,
-      script_generations: 30,
-      idea_generations: 30,
-      competitor_analyze: 30,
-      competitor_ideas: 30,
+      coach_messages: 150,
+      script_generations: 40,
+      idea_generations: 40,
+      competitor_analyze: 40,
+      competitor_ideas: 40,
       competitors: 30,
       downloads: 100,
-      swipe_saves: -1, // -1 = unlimited
+      swipe_saves: -1,
     },
     features: {
       ai_enabled: true,
@@ -90,19 +90,19 @@ export const TIERS: Record<TierSlug, TierConfig> = {
       scheduling: true,
     },
   },
-  studio: {
-    slug: 'studio',
-    name: 'Studio',
-    price: 29.99,
-    stripePriceId: process.env.STRIPE_PRICE_STUDIO ?? null,
+  max: {
+    slug: 'max',
+    name: 'Max',
+    price: 39.99,
+    stripePriceId: process.env.STRIPE_PRICE_MAX ?? null,
     limits: {
-      coach_messages: -1,
-      script_generations: -1,
-      idea_generations: -1,
-      competitor_analyze: -1,
-      competitor_ideas: -1,
-      competitors: -1,
-      downloads: -1,
+      coach_messages: 400,
+      script_generations: 150,
+      idea_generations: 150,
+      competitor_analyze: 100,
+      competitor_ideas: 100,
+      competitors: 100,
+      downloads: 500,
       swipe_saves: -1,
     },
     features: {
@@ -116,10 +116,10 @@ export const TIERS: Record<TierSlug, TierConfig> = {
 // Usage feature keys that map to tier limits
 export type UsageFeature = keyof TierConfig['limits']
 
-// Helper to get tier by slug (defaults to explorer)
+// Helper to get tier by slug (defaults to starter)
 export function getTier(slug: string | null | undefined): TierConfig {
   if (slug && slug in TIERS) return TIERS[slug as TierSlug]
-  return TIERS.explorer
+  return TIERS.starter
 }
 
 // Helper to check if a limit is unlimited
@@ -129,8 +129,8 @@ export function isUnlimited(limit: number): boolean {
 
 // Get all tiers as sorted array (for pricing page)
 export const TIER_LIST: TierConfig[] = [
-  TIERS.explorer,
-  TIERS.creator,
+  TIERS.starter,
+  TIERS.plus,
   TIERS.pro,
-  TIERS.studio,
+  TIERS.max,
 ]

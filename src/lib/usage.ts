@@ -110,5 +110,5 @@ export async function getUserTier(userId: string): Promise<TierSlug> {
     .eq('user_id', userId)
     .single()
 
-  return (data?.subscription_tier as TierSlug) ?? 'explorer'
+  return (data?.subscription_tier as TierSlug) ?? 'starter'
 }
