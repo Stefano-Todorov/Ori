@@ -113,6 +113,7 @@ const testimonials = [
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [mobileMenu, setMobileMenu] = useState(false)
   const animateRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
@@ -284,6 +285,19 @@ export default function LandingPage() {
           transform: translateY(-1px);
           box-shadow: 0 4px 20px rgba(255,255,255,0.15);
         }
+        @media (max-width: 768px) {
+          .nav-desktop { display: none !important; }
+          .nav-mobile-toggle { display: block !important; }
+          .nav-mobile-menu { display: flex !important; }
+          .steps-grid { grid-template-columns: 1fr !important; }
+          .chrome-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .testimonials-grid { grid-template-columns: 1fr !important; }
+          .pricing-grid { grid-template-columns: 1fr !important; }
+          .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 24px !important; }
+        }
+        @media (max-width: 480px) {
+          .footer-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       <div className="landing-page">
@@ -312,7 +326,8 @@ export default function LandingPage() {
               </svg>
               <span style={{ fontSize: 22, fontWeight: 700 }} className="gradient-text">Orianna</span>
             </a>
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+            {/* Desktop nav */}
+            <nav className="nav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
               <a href="#features" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Features</a>
               <a href="#how-it-works" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">How it works</a>
               <a href="#pricing" style={{ color: '#9ca3af', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-login">Pricing</a>
@@ -326,7 +341,35 @@ export default function LandingPage() {
                 </span>
               </Link>
             </nav>
+            {/* Mobile hamburger */}
+            <button
+              className="nav-mobile-toggle"
+              onClick={() => setMobileMenu(!mobileMenu)}
+              aria-label="Toggle menu"
+              style={{ display: 'none', background: 'none', border: 'none', color: '#d1d5db', cursor: 'pointer', padding: 4 }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                {mobileMenu ? (
+                  <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+                ) : (
+                  <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
+                )}
+              </svg>
+            </button>
           </div>
+          {/* Mobile menu dropdown */}
+          {mobileMenu && (
+            <div className="nav-mobile-menu" style={{ display: 'none', flexDirection: 'column', gap: 4, padding: '8px 24px 16px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(16px)' }}>
+              <a href="#features" onClick={() => setMobileMenu(false)} style={{ color: '#9ca3af', fontSize: 15, fontWeight: 500, textDecoration: 'none', padding: '10px 0' }}>Features</a>
+              <a href="#how-it-works" onClick={() => setMobileMenu(false)} style={{ color: '#9ca3af', fontSize: 15, fontWeight: 500, textDecoration: 'none', padding: '10px 0' }}>How it works</a>
+              <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ color: '#9ca3af', fontSize: 15, fontWeight: 500, textDecoration: 'none', padding: '10px 0' }}>Pricing</a>
+              <a href="#faq" onClick={() => setMobileMenu(false)} style={{ color: '#9ca3af', fontSize: 15, fontWeight: 500, textDecoration: 'none', padding: '10px 0' }}>FAQ</a>
+              <Link href="/login" onClick={() => setMobileMenu(false)} style={{ color: '#9ca3af', fontSize: 15, fontWeight: 500, textDecoration: 'none', padding: '10px 0' }}>Log in</Link>
+              <Link href="/signup" onClick={() => setMobileMenu(false)} style={{ display: 'inline-block', marginTop: 4 }}>
+                <span style={{ background: 'linear-gradient(135deg, #7c3aed, #9333ea)', color: 'white', fontWeight: 600, fontSize: 14, padding: '10px 24px', borderRadius: 999, display: 'inline-block' }}>Get started</span>
+              </Link>
+            </div>
+          )}
         </header>
 
         {/* Hero */}
@@ -494,7 +537,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {steps.map((step, i) => (
               <div
                 key={i}
@@ -599,7 +642,7 @@ export default function LandingPage() {
             pointerEvents: 'none',
           }} />
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '100px 24px', position: 'relative' }}>
-            <div ref={addRef} className="anim-target" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+            <div ref={addRef} className="anim-target chrome-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
               <div>
                 <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: '#a855f7', letterSpacing: '0.1em', display: 'block', marginBottom: 12 }}>
                   CHROME EXTENSION
@@ -685,7 +728,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
               {testimonials.map((t, i) => (
                 <div
                   key={i}
@@ -741,7 +784,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+          <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {/* Starter */}
             <div ref={addRef} className="anim-target feature-card" style={{ background: '#12121a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: 28, display: 'flex', flexDirection: 'column' }}>
               <div style={{ marginBottom: 24 }}>
@@ -924,7 +967,7 @@ export default function LandingPage() {
         {/* Footer */}
         <footer style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px 0 32px' }}>
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 40 }}>
+            <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 40 }}>
               {/* Brand */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
