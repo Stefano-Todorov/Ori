@@ -1140,7 +1140,8 @@ function shortcodeToMediaId(shortcode) {
 }
 
 async function fetchInstagramMetrics(items) {
-  const igHeaders = { 'X-IG-App-ID': '936619743392459' }
+  const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? ''
+  const igHeaders = { 'X-IG-App-ID': '936619743392459', 'X-CSRFToken': csrfToken }
 
   // Extract shortcodes from items (items are <a> links for IG overlay mode)
   const itemShortcodes = []
@@ -1499,7 +1500,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       } else if (data.platform === 'instagram') {
         // For saved/bookmarks page, fetch each post individually via IG API
         // (the profile-based fetchInstagramMetrics doesn't work here)
-        const igHeaders = { 'X-IG-App-ID': '936619743392459' }
+        const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? ''
+  const igHeaders = { 'X-IG-App-ID': '936619743392459', 'X-CSRFToken': csrfToken }
         const postsWithShortcodes = data.posts.filter(p => p.shortcode)
 
         // Batch fetch in groups of 5 with small delay to avoid rate limiting
