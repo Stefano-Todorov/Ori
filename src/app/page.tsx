@@ -925,7 +925,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link href={`/signup?plan=max${yearly ? '&billing=yearly' : ''}`}>
-                <span className="btn-ghost" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
+                <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
                   Go Max
                 </span>
               </Link>
