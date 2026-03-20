@@ -63,7 +63,7 @@ const steps = [
 const faqs = [
   {
     q: 'Is Orianna really free?',
-    a: 'Yes — the Starter plan is free forever with competitor tracking, inspo saves, scheduling, and the Chrome extension. AI features like the coach, script generator, and idea generation start at $5.99/month on the Plus plan.',
+    a: 'Yes — the Starter plan is free forever and includes 3 AI coach messages, 1 script, and 1 idea generation per month so you can try everything. Need more? Plans start at $5.99/month (or $4.17/month billed yearly).',
   },
   {
     q: 'What platforms does it support?',
@@ -114,6 +114,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [mobileMenu, setMobileMenu] = useState(false)
+  const [yearly, setYearly] = useState(false)
   const animateRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useEffect(() => {
@@ -422,7 +423,7 @@ export default function LandingPage() {
             </div>
 
             <p className="hero-proof" style={{ fontSize: 14, color: '#6b7280', marginBottom: 60 }}>
-              Free plan available &middot; No credit card required &middot; Set up in 30 seconds
+              Free plan with AI included &middot; No credit card required &middot; Set up in 30 seconds
             </p>
 
             {/* Dashboard mockup */}
@@ -779,9 +780,48 @@ export default function LandingPage() {
             <h2 style={{ fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 800, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
               Simple, transparent <span className="gradient-text">pricing</span>
             </h2>
-            <p style={{ fontSize: 16, color: '#9ca3af', maxWidth: 500, margin: '0 auto' }}>
-              Start free. Upgrade when you&apos;re ready to unlock AI-powered features.
+            <p style={{ fontSize: 16, color: '#9ca3af', maxWidth: 500, margin: '0 auto 28px' }}>
+              Start free with AI included. Upgrade when you need more.
             </p>
+
+            {/* Monthly / Yearly toggle */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: 4 }}>
+              <button
+                onClick={() => setYearly(false)}
+                style={{
+                  background: !yearly ? 'rgba(124,58,237,0.2)' : 'transparent',
+                  border: !yearly ? '1px solid rgba(124,58,237,0.4)' : '1px solid transparent',
+                  color: !yearly ? '#e9d5ff' : '#6b7280',
+                  borderRadius: 999,
+                  padding: '8px 20px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setYearly(true)}
+                style={{
+                  background: yearly ? 'rgba(124,58,237,0.2)' : 'transparent',
+                  border: yearly ? '1px solid rgba(124,58,237,0.4)' : '1px solid transparent',
+                  color: yearly ? '#e9d5ff' : '#6b7280',
+                  borderRadius: 999,
+                  padding: '8px 20px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Yearly
+                <span style={{ background: 'linear-gradient(135deg, #7c3aed, #9333ea)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, marginLeft: 8 }}>
+                  2 months free
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
@@ -793,10 +833,10 @@ export default function LandingPage() {
                   <span style={{ fontSize: 40, fontWeight: 800 }}>$0</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
-                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Explore the platform. No AI, no credit card.</p>
+                <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Try the AI. No credit card required.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['5 competitors tracked', 'Unlimited inspo saves', 'Content calendar', 'Ideas board', 'Chrome extension (save only)'].map((item, i) => (
+                {['3 AI coach messages/mo', '1 script generation/mo', '1 idea generation/mo', '5 competitors tracked', 'Unlimited inspo saves', 'Content calendar', 'Chrome extension (save only)'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -815,13 +855,14 @@ export default function LandingPage() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Plus</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$5.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>{yearly ? '$4.17' : '$5.99'}</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
+                {yearly && <p style={{ fontSize: 12, color: '#a855f7', margin: '4px 0 0', fontWeight: 600 }}>$49.99 billed yearly — save $21.89</p>}
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI to start creating smarter content.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['10 AI coach messages/mo', '3 script generations/mo', '5 idea generations/mo', '10 competitors tracked', '30 downloads/month', 'Unlimited inspo saves'].map((item, i) => (
+                {['25 AI coach messages/mo', '10 script generations/mo', '10 idea generations/mo', '10 post analyses/mo', '10 competitors tracked', '30 downloads/month', 'Unlimited inspo saves'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -843,13 +884,14 @@ export default function LandingPage() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#a855f7', marginBottom: 4 }}>Pro</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$14.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>{yearly ? '$12.50' : '$14.99'}</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
+                {yearly && <p style={{ fontSize: 12, color: '#a855f7', margin: '4px 0 0', fontWeight: 600 }}>$149.99 billed yearly — save $29.89</p>}
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>For serious creators who want to grow fast.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['150 AI coach messages/mo', '40 script generations/mo', '40 idea generations/mo', '30 competitors tracked', '100 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {['100 AI coach messages/mo', '40 script generations/mo', '40 idea generations/mo', '40 post analyses/mo', '30 competitors tracked', '75 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#a855f7', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -868,13 +910,14 @@ export default function LandingPage() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#9ca3af', marginBottom: 4 }}>Max</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800 }}>$39.99</span>
+                  <span style={{ fontSize: 40, fontWeight: 800 }}>{yearly ? '$33.33' : '$39.99'}</span>
                   <span style={{ fontSize: 14, color: '#6b7280' }}>/month</span>
                 </div>
+                {yearly && <p style={{ fontSize: 12, color: '#a855f7', margin: '4px 0 0', fontWeight: 600 }}>$399.99 billed yearly — save $79.89</p>}
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Maximum power for teams and top creators.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['400 AI coach messages/mo', '150 script generations/mo', '150 idea generations/mo', '100 competitors tracked', '500 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {['300 AI coach messages/mo', '125 script generations/mo', '125 idea generations/mo', '125 post analyses/mo', '100 competitors tracked', '300 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
                     {item}
@@ -960,7 +1003,7 @@ export default function LandingPage() {
                 Get started free
               </span>
             </Link>
-            <p style={{ fontSize: 14, color: '#6b7280', marginTop: 16 }}>Free plan available &middot; No credit card required</p>
+            <p style={{ fontSize: 14, color: '#6b7280', marginTop: 16 }}>Free plan with AI included &middot; No credit card required</p>
           </div>
         </section>
 

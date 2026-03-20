@@ -8,7 +8,9 @@ export interface TierConfig {
   slug: TierSlug
   name: string
   price: number // monthly USD, 0 = free
+  yearlyPrice: number // yearly USD total, 0 = free (equals ~10 months)
   stripePriceId: string | null // set after creating Stripe products
+  stripePriceYearlyId: string | null // yearly Stripe price
   limits: {
     coach_messages: number    // per month, 0 = disabled
     script_generations: number
@@ -31,11 +33,13 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     slug: 'starter',
     name: 'Starter',
     price: 0,
+    yearlyPrice: 0,
     stripePriceId: null,
+    stripePriceYearlyId: null,
     limits: {
-      coach_messages: 0,
-      script_generations: 0,
-      idea_generations: 0,
+      coach_messages: 3,
+      script_generations: 1,
+      idea_generations: 1,
       competitor_analyze: 0,
       competitor_ideas: 0,
       competitors: 5,
@@ -43,7 +47,7 @@ export const TIERS: Record<TierSlug, TierConfig> = {
       swipe_saves: -1, // unlimited
     },
     features: {
-      ai_enabled: false,
+      ai_enabled: true,
       extension_full: false,
       scheduling: true,
     },
@@ -52,13 +56,15 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     slug: 'plus',
     name: 'Plus',
     price: 5.99,
+    yearlyPrice: 49.99,
     stripePriceId: process.env.STRIPE_PRICE_PLUS ?? null,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_PLUS_YEARLY ?? null,
     limits: {
-      coach_messages: 10,
-      script_generations: 3,
-      idea_generations: 5,
-      competitor_analyze: 3,
-      competitor_ideas: 3,
+      coach_messages: 25,
+      script_generations: 10,
+      idea_generations: 10,
+      competitor_analyze: 10,
+      competitor_ideas: 10,
       competitors: 10,
       downloads: 30,
       swipe_saves: -1,
@@ -73,15 +79,17 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     slug: 'pro',
     name: 'Pro',
     price: 14.99,
+    yearlyPrice: 149.99,
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_PRO_YEARLY ?? null,
     limits: {
-      coach_messages: 150,
+      coach_messages: 100,
       script_generations: 40,
       idea_generations: 40,
       competitor_analyze: 40,
       competitor_ideas: 40,
       competitors: 30,
-      downloads: 100,
+      downloads: 75,
       swipe_saves: -1,
     },
     features: {
@@ -94,15 +102,17 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     slug: 'max',
     name: 'Max',
     price: 39.99,
+    yearlyPrice: 399.99,
     stripePriceId: process.env.STRIPE_PRICE_MAX ?? null,
+    stripePriceYearlyId: process.env.STRIPE_PRICE_MAX_YEARLY ?? null,
     limits: {
-      coach_messages: 400,
-      script_generations: 150,
-      idea_generations: 150,
-      competitor_analyze: 100,
-      competitor_ideas: 100,
+      coach_messages: 300,
+      script_generations: 125,
+      idea_generations: 125,
+      competitor_analyze: 125,
+      competitor_ideas: 125,
       competitors: 100,
-      downloads: 500,
+      downloads: 300,
       swipe_saves: -1,
     },
     features: {

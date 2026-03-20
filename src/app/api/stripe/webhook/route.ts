@@ -3,12 +3,15 @@ import { getStripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { TierSlug } from '@/lib/tiers'
 
-// Map Stripe price IDs to tier slugs
+// Map Stripe price IDs to tier slugs (monthly + yearly)
 function tierFromPriceId(priceId: string): TierSlug {
   const map: Record<string, TierSlug> = {
     [process.env.STRIPE_PRICE_PLUS ?? '']: 'plus',
+    [process.env.STRIPE_PRICE_PLUS_YEARLY ?? '']: 'plus',
     [process.env.STRIPE_PRICE_PRO ?? '']: 'pro',
+    [process.env.STRIPE_PRICE_PRO_YEARLY ?? '']: 'pro',
     [process.env.STRIPE_PRICE_MAX ?? '']: 'max',
+    [process.env.STRIPE_PRICE_MAX_YEARLY ?? '']: 'max',
   }
   return map[priceId] ?? 'starter'
 }
