@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient()
 
   switch (event.type) {
+    // ── Checkout ──────────────────────────────────────────
     case 'checkout.session.completed': {
       const session = event.data.object
       const userId = session.metadata?.user_id
@@ -63,18 +64,46 @@ export async function POST(req: NextRequest) {
       break
     }
 
+    case 'checkout.session.expired': {
+      // Session expired before payment — no action needed, user can retry
+      break
+    }
+
+    // ── Subscription lifecycle ────────────────────────────
+    case 'customer.subscription.created': {
+      // Initial subscription created — tier is set via checkout.session.completed
+      // but handle edge case where checkout event arrives late
+      const subscription = event.data.object
+      const customerId = subscription.customer as string
+      const priceId = subscription.items.data[0]?.price.id ?? ''
+      const tier = tierFromPriceId(priceId)
+
+      if (subscription.status === 'active') {
+        await supabase
+          .from('profiles')
+          .update({
+            subscription_tier: tier,
+            stripe_subscription_id: subscription.id,
+          })
+          .eq('stripe_customer_id', customerId)
+      }
+      break
+    }
+
     case 'customer.subscription.updated': {
       const subscription = event.data.object
       const priceId = subscription.items.data[0]?.price.id ?? ''
       const tier = tierFromPriceId(priceId)
       const customerId = subscription.customer as string
 
-      // Update tier based on new price
       if (subscription.status === 'active') {
         await supabase
           .from('profiles')
           .update({ subscription_tier: tier })
           .eq('stripe_customer_id', customerId)
+      } else if (subscription.status === 'past_due' || subscription.status === 'unpaid') {
+        // Keep current tier but could notify user — for now just log
+        console.warn(`Subscription ${subscription.id} is ${subscription.status}`)
       }
       break
     }
@@ -83,7 +112,6 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object
       const customerId = subscription.customer as string
 
-      // Downgrade to free
       await supabase
         .from('profiles')
         .update({
@@ -92,6 +120,31 @@ export async function POST(req: NextRequest) {
         })
         .eq('stripe_customer_id', customerId)
 
+      break
+    }
+
+    case 'customer.subscription.trial_will_end': {
+      // Trial ending in 3 days — could send notification in future
+      break
+    }
+
+    // ── Invoice / Payment ────────────────────────────────
+    case 'invoice.paid': {
+      // Recurring payment succeeded — ensure tier is current
+      const invoice = event.data.object
+      const customerId = invoice.customer as string
+      const subscriptionId = (invoice as unknown as { subscription: string | null }).subscription
+
+      if (subscriptionId) {
+        const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
+        const priceId = subscription.items.data[0]?.price.id ?? ''
+        const tier = tierFromPriceId(priceId)
+
+        await supabase
+          .from('profiles')
+          .update({ subscription_tier: tier })
+          .eq('stripe_customer_id', customerId)
+      }
       break
     }
 
@@ -105,6 +158,83 @@ export async function POST(req: NextRequest) {
         .update({ subscription_tier: 'starter' })
         .eq('stripe_customer_id', customerId)
 
+      break
+    }
+
+    case 'invoice.payment_action_required': {
+      // User needs to authenticate payment (3D Secure etc) — log for now
+      const invoice = event.data.object
+      console.warn(`Payment action required for invoice ${invoice.id}`)
+      break
+    }
+
+    case 'invoice.upcoming': {
+      // Upcoming invoice notification — could notify user in future
+      break
+    }
+
+    // ── Customer lifecycle ────────────────────────────────
+    case 'customer.created': {
+      // Customer created in Stripe — store customer ID if we can match by email
+      const customer = event.data.object
+      if (customer.email) {
+        await supabase
+          .from('profiles')
+          .update({ stripe_customer_id: customer.id })
+          .eq('email', customer.email)
+          .is('stripe_customer_id', null)
+      }
+      break
+    }
+
+    case 'customer.updated': {
+      // Customer info changed in Stripe — no action needed
+      break
+    }
+
+    case 'customer.deleted': {
+      // Customer deleted in Stripe — reset subscription
+      const customer = event.data.object
+      await supabase
+        .from('profiles')
+        .update({
+          subscription_tier: 'starter',
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+        })
+        .eq('stripe_customer_id', customer.id)
+
+      break
+    }
+
+    // ── Charges (refunds & disputes) ─────────────────────
+    case 'charge.refunded': {
+      // Refund issued — downgrade to free
+      const charge = event.data.object
+      const customerId = charge.customer as string
+      if (customerId) {
+        await supabase
+          .from('profiles')
+          .update({ subscription_tier: 'starter' })
+          .eq('stripe_customer_id', customerId)
+      }
+      break
+    }
+
+    case 'charge.dispute.created': {
+      // Chargeback opened — downgrade immediately
+      const dispute = event.data.object
+      const chargeId = dispute.charge as string
+      if (chargeId) {
+        const charge = await getStripe().charges.retrieve(chargeId)
+        const customerId = charge.customer as string
+        if (customerId) {
+          await supabase
+            .from('profiles')
+            .update({ subscription_tier: 'starter' })
+            .eq('stripe_customer_id', customerId)
+        }
+      }
       break
     }
   }

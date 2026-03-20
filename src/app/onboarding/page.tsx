@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,7 +22,18 @@ const STEPS = [
 ]
 
 export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingForm />
+    </Suspense>
+  )
+}
+
+function OnboardingForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const plan = searchParams.get('plan')
+  const billing = searchParams.get('billing')
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
 
@@ -59,7 +70,11 @@ export default function OnboardingPage() {
         onboarding_completed: true,
       }, { onConflict: 'user_id' })
 
-    router.push('/dashboard')
+    if (plan) {
+      router.push(`/dashboard/settings?tab=billing&plan=${plan}${billing ? `&billing=${billing}` : ''}`)
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   const canProceed = [

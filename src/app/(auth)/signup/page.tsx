@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -27,7 +27,18 @@ const labelStyle: React.CSSProperties = {
 }
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  )
+}
+
+function SignupForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const plan = searchParams.get('plan')
+  const billing = searchParams.get('billing')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +62,11 @@ export default function SignupPage() {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/onboarding')
+      const params = new URLSearchParams()
+      if (plan) params.set('plan', plan)
+      if (billing) params.set('billing', billing)
+      const qs = params.toString()
+      router.push(`/onboarding${qs ? `?${qs}` : ''}`)
       router.refresh()
     }
   }

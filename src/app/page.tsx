@@ -869,7 +869,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup">
+              <Link href={`/signup?plan=plus${yearly ? '&billing=yearly' : ''}`}>
                 <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
                   Get Plus
                 </span>
@@ -898,7 +898,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup">
+              <Link href={`/signup?plan=pro${yearly ? '&billing=yearly' : ''}`}>
                 <span className="btn-primary" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
                   Go Pro
                 </span>
@@ -924,7 +924,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup">
+              <Link href={`/signup?plan=max${yearly ? '&billing=yearly' : ''}`}>
                 <span className="btn-ghost" style={{ padding: '12px 0', fontSize: 14, display: 'block', textAlign: 'center', width: '100%' }}>
                   Go Max
                 </span>
