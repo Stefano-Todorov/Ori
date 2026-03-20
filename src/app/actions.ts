@@ -595,15 +595,24 @@ export async function updateSocialHandles(handles: { platform: Platform; usernam
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  // social_accounts.user_id FK references profiles(id), not auth.users.id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+  if (!profile) return { error: 'Profile not found. Please save your profile first.' }
+
   for (const { platform, username } of handles) {
     const clean = username.replace(/^@/, '').trim()
-    // Delete existing entry for this platform first, then insert if non-empty
-    await supabase.from('social_accounts').delete()
-      .eq('user_id', user.id).eq('platform', platform)
+    const { error: delErr } = await supabase.from('social_accounts').delete()
+      .eq('user_id', profile.id).eq('platform', platform)
+    if (delErr) return { error: `Delete failed for ${platform}: ${delErr.message}` }
     if (clean) {
-      await supabase.from('social_accounts').insert({
-        user_id: user.id, platform, username: clean,
+      const { error: insErr } = await supabase.from('social_accounts').insert({
+        user_id: profile.id, platform, username: clean,
       })
+      if (insErr) return { error: `Save failed for ${platform}: ${insErr.message}` }
     }
   }
 
@@ -616,10 +625,18 @@ export async function disconnectAccount(platform: Platform) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
+  // social_accounts.user_id FK references profiles(id)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+  if (!profile) return { error: 'Profile not found' }
+
   const { error } = await supabase
     .from('social_accounts')
     .delete()
-    .eq('user_id', user.id)
+    .eq('user_id', profile.id)
     .eq('platform', platform)
 
   if (error) return { error: error.message }

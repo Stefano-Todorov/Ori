@@ -25,17 +25,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
   }
 
-  const [{ data: competitors }, { data: profile }, { data: competitorPosts }, { data: tagPosts }, { data: socialAccounts }] = await Promise.all([
+  // Fetch profile first — needed to look up social_accounts by profiles.id (FK target)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, user_id, niche, sub_niche, goals, auto_sync_own_profile, last_synced_at')
+    .eq('user_id', user.id)
+    .single()
+
+  const [{ data: competitors }, { data: competitorPosts }, { data: tagPosts }, { data: socialAccounts }] = await Promise.all([
     supabase
       .from('competitors')
       .select('id, handle, platform, display_name, group_id')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('profiles')
-      .select('niche, sub_niche, goals, auto_sync_own_profile, last_synced_at')
-      .eq('user_id', user.id)
-      .single(),
     supabase
       .from('posts')
       .select('competitor_handle')
@@ -46,10 +48,9 @@ export async function GET(req: NextRequest) {
       .select('tags')
       .eq('user_id', user.id)
       .not('tags', 'eq', '{}'),
-    supabase
-      .from('social_accounts')
-      .select('platform, username')
-      .eq('user_id', user.id),
+    profile
+      ? supabase.from('social_accounts').select('platform, username').eq('user_id', profile.id)
+      : Promise.resolve({ data: [] }),
   ])
 
   // Group competitors by group_id (cross-platform account linking)

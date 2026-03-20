@@ -1638,39 +1638,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           }
         }
 
-        // Get grid links
-        const links = document.querySelectorAll('a[href*="/reel/"], a[href*="/p/"]')
-        const seen = new Set()
+        // Use same approach as GET_SORTED_METRICS: findGridAndItems() + fetchInstagramMetrics()
+        const grid = findGridAndItems()
         const limit = msg.limit ?? 50
-        let count = 0
 
-        // Try to get IG metrics from API cache
-        const igMetrics = await fetchInstagramMetrics([...links].slice(0, limit))
+        if (grid && grid.items) {
+          const items = grid.items.slice(0, limit)
+          const igMetrics = await fetchInstagramMetrics(items)
+          const seen = new Set()
 
-        for (const link of links) {
-          if (count >= limit) break
-          const href = link.href
-          if (seen.has(href)) continue
-          seen.add(href)
-          count++
+          for (const link of items) {
+            const href = link.href
+            if (!href || seen.has(href)) continue
+            seen.add(href)
 
-          const m = href.match(/\/(reel|p)\/([^/?]+)/)
-          const sc = m?.[2]
-          const cached = igMetricsCache.get(sc)
-          const metrics = igMetrics?.get(link)
+            const m = href.match(/\/(reel|p)\/([^/?]+)/)
+            const sc = m?.[2]
+            const metrics = igMetrics.get(link) ?? {}
+            const cached = igMetricsCache.get(sc)
 
-          posts.push({
-            url: href,
-            caption: cached?.caption || null,
-            views: metrics?.views ?? cached?.views ?? 0,
-            likes: metrics?.likes ?? cached?.likes ?? 0,
-            comments: metrics?.comments ?? cached?.comments ?? 0,
-            shares: 0,
-            saves: cached?.saves ?? 0,
-            hashtags: extractHashtags(cached?.caption || ''),
-            thumbnail: metrics?.thumb ?? cached?.thumb ?? null,
-            posted_at: null,
-          })
+            posts.push({
+              url: href,
+              caption: cached?.caption || null,
+              views: metrics?.views ?? cached?.views ?? 0,
+              likes: metrics?.likes ?? cached?.likes ?? 0,
+              comments: metrics?.comments ?? cached?.comments ?? 0,
+              shares: 0,
+              saves: cached?.saves ?? 0,
+              hashtags: extractHashtags(cached?.caption || ''),
+              thumbnail: metrics?.thumb ?? cached?.thumb ?? null,
+              posted_at: null,
+            })
+          }
         }
       }
 

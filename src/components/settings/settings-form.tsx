@@ -67,22 +67,27 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
     setLoading(true)
     setError(null)
 
-    const [profileResult, handlesResult] = await Promise.all([
-      updateProfile({
-        name: name || null,
-        niche: niche || null,
-        sub_niche: subNiche || null,
-        goals: goals || null,
-        platforms,
-        posting_target: postingTarget,
-        auto_sync_own_profile: autoSync,
-      }),
-      updateSocialHandles(
-        PLATFORMS.map(p => ({ platform: p.id, username: handles[p.id] ?? '' }))
-      ),
-    ])
+    // Save profile first (creates row if needed), then social handles (FK depends on profile.id)
+    const profileResult = await updateProfile({
+      name: name || null,
+      niche: niche || null,
+      sub_niche: subNiche || null,
+      goals: goals || null,
+      platforms,
+      posting_target: postingTarget,
+      auto_sync_own_profile: autoSync,
+    })
+    if (profileResult?.error) {
+      setError(profileResult.error)
+      setLoading(false)
+      return
+    }
 
-    const err = profileResult?.error || handlesResult?.error
+    const handlesResult = await updateSocialHandles(
+      PLATFORMS.map(p => ({ platform: p.id, username: handles[p.id] ?? '' }))
+    )
+
+    const err = handlesResult?.error
     if (err) {
       setError(err)
       setLoading(false)
