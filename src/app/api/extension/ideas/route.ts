@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { checkFeature } from '@/lib/usage'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +23,15 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
+  }
+
+  // Gate: requires extension_full feature
+  const hasFullExtension = await checkFeature(user.id, 'extension_full')
+  if (!hasFullExtension) {
+    return NextResponse.json(
+      { error: 'upgrade_required', message: 'Full extension features require Pro or Max plan' },
+      { status: 403, headers: corsHeaders },
+    )
   }
 
   const body = await req.json()

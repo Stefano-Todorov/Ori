@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { checkFeature } from '@/lib/usage'
 import { z } from 'zod'
 
 const PostSchema = z.object({
@@ -76,6 +77,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   }
 
+  // Gate extension-only calls: requires extension_full feature
+  if (authHeader?.startsWith('Bearer ')) {
+    const hasFullExtension = await checkFeature(user.id, 'extension_full')
+    if (!hasFullExtension) {
+      return NextResponse.json(
+        { error: 'upgrade_required', message: 'Full extension features require Pro or Max plan' },
+        { status: 403, headers: corsHeaders },
+      )
+    }
+  }
+
   const body = await request.json()
   const parsed = SyncSchema.safeParse(body)
   if (!parsed.success) {
@@ -86,7 +98,7 @@ export async function POST(request: NextRequest) {
 
   // Build upsert records
   const postRecords = rawPosts
-    .filter(p => p.url) // skip posts without URLs
+    .filter(p => p.url && (p.views > 0 || p.likes > 0 || p.comments > 0 || p.caption || p.thumbnail)) // skip posts without URLs or data
     .map((p) => ({
       user_id: user!.id,
       platform,

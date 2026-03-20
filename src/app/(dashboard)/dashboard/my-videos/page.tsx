@@ -14,6 +14,7 @@ export default async function MyVideosPage() {
       .eq('user_id', user.id)
       .eq('is_competitor', false)
       .eq('is_trending', false)
+      .or('views.gt.0,likes.gt.0,comments.gt.0,caption.not.is.null,thumbnail_url.not.is.null')
       .order('posted_at', { ascending: false, nullsFirst: false }),
     supabase
       .from('content_ideas')

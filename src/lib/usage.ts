@@ -112,3 +112,13 @@ export async function getUserTier(userId: string): Promise<TierSlug> {
 
   return (data?.subscription_tier as TierSlug) ?? 'starter'
 }
+
+// Check if a user has a specific feature enabled
+export async function checkFeature(
+  userId: string,
+  feature: keyof import('@/lib/tiers').TierConfig['features'],
+): Promise<boolean> {
+  const tierSlug = await getUserTier(userId)
+  const tier = getTier(tierSlug)
+  return tier.features[feature] === true
+}
