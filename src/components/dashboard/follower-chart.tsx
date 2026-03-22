@@ -50,16 +50,24 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
     byDate[s.recorded_at][s.platform] = s.count
   }
 
-  const data = Object.entries(byDate)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, platforms]) => {
-      const all = Object.values(platforms).reduce((sum, v) => sum + v, 0)
-      return {
-        date: new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        all,
-        ...platforms,
-      }
-    })
+  // Build data with carry-forward: if a platform wasn't synced on a date,
+  // use its most recent known value so "All" doesn't drop artificially.
+  const sortedDates = Object.keys(byDate).sort()
+  const lastKnown: Record<string, number> = {}
+  const data = sortedDates.map(date => {
+    const platforms = byDate[date]
+    // Update last known values for platforms present on this date
+    for (const [p, v] of Object.entries(platforms)) {
+      lastKnown[p] = v
+    }
+    // "All" uses last known value for every platform we've ever seen
+    const all = Object.values(lastKnown).reduce((sum, v) => sum + v, 0)
+    return {
+      date: new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      all,
+      ...platforms,
+    }
+  })
 
   const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
 
@@ -96,7 +104,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
             <XAxis dataKey="date" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
             <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} className="fill-muted-foreground" />
             <Tooltip
-              formatter={(v: number | undefined) => v != null ? formatNumber(v) : ''}
+              formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''}
               contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
             />
             {PLATFORMS.filter(p => active.has(p.key)).map(p => (
