@@ -663,6 +663,8 @@ const STATUS_ORDER: Record<IdeaStatus, number> = { new: 0, recording: 1, editing
 
 // ─── Collapsible status group ──────────────────────────────────────────────
 
+const STATUS_GROUP_LIMIT = 5
+
 function StatusGroup({
   status,
   ideas,
@@ -675,23 +677,55 @@ function StatusGroup({
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [showAll, setShowAll] = useState(false)
   const count = ideas.length
   if (count === 0) return null
+
+  const needsTruncation = count > STATUS_GROUP_LIMIT && !showAll
+  const visibleChildren = needsTruncation
+    ? (children as React.ReactElement[]).slice(0, STATUS_GROUP_LIMIT)
+    : children
+  const remaining = count - STATUS_GROUP_LIMIT
 
   return (
     <div>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 mb-2 group"
+        className="w-full flex items-center gap-3 mb-3 py-2 px-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-all group"
       >
-        <ChevronDown size={14} className={`text-[#52525b] transition-transform ${open ? '' : '-rotate-90'}`} />
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${STATUS_PILL[status]}`}>
+        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md transition-all duration-200 ${open ? 'bg-purple-500/20 text-purple-400' : 'bg-white/[0.06] text-[#71717a] group-hover:text-white'}`}>
+          <ChevronDown size={14} className={`transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`} />
+        </span>
+        <span className={`inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold ${STATUS_PILL[status]}`}>
           {STATUS_LABEL[status]}
         </span>
-        <span className="text-xs text-[#52525b]">{count}</span>
+        <span className="text-xs font-medium text-[#71717a] bg-white/[0.05] px-2 py-0.5 rounded-full">{count}</span>
+        {!open && <span className="text-[11px] text-[#52525b] ml-auto">Click to expand</span>}
       </button>
-      {open && children}
+      {open && (
+        <>
+          {visibleChildren}
+          {needsTruncation && (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              className="w-full mt-2 py-2.5 rounded-lg border border-dashed border-white/[0.1] text-xs font-medium text-[#a1a1aa] hover:text-white hover:border-purple-500/30 hover:bg-purple-500/5 transition-all"
+            >
+              Show {remaining} more {STATUS_LABEL[status].toLowerCase()} idea{remaining !== 1 ? 's' : ''}
+            </button>
+          )}
+          {showAll && count > STATUS_GROUP_LIMIT && (
+            <button
+              type="button"
+              onClick={() => setShowAll(false)}
+              className="w-full mt-2 py-2 text-xs text-[#71717a] hover:text-white transition-colors"
+            >
+              Show less
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }
