@@ -455,16 +455,17 @@ function IdeaCard({
 
   return (
     <div
-      className={`rounded-xl border transition-all duration-200 mb-2 ${
+      className={`rounded-xl border transition-all duration-200 mb-2 cursor-pointer ${
         selected
           ? 'border-purple-500/50 bg-[#1a1a2e]/80 ring-1 ring-purple-500/30'
           : 'border-white/[0.06] bg-[#1a1a2e] hover:border-white/[0.12] hover:bg-[#1e1e34]'
       }`}
       style={{ padding: '16px 18px' }}
+      onClick={() => hasContent && setExpanded(!expanded)}
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
-        <div className="pt-0.5">
+        <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
           <IdeaCheckbox checked={selected} onChange={onToggleSelect} />
         </div>
 
@@ -474,7 +475,12 @@ function IdeaCard({
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
+            {hasContent && (
+              <ChevronDown size={16} className={`shrink-0 text-[#71717a] transition-transform duration-200 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+            )}
+          </div>
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
@@ -506,7 +512,7 @@ function IdeaCard({
           </div>
 
           {/* Tags row */}
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="flex items-center gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>
             <TagPills tags={item.tags ?? []} />
             <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
           </div>
@@ -526,24 +532,12 @@ function IdeaCard({
           )}
 
           {/* Content sections (collapsible) */}
-          {hasContent && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1.5 text-xs text-[#71717a] hover:text-white transition-colors"
-              >
-                <ChevronDown size={14} className={`transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
-                {expanded ? 'Hide details' : 'Show details'}
-              </button>
-              {expanded && (
-                <div className="space-y-2 mt-2">
-                  {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
-                  {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
-                  {item.cta && <Section label="CTA" text={item.cta} />}
-                  {item.caption && <Section label="Caption" text={item.caption} />}
-                </div>
-              )}
+          {hasContent && expanded && (
+            <div className="space-y-2 mt-3">
+              {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
+              {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
+              {item.cta && <Section label="CTA" text={item.cta} />}
+              {item.caption && <Section label="Caption" text={item.caption} />}
             </div>
           )}
 
@@ -555,7 +549,7 @@ function IdeaCard({
         </div>
 
         {/* Right side: thumbnail + actions */}
-        <div className="flex items-start gap-3 shrink-0">
+        <div className="flex items-start gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
           {item.thumbnail_url && (
             <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
               <img
