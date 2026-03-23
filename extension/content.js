@@ -1099,12 +1099,16 @@ function cacheMediaNode(node) {
   const sc = node.shortcode ?? node.code
   if (!sc || igMetricsCache.has(sc)) return
   const captionText = node.caption?.text ?? node.edge_media_to_caption?.edges?.[0]?.node?.text ?? null
+  let postedAt = null
+  const takenAt = parseInt(node.taken_at) || parseInt(node.taken_at_timestamp) || parseInt(node.device_timestamp) || 0
+  if (takenAt > 0) postedAt = new Date(takenAt * 1000).toISOString()
   igMetricsCache.set(sc, {
     views: node.video_view_count ?? node.play_count ?? null,
     likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
     comments: node.comment_count ?? node.edge_media_to_comment?.count ?? null,
     saves: node.save_count ?? null,
     thumb: node.display_url ?? node.thumbnail_src ?? node.image_versions2?.candidates?.[0]?.url ?? null,
+    posted_at: postedAt,
     caption: captionText,
   })
 }
@@ -1305,6 +1309,7 @@ window.addEventListener('message', (e) => {
           saves: item.saves || null,
           caption: item.caption || null,
           thumb: item.thumb || null,
+          posted_at: item.posted_at || null,
         })
       }
     }
@@ -1365,6 +1370,9 @@ function extractTikTokItemsFromJSON(obj, depth) {
   // Direct item with stats
   if (obj.id && (obj.stats || obj.statsV2)) {
     const st = obj.stats || obj.statsV2 || {}
+    let postedAt = null
+    const ct = parseInt(obj.createTime) || parseInt(obj.create_time) || 0
+    if (ct > 0) postedAt = new Date(ct * 1000).toISOString()
     ttMetricsCache.set(String(obj.id), {
       views: parseInt(st.playCount) || parseInt(st.play_count) || null,
       likes: parseInt(st.diggCount) || parseInt(st.digg_count) || null,
@@ -1373,6 +1381,7 @@ function extractTikTokItemsFromJSON(obj, depth) {
       saves: parseInt(st.collectCount) || parseInt(st.collect_count) || null,
       caption: obj.desc || null,
       thumb: obj.video?.cover || obj.video?.dynamicCover || obj.video?.originCover || null,
+      posted_at: postedAt,
     })
     return
   }
@@ -1613,7 +1622,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
               saves: cached?.saves ?? 0,
               hashtags: extractHashtags(cached?.caption || ''),
               thumbnail: thumb || null,
-              posted_at: null,
+              posted_at: cached?.posted_at || null,
             })
           }
         }
@@ -1667,7 +1676,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
               saves: cached?.saves ?? 0,
               hashtags: extractHashtags(cached?.caption || ''),
               thumbnail: metrics?.thumb ?? cached?.thumb ?? null,
-              posted_at: null,
+              posted_at: cached?.posted_at || null,
             })
           }
         }

@@ -74,7 +74,9 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
 
     result.sort((a, b) => {
       if (sortBy === 'posted_at') {
-        return new Date(b.posted_at ?? 0).getTime() - new Date(a.posted_at ?? 0).getTime()
+        const dateA = new Date(a.posted_at ?? a.created_at ?? 0).getTime()
+        const dateB = new Date(b.posted_at ?? b.created_at ?? 0).getTime()
+        return dateB - dateA
       }
       return ((b[sortBy] as number) ?? 0) - ((a[sortBy] as number) ?? 0)
     })
@@ -272,9 +274,9 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                 </div>
 
                 {/* Date */}
-                {post.posted_at && (
+                {(post.posted_at || post.created_at) && (
                   <p className="text-xs text-muted-foreground">
-                    {new Date(post.posted_at).toLocaleDateString()}
+                    {new Date(post.posted_at ?? post.created_at).toLocaleDateString()}
                   </p>
                 )}
 

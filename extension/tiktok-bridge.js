@@ -7,6 +7,9 @@
 
   function parseItem(it) {
     var st = it.stats || it.statsV2 || {};
+    var postedAt = null;
+    var ct = parseInt(it.createTime) || parseInt(it.create_time) || 0;
+    if (ct > 0) postedAt = new Date(ct * 1000).toISOString();
     return {
       id: it.id || '',
       views: parseInt(st.playCount) || parseInt(st.play_count) || 0,
@@ -15,7 +18,8 @@
       shares: parseInt(st.shareCount) || parseInt(st.share_count) || 0,
       saves: parseInt(st.collectCount) || parseInt(st.collect_count) || 0,
       caption: it.desc || '',
-      thumb: (it.video && (it.video.cover || it.video.dynamicCover || it.video.originCover)) || ''
+      thumb: (it.video && (it.video.cover || it.video.dynamicCover || it.video.originCover)) || '',
+      posted_at: postedAt
     };
   }
 
