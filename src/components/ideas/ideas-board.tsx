@@ -554,12 +554,18 @@ function IdeaCard({
         <div className="flex items-start gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
           {item.thumbnail_url && (
             <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-              <img
-                src={item.thumbnail_url}
-                alt=""
-                className="w-12 h-12 rounded-lg object-cover border border-white/[0.08]"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
+              <div className="w-16 h-20 rounded-lg border border-white/[0.08] bg-[#252535] overflow-hidden flex items-center justify-center shrink-0">
+                <img
+                  src={item.thumbnail_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const el = e.target as HTMLImageElement
+                    el.style.display = 'none'
+                    el.parentElement!.innerHTML = '<span class="text-2xl opacity-30">🎬</span>'
+                  }}
+                />
+              </div>
             </a>
           )}
           <div className="flex items-center gap-2">
