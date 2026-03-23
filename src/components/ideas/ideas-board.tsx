@@ -416,6 +416,7 @@ function IdeaCard({
   onTagsChange: (tags: string[]) => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduling, setScheduling] = useState(false)
@@ -524,13 +525,25 @@ function IdeaCard({
             </a>
           )}
 
-          {/* Content sections */}
+          {/* Content sections (collapsible) */}
           {hasContent && (
-            <div className="space-y-2 mt-3">
-              {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
-              {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
-              {item.cta && <Section label="CTA" text={item.cta} />}
-              {item.caption && <Section label="Caption" text={item.caption} />}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="flex items-center gap-1.5 text-xs text-[#71717a] hover:text-white transition-colors"
+              >
+                <ChevronDown size={14} className={`transition-transform duration-200 ${expanded ? 'rotate-0' : '-rotate-90'}`} />
+                {expanded ? 'Hide details' : 'Show details'}
+              </button>
+              {expanded && (
+                <div className="space-y-2 mt-2">
+                  {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
+                  {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
+                  {item.cta && <Section label="CTA" text={item.cta} />}
+                  {item.caption && <Section label="Caption" text={item.caption} />}
+                </div>
+              )}
             </div>
           )}
 
