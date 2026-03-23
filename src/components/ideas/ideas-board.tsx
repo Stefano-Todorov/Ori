@@ -478,7 +478,9 @@ function IdeaCard({
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
             {hasContent && (
-              <ChevronDown size={16} className={`shrink-0 text-[#71717a] transition-transform duration-200 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+              <span className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md transition-all duration-200 ${expanded ? 'bg-purple-500/20 text-purple-400' : 'bg-white/[0.06] text-[#71717a] hover:text-white'}`}>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
+              </span>
             )}
           </div>
 
@@ -560,9 +562,9 @@ function IdeaCard({
               />
             </a>
           )}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Select value={item.production_status} onValueChange={(v) => onStatusChange(v as IdeaStatus)}>
-              <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-full px-2.5 gap-1 border ${STATUS_PILL[item.production_status]}`}>
+              <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[item.production_status]}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -574,19 +576,23 @@ function IdeaCard({
             <button
               type="button"
               onClick={onEdit}
-              className="p-1.5 text-[#71717a] hover:text-white transition-colors rounded-md hover:bg-white/[0.05]"
-              title="Edit"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-[#a1a1aa] border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] hover:text-white hover:border-white/[0.15] transition-all"
             >
-              <Pencil size={16} />
+              <Pencil size={13} />
+              <span className="hidden sm:inline">Edit</span>
             </button>
             <div className="relative" ref={scheduleRef}>
               <button
                 type="button"
                 onClick={() => setScheduleOpen(!scheduleOpen)}
-                className={`p-1.5 transition-colors rounded-md hover:bg-white/[0.05] ${scheduleOpen ? 'text-purple-400' : 'text-[#71717a] hover:text-white'}`}
-                title="Schedule"
+                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium border transition-all ${
+                  scheduleOpen
+                    ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                    : 'text-[#a1a1aa] border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] hover:text-white hover:border-white/[0.15]'
+                }`}
               >
-                <CalendarPlus size={16} />
+                <CalendarPlus size={13} />
+                <span className="hidden sm:inline">Schedule</span>
               </button>
               {scheduleOpen && (
                 <div className="absolute right-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-xl shadow-2xl shadow-black/40 p-4 w-64">
@@ -606,10 +612,10 @@ function IdeaCard({
               type="button"
               onClick={handleDelete}
               disabled={deleting}
-              className="p-1.5 text-[#71717a] hover:text-red-400 transition-colors rounded-md hover:bg-white/[0.05] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-medium text-[#a1a1aa] border border-white/[0.08] bg-white/[0.03] hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/25 transition-all disabled:opacity-50"
               title="Delete"
             >
-              <Trash2 size={16} />
+              <Trash2 size={13} />
             </button>
           </div>
         </div>
