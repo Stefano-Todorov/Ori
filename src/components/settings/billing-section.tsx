@@ -215,9 +215,25 @@ export function BillingSection() {
                   )
                 })}
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Extension</span>
-                  <span className="font-semibold text-foreground">
-                    {tier.features.extension_full ? 'Full' : 'Save only'}
+                  <span className="text-muted-foreground">Manual ideas</span>
+                  <span className="font-semibold text-purple-500">Unlimited</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Content calendar</span>
+                  <span className="font-semibold text-green-500">
+                    <Check size={12} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Sync my videos</span>
+                  <span className="font-semibold text-green-500">
+                    <Check size={12} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Chrome extension</span>
+                  <span className="font-semibold text-green-500">
+                    <Check size={12} />
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
