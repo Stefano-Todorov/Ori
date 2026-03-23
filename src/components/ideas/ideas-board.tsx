@@ -56,12 +56,13 @@ interface IdeaFormState {
   caption: string
   difficulty: 'easy' | 'medium' | 'hard' | ''
   videoType: string
+  tags: string[]
 }
 
 function emptyForm(): IdeaFormState {
   return {
     idea: '', source: '', inspirationUrl: '', hookIdea: '',
-    scriptSnippet: '', cta: '', caption: '', difficulty: '', videoType: '',
+    scriptSnippet: '', cta: '', caption: '', difficulty: '', videoType: '', tags: [],
   }
 }
 
@@ -76,6 +77,7 @@ function formFromIdea(item: ContentIdea): IdeaFormState {
     caption: item.caption ?? '',
     difficulty: item.difficulty ?? '',
     videoType: item.video_type ?? '',
+    tags: item.tags ?? [],
   }
 }
 
@@ -105,7 +107,7 @@ function SectionDivider({ label }: { label: string }) {
   )
 }
 
-function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: IdeaFormState) => void }) {
+function IdeaFormFields({ form, setForm, allTags }: { form: IdeaFormState; setForm: (f: IdeaFormState) => void; allTags: string[] }) {
   function set<K extends keyof IdeaFormState>(key: K, val: IdeaFormState[K]) {
     setForm({ ...form, [key]: val })
   }
@@ -178,6 +180,15 @@ function IdeaFormFields({ form, setForm }: { form: IdeaFormState; setForm: (f: I
           rows={3}
           className={fieldInputClass}
         />
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-2">
+        <FormLabel>Tags</FormLabel>
+        <div className="flex items-center gap-2 flex-wrap">
+          <TagPills tags={form.tags} />
+          <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
+        </div>
       </div>
 
       {/* Section 2: Settings */}
@@ -707,6 +718,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       caption: addForm.caption.trim() || undefined,
       difficulty: addForm.difficulty || undefined,
       video_type: addForm.videoType || undefined,
+      tags: addForm.tags.length > 0 ? addForm.tags : undefined,
     })
     setIdeas((prev) => [{
       id: crypto.randomUUID(),
@@ -722,7 +734,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       caption: addForm.caption.trim() || null,
       difficulty: (addForm.difficulty || null) as ContentIdea['difficulty'],
       video_type: addForm.videoType || null,
-      tags: [],
+      tags: addForm.tags,
       status: 'new',
       production_status: 'new',
       linked_post_id: null,
@@ -752,6 +764,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       caption: editForm.caption.trim() || null,
       difficulty: (editForm.difficulty || null) as ContentIdea['difficulty'],
       video_type: editForm.videoType || null,
+      tags: editForm.tags,
     }
     await updateIdea(editingId, fields)
     setIdeas((prev) => prev.map((i) => i.id === editingId ? { ...i, ...fields } : i))
@@ -1097,7 +1110,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <DialogTitle className="text-xl font-bold text-foreground">New idea</DialogTitle>
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
-          <IdeaFormFields form={addForm} setForm={setAddForm} />
+          <IdeaFormFields form={addForm} setForm={setAddForm} allTags={allTags} />
           <button
             onClick={handleAdd}
             disabled={!addForm.idea.trim() || adding}
@@ -1115,7 +1128,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
-          <IdeaFormFields form={editForm} setForm={setEditForm} />
+          <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
 
           {/* Section 3: AI Assist */}
           <SectionDivider label="AI Assist" />
