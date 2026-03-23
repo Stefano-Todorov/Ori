@@ -48,7 +48,7 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     },
     features: {
       ai_enabled: true,
-      extension_full: false,
+      extension_full: true,
       scheduling: true,
     },
   },
@@ -71,7 +71,7 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     },
     features: {
       ai_enabled: true,
-      extension_full: false,
+      extension_full: true,
       scheduling: true,
     },
   },
