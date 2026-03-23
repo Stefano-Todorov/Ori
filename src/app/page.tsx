@@ -836,10 +836,20 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Try the AI. No credit card required.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['3 AI coach messages/mo', '1 script generation/mo', '1 idea generation/mo', '5 competitors tracked', 'Unlimited inspo saves', 'Content calendar', 'Chrome extension (save only)'].map((item, i) => (
+                {[
+                  { text: '3 AI coach messages/mo', ai: true },
+                  { text: '1 script generation/mo', ai: true },
+                  { text: '1 idea generation/mo', ai: true },
+                  { text: '5 competitors tracked' },
+                  { text: 'Unlimited inspo saves' },
+                  { text: 'Unlimited manual ideas' },
+                  { text: 'Content calendar' },
+                  { text: 'Sync my videos' },
+                  { text: 'Chrome extension' },
+                ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
-                    {item}
+                    {item.text}
                   </li>
                 ))}
               </ul>
@@ -862,10 +872,23 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Unlock AI to start creating smarter content.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['25 AI coach messages/mo', '10 script generations/mo', '10 idea generations/mo', '10 post analyses/mo', '10 competitors tracked', '30 downloads/month', 'Unlimited inspo saves'].map((item, i) => (
+                {[
+                  { text: '25 AI coach messages/mo', ai: true },
+                  { text: '10 script generations/mo', ai: true },
+                  { text: '10 idea generations/mo', ai: true },
+                  { text: '10 post analyses/mo', ai: true },
+                  { text: '10 competitor idea gens/mo', ai: true },
+                  { text: '10 competitors tracked' },
+                  { text: '30 video downloads/mo' },
+                  { text: 'Unlimited inspo saves' },
+                  { text: 'Unlimited manual ideas' },
+                  { text: 'Content calendar' },
+                  { text: 'Sync my videos' },
+                  { text: 'Chrome extension' },
+                ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
-                    {item}
+                    {item.text}
                   </li>
                 ))}
               </ul>
@@ -891,10 +914,23 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>For serious creators who want to grow fast.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['100 AI coach messages/mo', '40 script generations/mo', '40 idea generations/mo', '40 post analyses/mo', '30 competitors tracked', '75 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {[
+                  { text: '100 AI coach messages/mo', ai: true },
+                  { text: '40 script generations/mo', ai: true },
+                  { text: '40 idea generations/mo', ai: true },
+                  { text: '40 post analyses/mo', ai: true },
+                  { text: '40 competitor idea gens/mo', ai: true },
+                  { text: '30 competitors tracked' },
+                  { text: '75 video downloads/mo' },
+                  { text: 'Unlimited inspo saves' },
+                  { text: 'Unlimited manual ideas' },
+                  { text: 'Content calendar' },
+                  { text: 'Sync my videos' },
+                  { text: 'Chrome extension' },
+                ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#a855f7', fontSize: 14 }}>&#10003;</span>
-                    {item}
+                    {item.text}
                   </li>
                 ))}
               </ul>
@@ -917,10 +953,23 @@ export default function LandingPage() {
                 <p style={{ fontSize: 13, color: '#6b7280', margin: '8px 0 0', lineHeight: 1.5 }}>Maximum power for teams and top creators.</p>
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
-                {['300 AI coach messages/mo', '125 script generations/mo', '125 idea generations/mo', '125 post analyses/mo', '100 competitors tracked', '300 downloads/month', 'Unlimited inspo saves', 'Full Chrome extension'].map((item, i) => (
+                {[
+                  { text: '300 AI coach messages/mo', ai: true },
+                  { text: '125 script generations/mo', ai: true },
+                  { text: '125 idea generations/mo', ai: true },
+                  { text: '125 post analyses/mo', ai: true },
+                  { text: '125 competitor idea gens/mo', ai: true },
+                  { text: '100 competitors tracked' },
+                  { text: '300 video downloads/mo' },
+                  { text: 'Unlimited inspo saves' },
+                  { text: 'Unlimited manual ideas' },
+                  { text: 'Content calendar' },
+                  { text: 'Sync my videos' },
+                  { text: 'Chrome extension' },
+                ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: '#7c3aed', fontSize: 14 }}>&#10003;</span>
-                    {item}
+                    {item.text}
                   </li>
                 ))}
               </ul>
