@@ -3,13 +3,14 @@ import { redirect } from 'next/navigation'
 import { AddSwipeButton } from '@/components/trending/add-swipe-button'
 import { InspoList } from '@/components/trending/swipe-list'
 import { DismissibleTip } from '@/components/ui/dismissible-tip'
+import { getAllUserTags } from '@/lib/tags'
 
 export default async function InspoPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: activePosts }, { data: archivedPosts }, { data: profile }] = await Promise.all([
+  const [{ data: activePosts }, { data: archivedPosts }, allTags] = await Promise.all([
     supabase
       .from('posts')
       .select('*')
@@ -24,24 +25,11 @@ export default async function InspoPage() {
       .eq('is_trending', true)
       .eq('status', 'archived')
       .order('created_at', { ascending: false }),
-    supabase
-      .from('profiles')
-      .select('inspo_tags')
-      .eq('user_id', user.id)
-      .single(),
+    getAllUserTags(user.id),
   ])
 
   const posts = activePosts ?? []
   const archived = archivedPosts ?? []
-  const savedTags: string[] = profile?.inspo_tags ?? []
-  const postTags = [...posts, ...archived].flatMap(p => p.tags ?? [])
-  const allTags = [...new Set([...savedTags, ...postTags])].sort()
-
-  // Sync: if posts have tags not yet in profile.inspo_tags, save them
-  const newTags = allTags.filter(t => !savedTags.includes(t))
-  if (newTags.length > 0) {
-    supabase.from('profiles').update({ inspo_tags: allTags }).eq('user_id', user.id)
-  }
 
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-4xl">
