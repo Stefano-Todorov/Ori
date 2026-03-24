@@ -14,15 +14,36 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Orianna",
-  description: "AI Content Coach",
+  title: {
+    default: "Orianna — AI Content Coach",
+    template: "%s | Orianna",
+  },
+  description:
+    "AI-powered content coach for TikTok, Instagram Reels & YouTube Shorts creators. Generate scripts, track competitors, and grow faster.",
+  keywords: [
+    "AI content coach",
+    "TikTok scripts",
+    "Instagram Reels",
+    "YouTube Shorts",
+    "content creator tools",
+    "video script generator",
+  ],
   icons: {
     icon: "/brand/emoticon.svg",
     apple: "/brand/avatar.svg",
   },
   openGraph: {
-    title: "Orianna",
-    description: "AI Content Coach for short-form video creators",
+    title: "Orianna — AI Content Coach",
+    description:
+      "AI-powered content coach for short-form video creators. Generate scripts, track competitors, and grow faster.",
+    images: ["/brand/image.svg"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Orianna — AI Content Coach",
+    description:
+      "AI-powered content coach for short-form video creators.",
     images: ["/brand/image.svg"],
   },
 };

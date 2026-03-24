@@ -1,5 +1,5 @@
 // Orianna Extension - Background Service Worker
-const API_BASE = 'http://localhost:3000' // Change to production URL when deployed
+const API_BASE = 'https://orianna.vercel.app' // Production URL (users can override in popup settings)
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'INGEST_POSTS') {
