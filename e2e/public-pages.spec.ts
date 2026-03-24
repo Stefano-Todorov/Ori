@@ -4,8 +4,8 @@ test.describe('Public pages load correctly', () => {
   test('landing page loads', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Orianna/);
-    // Check key elements exist
-    await expect(page.getByText('Orianna')).toBeVisible();
+    // Check the nav logo exists (first instance)
+    await expect(page.getByText('Orianna').first()).toBeVisible();
   });
 
   test('login page loads with form', async ({ page }) => {
