@@ -47,8 +47,30 @@ function setState(patch) {
 
 async function init() {
   const auth = await chrome.runtime.sendMessage({ type: 'GET_AUTH' })
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  const isSupportedUrl = tab?.url && (tab.url.includes('tiktok.com') || tab.url.includes('instagram.com'))
+
+  // If not logged in, still try to detect page type for sort functionality
   if (!auth.isLoggedIn) {
-    setState({ view: 'login', auth })
+    let postData = null
+    if (isSupportedUrl) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const result = await chrome.tabs.sendMessage(tab.id, { type: 'EXTRACT' })
+          postData = result?.data ?? null
+        } catch {
+          if (attempt === 0) {
+            try {
+              await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] })
+            } catch {}
+          }
+        }
+        if (postData) break
+        if (attempt < 2) await new Promise(r => setTimeout(r, 800))
+      }
+    }
+    setState({ view: 'login', auth, postData })
     return
   }
 
@@ -57,9 +79,6 @@ async function init() {
   const dontAskCompetitor = stored.dontAskCompetitor ?? false
 
   setState({ auth, dontAskCompetitor })
-
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  const isSupportedUrl = tab?.url && (tab.url.includes('tiktok.com') || tab.url.includes('instagram.com'))
 
   let postData = null
   // Try extraction, with retries for SPA navigation (DOM may not be ready)
@@ -490,10 +509,115 @@ function render() {
   }
 
   if (state.view === 'login') {
+    const p = state.postData
+    const isProfile = p?.pageType === 'profile'
+    const hasPost = !!p && !isProfile
+    const sortedPosts = state.sortedPosts ?? []
+    const sortBy = state.sortBy ?? 'views'
+    const sortCount = state.sortCount ?? 25
+
+    const sortListHtml = sortedPosts.length > 0
+      ? sortedPosts.slice(0, sortCount).map((post, i) => `
+          <div class="sorted-item" title="${escHtml(post.href)}">
+            <span class="sorted-rank">${i + 1}</span>
+            ${post.thumb ? `<img class="sorted-thumb" src="${post.thumb}" />` : `<div class="sorted-thumb"></div>`}
+            <div class="sorted-metrics">
+              <div class="sorted-metric-row">
+                ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">👁 ${fmt(post.views)}</span>` : ''}
+                ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">❤️ ${fmt(post.likes)}</span>` : ''}
+                ${post.comments != null ? `<span class="${sortBy === 'comments' ? 'primary' : 'val'}">💬 ${fmt(post.comments)}</span>` : ''}
+              </div>
+              <div class="sorted-url">${post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '')}</div>
+            </div>
+            <div class="sorted-actions">
+              <button class="btn-open" data-url="${escHtml(post.href)}">Open</button>
+              <button class="btn-goto" data-url="${escHtml(post.href)}">Go to</button>
+            </div>
+          </div>
+        `).join('')
+      : ''
+
     app.innerHTML = `
       <div class="header"><span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span></div>
+
+      ${isProfile ? `
+        <div class="profile-header">
+          <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
+          <span class="detected-handle">@${p.handle}</span>
+        </div>
+
+        <div class="sort-box">
+          <div class="sort-controls">
+            <span class="sort-label">Sort by</span>
+            <select id="sort-by">
+              <option value="views" ${sortBy === 'views' ? 'selected' : ''}>Views</option>
+              <option value="likes" ${sortBy === 'likes' ? 'selected' : ''}>Likes</option>
+              <option value="comments" ${sortBy === 'comments' ? 'selected' : ''}>Comments</option>
+            </select>
+            <span class="sort-label">Top</span>
+            <select id="sort-count">
+              <option value="10" ${sortCount === 10 ? 'selected' : ''}>10</option>
+              <option value="25" ${sortCount === 25 ? 'selected' : ''}>25</option>
+              <option value="50" ${sortCount === 50 ? 'selected' : ''}>50</option>
+            </select>
+            <button class="btn btn-primary" id="sort-btn" ${state.saving === 'sorting' ? 'disabled' : ''}>
+              ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Sort'}
+            </button>
+          </div>
+          ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${state.errors.sort}</div>` : ''}
+          ${sortedPosts.length > 0 ? `
+            <div class="sort-status">
+              Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
+            </div>
+          ` : `
+            <div class="sort-helper">Click Sort to rank videos by metrics.</div>
+          `}
+        </div>
+
+        ${sortedPosts.length > 0 ? `
+          <div class="sorted-list">${sortListHtml}</div>
+          <div class="sort-export">
+            <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+          </div>
+        ` : ''}
+
+        <div class="locked-actions">
+          <div class="locked-action">🔒 Track as Competitor</div>
+          <div class="locked-action">🔒 Sync Videos</div>
+        </div>
+      ` : hasPost ? `
+        <div class="detected">
+          <div class="detected-row">
+            <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
+            <span class="detected-handle">@${p.handle || 'unknown'}</span>
+          </div>
+          ${p.caption ? `<div class="detected-caption">${escHtml(p.caption)}</div>` : ''}
+          ${(p.views != null || p.likes != null) ? (() => {
+            const eng = p.views > 0 ? (((p.likes || 0) + (p.comments || 0) + (p.shares || 0)) / p.views * 100).toFixed(1) : null
+            return `
+            <div class="stats-row">
+              ${p.views != null ? `<div>👁 <span class="stat-num">${fmt(p.views)}</span> <span class="stat-label">views</span></div>` : ''}
+              ${p.likes != null ? `<div>❤️ <span class="stat-num">${fmt(p.likes)}</span> <span class="stat-label">likes</span></div>` : ''}
+              ${p.comments != null ? `<div>💬 <span class="stat-num">${fmt(p.comments)}</span> <span class="stat-label">comments</span></div>` : ''}
+              ${p.shares != null ? `<div>📤 <span class="stat-num">${fmt(p.shares)}</span> <span class="stat-label">shares</span></div>` : ''}
+              ${eng != null ? `<div>⚡ <span class="stat-num stat-eng">${eng}%</span> <span class="stat-label">eng</span></div>` : ''}
+            </div>`
+          })() : ''}
+        </div>
+        <div class="locked-actions">
+          <div class="locked-action">🔒 Save as Inspiration</div>
+          <div class="locked-action">🔒 Create from Inspo</div>
+          <div class="locked-action">🔒 Generate Video Idea</div>
+          <div class="locked-action">🔒 Why Did It Do Well?</div>
+        </div>
+      ` : `
+        <div class="no-post">
+          Navigate to a TikTok or Instagram video to capture it.
+        </div>
+      `}
+
       <div class="login-section">
-        <h2>Sign in to Orianna</h2>
+        <h2>${p ? 'Sign in to unlock all features' : 'Sign in to Orianna'}</h2>
         <p>Use your Orianna account credentials</p>
         <div style="display:flex;flex-direction:column;gap:8px">
           <input id="email" type="email" placeholder="Email" />
@@ -517,6 +641,22 @@ function render() {
     })
     document.getElementById('password').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('login-btn').click()
+    })
+    // Sort functionality works without login
+    document.getElementById('sort-btn')?.addEventListener('click', handleSort)
+    document.getElementById('export-btn')?.addEventListener('click', handleExportCSV)
+    document.querySelectorAll('.btn-open[data-url]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        chrome.tabs.create({ url: btn.dataset.url, active: false })
+      })
+    })
+    document.querySelectorAll('.btn-goto[data-url]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        chrome.tabs.update(tab.id, { url: btn.dataset.url })
+        window.close()
+      })
     })
     return
   }
