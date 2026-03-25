@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/service'
+import { TIERS, type TierSlug } from '@/lib/tiers'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -10,9 +11,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { priceId } = await req.json()
+  const { tierSlug, yearly, priceId: directPriceId } = await req.json()
+
+  // Resolve price ID: either from tierSlug (new) or direct priceId (legacy)
+  let priceId = directPriceId
+  if (tierSlug && !priceId) {
+    const tier = TIERS[tierSlug as TierSlug]
+    if (!tier || tier.price === 0) {
+      return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
+    }
+    priceId = yearly ? tier.stripePriceYearlyId : tier.stripePriceId
+  }
+
   if (!priceId) {
-    return NextResponse.json({ error: 'Missing priceId' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing priceId — check STRIPE_PRICE_* env vars are set' }, { status: 400 })
   }
 
   // Check if user already has a Stripe customer ID

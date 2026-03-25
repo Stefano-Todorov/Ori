@@ -76,14 +76,13 @@ export function BillingSection() {
   }, [loading, usageData, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCheckout(tier: TierConfig) {
-    const priceId = yearly ? tier.stripePriceYearlyId : tier.stripePriceId
-    if (!priceId) return
+    if (tier.price === 0) return
     setCheckoutLoading(tier.slug)
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ tierSlug: tier.slug, yearly }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url
