@@ -7,6 +7,8 @@ Next.js 16.1.6 (App Router) + Supabase + Anthropic Claude SDK + Stripe + Tailwin
 <!-- ultrathink -->
 IMPORTANT: Think thoroughly before responding. Provide complete, detailed answers the first time — do not give partial lists or surface-level responses. Missing details costs more time than careful thinking upfront. When committing, always push to remote immediately (Vercel auto-deploys from main).
 
+IMPORTANT: If you can do a task, DO IT — don't give the user manual steps for things you can execute. Only hand off when it truly requires their browser, credentials, or physical action. Recommend the simplest, most practical solution first — not the flashiest.
+
 ## Tech Stack
 - **Runtime**: Next.js 16.1.6 App Router, TypeScript, React 19
 - **Database & Auth**: Supabase (Postgres + RLS + Auth). Schema: `supabase/schema.sql`
