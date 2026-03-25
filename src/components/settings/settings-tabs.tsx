@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SettingsForm } from '@/components/settings/settings-form'
 import { BillingSection } from '@/components/settings/billing-section'
-import { User, CreditCard } from 'lucide-react'
+import { UsageSection } from '@/components/settings/usage-section'
+import { User, CreditCard, BarChart3 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: User },
+  { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },
 ] as const
 
@@ -21,6 +23,7 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
   useEffect(() => {
     const tab = searchParams.get('tab')
     if (tab === 'billing') setActiveTab('billing')
+    if (tab === 'usage') setActiveTab('usage')
   }, [searchParams])
 
   return (
@@ -49,6 +52,7 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
 
       {/* Tab content */}
       {activeTab === 'profile' && <SettingsForm profile={profile} socialAccounts={socialAccounts} />}
+      {activeTab === 'usage' && <UsageSection />}
       {activeTab === 'billing' && <BillingSection />}
     </div>
   )
