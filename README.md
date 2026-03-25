@@ -15,10 +15,15 @@ Orianna helps creators grow by combining their own post analytics with AI coachi
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16.1.6 (App Router)
 - **Database & Auth**: Supabase (Postgres + Row Level Security)
-- **AI**: Anthropic Claude (claude-sonnet-4-5)
-- **Styling**: Tailwind CSS + shadcn/ui
+- **AI**: Anthropic Claude (`claude-sonnet-4-6`) — `src/lib/claude.ts`
+- **Payments**: Stripe — subscription tiers, usage tracking
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Monitoring**: Sentry (error tracking, client + server + edge)
+- **Email**: Resend
+- **Notifications**: Telegram (via Telegraf)
+- **Testing**: Playwright (e2e)
 - **Language**: TypeScript
 
 ## Local Setup
@@ -62,22 +67,34 @@ Open [http://localhost:3000](http://localhost:3000).
 src/
   app/
     (auth)/           # Login, signup pages
-    (dashboard)/      # Main app: dashboard, coach, scripts, posts, competitors, trending, settings
-    api/              # API routes: coach, scripts, posts/upload-csv, extension/ingest, auth/callback
+    (dashboard)/      # Main app: dashboard, coach, scripts, ideas, inspo, competitors, my-videos, schedule, settings
+    api/              # 14 API route groups (coach, scripts, posts, extension, stripe, cron, etc.)
     onboarding/       # 4-step onboarding wizard
   components/
     coach/            # AI coach chat UI
-    dashboard/        # Metrics cards, top posts
-    layout/           # Sidebar navigation
-    posts/            # CSV import button, competitor add
-    scripts/          # Script generator form, saved scripts list
-    settings/         # Profile settings form
+    dashboard/        # Metrics cards, top posts, kanban board, calendar
+    ideas/            # Ideas board with edit dialog
+    layout/           # Sidebar navigation, usage bar
+    posts/            # CSV import, competitor add
+    schedule/         # Production tracker, recording days
+    scripts/          # Script generator, saved scripts list
+    settings/         # Profile settings, billing, theme toggle
+    trending/         # Swipe file list, add swipe button
     ui/               # shadcn/ui components
   lib/
     claude.ts         # Anthropic SDK client + system prompt builder
-    supabase/         # Supabase client (browser, server, middleware)
+    stripe.ts         # Stripe client + helpers
+    knowledge.ts      # Loads coaching knowledge base
+    supabase/         # Supabase clients (browser, server, service, middleware)
     types.ts          # All TypeScript types
+    tiers.ts          # Subscription tier logic
+    usage.ts          # Feature usage tracking
     utils.ts          # Utility functions
+e2e/                  # Playwright e2e tests (5 spec files)
+extension/            # Chrome extension (Manifest V3)
+knowledge/            # AI coaching knowledge base (5 guides)
+supabase/             # Database schema + 12 migrations
+marketing/            # Brand assets and copy templates
 ```
 
 ## Database Schema
@@ -99,4 +116,12 @@ The post import accepts CSV exports from TikTok, Instagram, and YouTube. Support
 
 ## Browser Extension
 
-The companion browser extension can push competitor posts and trending content directly to the app via `/api/extension/ingest`. Extension setup coming soon.
+The companion Chrome extension captures trending content and competitor posts directly into the app via `/api/extension/ingest`. Located in `extension/` (Manifest V3 — popup, content script, background service worker, TikTok bridge).
+
+## E2E Tests
+
+```bash
+npx playwright test
+```
+
+5 spec files covering API health, auth flows, extension API, extension popup, and public pages. 36 tests passing.

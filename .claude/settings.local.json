@@ -2,8 +2,23 @@
   "permissions": {
     "allow": [
       "Bash(git commit:*)",
-      "WebSearch",
-      "Bash(git status -u)"
+      "Bash(git status*)",
+      "Bash(git push*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npx playwright test*)",
+      "Bash(npx tsc*)",
+      "WebSearch"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
+      }
     ]
   }
 }

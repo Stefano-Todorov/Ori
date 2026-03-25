@@ -1,94 +1,96 @@
-# Agent Instructions
+# Orianna
 
-> This file is mirrored across CLAUDE.md, AGENTS.md, and GEMINI.md so the same instructions load in any AI environment.
+AI content coaching platform for TikTok/Instagram/YouTube Shorts creators.
+Next.js 16.1.6 (App Router) + Supabase + Anthropic Claude SDK + Stripe + Tailwind v4 + shadcn/ui.
 
-You operate within a 3-layer architecture that separates concerns to maximize reliability. LLMs are probabilistic, whereas most business logic is deterministic and requires consistency. This system fixes that mismatch.
+## Working Style
+<!-- ultrathink -->
+IMPORTANT: Think thoroughly before responding. Provide complete, detailed answers the first time — do not give partial lists or surface-level responses. Missing details costs more time than careful thinking upfront. When committing, always push to remote immediately (Vercel auto-deploys from main).
 
-## The 3-Layer Architecture
+## Tech Stack
+- **Runtime**: Next.js 16.1.6 App Router, TypeScript, React 19
+- **Database & Auth**: Supabase (Postgres + RLS + Auth). Schema: `supabase/schema.sql`
+- **AI**: Anthropic Claude SDK (`claude-sonnet-4-6`) — `src/lib/claude.ts`
+- **Payments**: Stripe — `src/lib/stripe.ts`, `src/lib/tiers.ts`, `src/lib/usage.ts`
+- **Styling**: Tailwind CSS v4 + shadcn/ui. Design system: see `DESIGN.md`
+- **Monitoring**: Sentry (client + server + edge configs at project root)
+- **Testing**: Playwright e2e — 5 spec files in `e2e/`, 36 tests passing
+- **Deployment**: Vercel (push to main = auto-deploy). Crons in `vercel.json`
 
-**Layer 1: Directive (What to do)**
-- Basically just SOPs written in Markdown, live in `directives/`
-- Define the goals, inputs, tools/scripts to use, outputs, and edge cases
-- Natural language instructions, like you'd give a mid-level employee
+## Architecture
 
-**Layer 2: Orchestration (Decision making)**
-- This is you. Your job: intelligent routing.
-- Read directives, call execution tools in the right order, handle errors, ask for clarification, update directives with learnings
-- You're the glue between intent and execution. E.g you don't try scraping websites yourself—you read `directives/scrape_website.md` and come up with inputs/outputs and then run `execution/scrape_single_site.py`
+```mermaid
+flowchart TD
+  Browser --> Middleware[Next.js Middleware<br/>Auth check]
+  Middleware --> Pages[App Router Pages<br/>Route group: dashboard]
+  Pages --> SA[Server Actions<br/>src/app/actions.ts]
+  Pages --> API[API Routes<br/>src/app/api/]
+  SA --> Supabase[(Supabase<br/>Postgres + Auth)]
+  API --> Claude[Claude AI<br/>Streaming]
+  API --> Stripe[Stripe<br/>Payments]
+  API --> Supabase
+  Extension[Chrome Extension] --> API
+```
 
-**Layer 3: Execution (Doing the work)**
-- Deterministic Python scripts in `execution/`
-- Environment variables, api tokens, etc are stored in `.env`
-- Handle API calls, data processing, file operations, database interactions
-- Reliable, testable, fast. Use scripts instead of manual work.
+### Route structure
+- `(auth)/` — login, signup
+- `(dashboard)/dashboard/*` — main app (coach, scripts, ideas, inspo, competitors, my-videos, schedule, settings, cleanup)
+- `onboarding/` — 4-step wizard
+- `api/` — 14 route groups (auth, coach, competitors, cron, download, extension, ideas, insights, posts, scripts, social, stripe, thumbnail, usage)
 
-**Why this works:** if you do everything yourself, errors compound. 90% accuracy per step = 59% success over 5 steps. The solution is push complexity into deterministic code. That way you just focus on decision-making.
+### DB schema
 
-## Operating Principles
+```mermaid
+erDiagram
+  profiles ||--o{ posts : "user_id"
+  profiles ||--o{ scripts : "user_id"
+  profiles ||--o{ content_ideas : "user_id"
+  profiles ||--o{ competitors : "user_id"
+  profiles ||--o{ coach_messages : "user_id"
+  profiles ||--o{ usage : "user_id"
+  posts { uuid user_id; bool is_competitor; bool is_trending; int views; float engagement }
+  scripts { text hook; text body; text cta; text[] hashtags; jsonb variants }
+  content_ideas { text idea; text status; text production_status; text hook_idea }
+  competitors { text handle; text platform; int follower_count }
+```
 
-**1. Check for tools first**
-Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
+`posts` table serves triple duty: user posts (`is_competitor=false, is_trending=false`), competitor posts (`is_competitor=true`), swipe file (`is_trending=true`).
 
-**2. Self-anneal when things break**
-- Read error message and stack trace
-- Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
-- Update the directive with what you learned (API limits, timing, edge cases)
-- Example: you hit an API rate limit → you then look into API → find a batch endpoint that would fix → rewrite script to accommodate → test → update directive.
+## Critical Patterns
 
-**3. Update directives as you learn**
-Directives are living documents. When you discover API constraints, better approaches, common errors, or timing expectations—update the directive. But don't create or overwrite directives without asking unless explicitly told to. Directives are your instruction set and must be preserved (and improved upon over time, not extemporaneously used and then discarded).
+**All mutations go through server actions** (`src/app/actions.ts`, ~800 lines).
+Browser client direct Supabase writes silently fail (0 rows, no error). Only use browser client for reads.
 
-## Self-annealing loop
+**Profile UPSERT, not UPDATE.** The Supabase `handle_new_user` trigger may not fire, leaving no profile row. Always:
+```ts
+supabase.from('profiles').upsert(
+  { user_id: user.id, email: user.email ?? '', ...fields },
+  { onConflict: 'user_id' }
+)
+```
 
-Errors are learning opportunities. When something breaks:
-1. Fix it
-2. Update the tool
-3. Test tool, make sure it works
-4. Update directive to include new flow
-5. System is now stronger
+**Supabase clients:**
+- Server (cookies): `src/lib/supabase/server.ts`
+- Browser (anon key): `src/lib/supabase/client.ts`
+- Service role: `src/lib/supabase/service.ts`
+- Middleware: `src/lib/supabase/middleware.ts`
 
-## File Organization
+**AI system prompt** uses `knowledge/` directory (5 coaching guides) loaded via `src/lib/knowledge.ts`. Coach context includes user's scripts, ideas, and post analytics.
 
-**Deliverables vs Intermediates:**
-- **Deliverables**: Google Sheets, Google Slides, or other cloud-based outputs that the user can access
-- **Intermediates**: Temporary files needed during processing
+## Development
 
-**Directory structure:**
-- `.tmp/` - All intermediate files (dossiers, scraped data, temp exports). Never commit, always regenerated.
-- `execution/` - Python scripts (the deterministic tools)
-- `directives/` - SOPs in Markdown (the instruction set)
-- `.env` - Environment variables and API keys
-- `credentials.json`, `token.json` - Google OAuth credentials (required files, in `.gitignore`)
+- `npm run dev` — local server
+- `npx playwright test` — e2e tests (5 specs, 36 tests)
+- Push to main = auto-deploy via Vercel
+- Vercel crons: `/api/cron/publish` (daily 9am), `/api/cron/cleanup` (daily 3am)
 
-**Key principle:** Local files are only for processing. Deliverables live in cloud services (Google Sheets, Slides, etc.) where the user can access them. Everything in `.tmp/` can be deleted and regenerated.
+## Gotchas
+- Route group `(dashboard)` is NOT in the URL — pages are at `/dashboard/*`
+- Some DB columns only exist via migrations, not in original `schema.sql` (e.g. `content_ideas.hook_idea`, `competitors.profile_url`)
+- `.env.local` for all secrets (Supabase, Anthropic, Stripe, Sentry, Resend)
 
-## Cloud Webhooks (Modal)
-
-The system supports event-driven execution via Modal webhooks. Each webhook maps to exactly one directive with scoped tool access.
-
-**When user says "add a webhook that...":**
-1. Read `directives/add_webhook.md` for complete instructions
-2. Create the directive file in `directives/`
-3. Add entry to `execution/webhooks.json`
-4. Deploy: `modal deploy execution/modal_webhook.py`
-5. Test the endpoint
-
-**Key files:**
-- `execution/webhooks.json` - Webhook slug → directive mapping
-- `execution/modal_webhook.py` - Modal app (do not modify unless necessary)
-- `directives/add_webhook.md` - Complete setup guide
-
-**Endpoints:**
-- `https://nick-90891--claude-orchestrator-list-webhooks.modal.run` - List webhooks
-- `https://nick-90891--claude-orchestrator-directive.modal.run?slug={slug}` - Execute directive
-- `https://nick-90891--claude-orchestrator-test-email.modal.run` - Test email
-
-**Available tools for webhooks:** `send_email`, `read_sheet`, `update_sheet`
-
-**All webhook activity streams to Slack in real-time.**
-
-## Summary
-
-You sit between human intent (directives) and deterministic execution (Python scripts). Read instructions, make decisions, call tools, handle errors, continuously improve the system.
-
-Be pragmatic. Be reliable. Self-anneal.
+## Reference
+- See `README.md` for full project structure and local setup
+- See `DESIGN.md` for colors, typography, component styles
+- See `supabase/schema.sql` + `supabase/migrations/` for authoritative DB schema
+- See `knowledge/` for AI coaching knowledge base (5 files)

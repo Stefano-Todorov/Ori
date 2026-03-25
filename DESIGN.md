@@ -182,4 +182,3 @@ animation: coach-pulse 3s ease-in-out infinite;
 - No pure black backgrounds — use `#0a0a0f` minimum
 - No unstyled scrollbars in dark theme
 - No emoji in UI unless specifically requested by user
-- Don't track own content/posts — this app tracks competitors and inspo only
