@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
 import { checkFeature } from '@/lib/usage'
 import { z } from 'zod'
 
@@ -25,15 +24,6 @@ const SyncSchema = z.object({
   posts: z.array(PostSchema),
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
-export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
-}
-
 /** Tokenize text into lowercase words (3+ chars), stripping punctuation */
 function tokenize(text: string): Set<string> {
   return new Set(
@@ -54,36 +44,22 @@ function tokenOverlap(a: Set<string>, b: Set<string>): number {
   return count
 }
 
+export async function OPTIONS() {
+  return optionsResponse()
+}
+
 export async function POST(request: NextRequest) {
-  // Auth: support Bearer token (extension) and cookie-based (webapp)
-  let user = null
-  let supabase
-
-  const authHeader = request.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7)
-    supabase = createServiceClient()
-    const { data, error } = await supabase.auth.getUser(token)
-    if (!error && data.user) user = data.user
-  }
-
-  if (!user) {
-    supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  }
-
-  if (!user || !supabase) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
-  }
+  const auth = await authenticateExtensionRequest(request, 'extension-sync-my-videos', { allowCookieAuth: true })
+  if ('status' in auth) return auth
+  const { user, supabase, authMethod } = auth
 
   // Gate extension-only calls: requires extension_full feature
-  if (authHeader?.startsWith('Bearer ')) {
+  if (authMethod === 'bearer') {
     const hasFullExtension = await checkFeature(user.id, 'extension_full')
     if (!hasFullExtension) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'upgrade_required', message: 'Full extension features require Pro or Max plan' },
-        { status: 403, headers: corsHeaders },
+        403,
       )
     }
   }
@@ -91,7 +67,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const parsed = SyncSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400, headers: corsHeaders })
+    return jsonResponse({ error: 'Invalid payload', details: parsed.error.issues }, 400)
   }
 
   const { platform, follower_count, posts: rawPosts } = parsed.data
@@ -100,7 +76,7 @@ export async function POST(request: NextRequest) {
   const postRecords = rawPosts
     .filter(p => p.url && (p.views > 0 || p.likes > 0 || p.comments > 0 || p.caption || p.thumbnail)) // skip posts without URLs or data
     .map((p) => ({
-      user_id: user!.id,
+      user_id: user.id,
       platform,
       url: p.url!,
       caption: p.caption ?? null,
@@ -148,7 +124,7 @@ export async function POST(request: NextRequest) {
       .upsert(postRecords, { onConflict: 'user_id,url', ignoreDuplicates: false })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+      return errorResponse(error.message, 500)
     }
 
     synced = postRecords.length
@@ -227,10 +203,10 @@ export async function POST(request: NextRequest) {
   revalidatePath('/dashboard/my-videos')
   revalidatePath('/dashboard')
 
-  return NextResponse.json({
+  return jsonResponse({
     synced,
     new: newCount,
     updated: updatedCount,
     suggested_links: suggestedLinks,
-  }, { headers: corsHeaders })
+  })
 }

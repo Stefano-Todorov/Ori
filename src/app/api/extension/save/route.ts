@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { NextRequest } from 'next/server'
+import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 const INSPO_LIMIT = 100
@@ -28,28 +28,14 @@ async function archiveOldInspo(supabase: SupabaseClient, userId: string) {
     .in('id', oldest.map((p: { id: string }) => p.id))
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
 export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+  return optionsResponse()
 }
 
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
-  }
-
-  const token = authHeader.slice(7)
-  const supabase = createServiceClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
-  }
+  const auth = await authenticateExtensionRequest(req, 'extension-save')
+  if ('status' in auth) return auth
+  const { user, supabase } = auth
 
   const body = await req.json()
   const { type, platform, url, caption, views, likes, comments, shares, saves, hook_text, hashtags, duration, audio, notes, tags, thumbnail } = body
@@ -106,12 +92,12 @@ export async function POST(req: NextRequest) {
       .ilike('competitor_handle', handle)
       .eq('is_competitor', false)
 
-    return NextResponse.json({ ok: true }, { headers: corsHeaders })
+    return jsonResponse({ ok: true })
   }
 
   // Save as inspiration → Inspo tab (+ competitor tab if creator is already tracked)
   if (type === 'inspiration') {
-    if (!platform) return NextResponse.json({ error: 'platform is required' }, { status: 400, headers: corsHeaders })
+    if (!platform) return errorResponse('platform is required', 400)
 
     // Check duplicate by URL
     const force = body.force // 'replace' = delete old + save new, 'keep' = save new anyway
@@ -119,7 +105,7 @@ export async function POST(req: NextRequest) {
       const { data: existingPost } = await supabase
         .from('posts').select('id').eq('user_id', user.id).eq('url', url).limit(1)
       if (existingPost && existingPost.length > 0) {
-        return NextResponse.json({ error: 'Already saved', duplicate: true }, { status: 409, headers: corsHeaders })
+        return jsonResponse({ error: 'Already saved', duplicate: true }, 409)
       }
     }
 
@@ -163,15 +149,15 @@ export async function POST(req: NextRequest) {
     }
 
     const { error } = await supabase.from('posts').insert(postRow)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+    if (error) return errorResponse(error.message, 500)
 
     // Auto-archive oldest inspo posts beyond 100
     await archiveOldInspo(supabase, user.id)
 
-    return NextResponse.json({ ok: true }, { headers: corsHeaders })
+    return jsonResponse({ ok: true })
   }
 
-  if (!platform) return NextResponse.json({ error: 'platform is required' }, { status: 400, headers: corsHeaders })
+  if (!platform) return errorResponse('platform is required', 400)
 
   // Check for duplicate URL
   if (url) {
@@ -182,7 +168,7 @@ export async function POST(req: NextRequest) {
       .eq('url', url)
       .limit(1)
     if (existing && existing.length > 0) {
-      return NextResponse.json({ error: 'Already saved', duplicate: true }, { status: 409, headers: corsHeaders })
+      return jsonResponse({ error: 'Already saved', duplicate: true }, 409)
     }
   }
 
@@ -242,12 +228,12 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await supabase.from('posts').insert(postRow)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+  if (error) return errorResponse(error.message, 500)
 
   // Auto-archive oldest inspo posts beyond 100
   if (type === 'swipe') {
     await archiveOldInspo(supabase, user.id)
   }
 
-  return NextResponse.json({ ok: true, isNew: type === 'competitor' && competitorHandle ? true : false }, { headers: corsHeaders })
+  return jsonResponse({ ok: true, isNew: type === 'competitor' && competitorHandle ? true : false })
 }

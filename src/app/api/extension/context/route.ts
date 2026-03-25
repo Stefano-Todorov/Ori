@@ -1,29 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/service'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
+import { NextRequest } from 'next/server'
+import { authenticateExtensionRequest, optionsResponse, jsonResponse } from '@/lib/extension-auth'
 
 export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+  return optionsResponse()
 }
 
 // Called by Chrome extension — auth via Bearer token (Supabase JWT)
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
-  }
-
-  const token = authHeader.slice(7)
-  const supabase = createServiceClient()
-
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
-  }
+  const auth = await authenticateExtensionRequest(req, 'extension-context')
+  if ('status' in auth) return auth
+  const { user, supabase } = auth
 
   // Fetch profile first — needed to look up social_accounts by profiles.id (FK target)
   const { data: profile } = await supabase
@@ -88,10 +74,10 @@ export async function GET(req: NextRequest) {
   const profileTags: string[] = []
   const allTags = [...new Set([...profileTags, ...(tagPosts ?? []).flatMap((p: { tags: string[] }) => p.tags ?? [])])].sort()
 
-  return NextResponse.json({
+  return jsonResponse({
     competitors: Array.from(groupMap.values()),
     profile: profile ?? {},
     allTags,
     socialAccounts: (socialAccounts ?? []).map(a => ({ platform: a.platform, username: a.username })),
-  }, { headers: corsHeaders })
+  })
 }

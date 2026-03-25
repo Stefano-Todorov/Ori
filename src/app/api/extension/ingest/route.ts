@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
 import { z } from 'zod'
 
 const PostSchema = z.object({
@@ -24,42 +23,19 @@ const IngestSchema = z.object({
   posts: z.array(PostSchema),
 })
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
 export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+  return optionsResponse()
 }
 
 export async function POST(request: NextRequest) {
-  // Support both cookie-based auth (webapp) and Bearer token auth (extension)
-  let user = null
-  let supabase
-
-  const authHeader = request.headers.get('authorization')
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.slice(7)
-    supabase = createServiceClient()
-    const { data, error } = await supabase.auth.getUser(token)
-    if (!error && data.user) user = data.user
-  }
-
-  if (!user) {
-    supabase = await createClient()
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  }
-
-  if (!user || !supabase) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
-  }
+  const auth = await authenticateExtensionRequest(request, 'extension-ingest', { allowCookieAuth: true })
+  if ('status' in auth) return auth
+  const { user, supabase } = auth
 
   const body = await request.json()
   const parsed = IngestSchema.safeParse(body)
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid payload', details: parsed.error.issues }, { status: 400, headers: corsHeaders })
+    return jsonResponse({ error: 'Invalid payload', details: parsed.error.issues }, 400)
   }
 
   const { platform, competitor_handle, is_trending, posts: rawPosts } = parsed.data
@@ -85,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (posts.length === 0) {
-    return NextResponse.json({ ingested: 0, skipped }, { headers: corsHeaders })
+    return jsonResponse({ ingested: 0, skipped })
   }
 
   // Upsert competitor record if applicable
@@ -128,9 +104,9 @@ export async function POST(request: NextRequest) {
   }))
 
   const { error } = await supabase.from('posts').insert(postRecords)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
+  if (error) return errorResponse(error.message, 500)
 
   revalidatePath('/dashboard/inspo')
 
-  return NextResponse.json({ ingested: postRecords.length, skipped }, { headers: corsHeaders })
+  return jsonResponse({ ingested: postRecords.length, skipped })
 }
