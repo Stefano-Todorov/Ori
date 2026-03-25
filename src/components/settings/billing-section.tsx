@@ -52,7 +52,7 @@ export function BillingSection() {
   const [loading, setLoading] = useState(true)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
-  const [yearly, setYearly] = useState(searchParams.get('billing') === 'yearly')
+  const yearly = false
   const autoCheckoutDone = useRef(false)
 
   useEffect(() => {
@@ -141,31 +141,6 @@ export function BillingSection() {
         )}
       </div>
 
-      {/* Monthly / Yearly toggle */}
-      <div className="flex items-center justify-center">
-        <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
-          <button
-            onClick={() => setYearly(false)}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-              !yearly ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setYearly(true)}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
-              yearly ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Yearly
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-500">
-              2 months free
-            </span>
-          </button>
-        </div>
-      </div>
-
       {/* Tier cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {TIER_LIST.map(tier => {
@@ -189,14 +164,9 @@ export function BillingSection() {
                   )}
                 </div>
                 <p className="text-2xl font-bold text-foreground mt-2">
-                  {tier.price === 0 ? 'Free' : `$${yearly ? (tier.yearlyPrice / 12).toFixed(2) : tier.price}`}
+                  {tier.price === 0 ? 'Free' : `$${tier.price}`}
                   {tier.price > 0 && <span className="text-xs font-normal text-muted-foreground">/mo</span>}
                 </p>
-                {tier.price > 0 && yearly && (
-                  <p className="text-[10px] text-purple-500 font-semibold mt-0.5">
-                    ${tier.yearlyPrice}/yr — save ${(tier.price * 12 - tier.yearlyPrice).toFixed(2)}
-                  </p>
-                )}
               </div>
 
               {/* Feature list */}
