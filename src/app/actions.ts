@@ -777,6 +777,45 @@ export async function linkVideoToIdea(postId: string, ideaId: string) {
   return { error: null }
 }
 
+// ─── Feedback / Bug Reports ──────────────────────────────────────────────────
+
+export async function submitFeedback(fields: {
+  type: 'bug' | 'feature' | 'other'
+  subject: string
+  description: string
+  page_url?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase.from('feedback').insert({
+    user_id: user.id,
+    type: fields.type,
+    subject: fields.subject,
+    description: fields.description,
+    page_url: fields.page_url || null,
+  })
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+export async function getUserFeedback() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data } = await supabase
+    .from('feedback')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  return data ?? []
+}
+
 export async function unlinkVideoFromIdea(postId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

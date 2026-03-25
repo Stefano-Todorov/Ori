@@ -5,13 +5,15 @@ import { useSearchParams } from 'next/navigation'
 import { SettingsForm } from '@/components/settings/settings-form'
 import { BillingSection } from '@/components/settings/billing-section'
 import { UsageSection } from '@/components/settings/usage-section'
-import { User, CreditCard, BarChart3 } from 'lucide-react'
+import { FeedbackSection } from '@/components/settings/feedback-section'
+import { User, CreditCard, BarChart3, MessageSquareWarning } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },
+  { id: 'feedback', label: 'Feedback', icon: MessageSquareWarning },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -24,6 +26,7 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
     const tab = searchParams.get('tab')
     if (tab === 'billing') setActiveTab('billing')
     if (tab === 'usage') setActiveTab('usage')
+    if (tab === 'feedback') setActiveTab('feedback')
   }, [searchParams])
 
   return (
@@ -54,6 +57,7 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
       {activeTab === 'profile' && <SettingsForm profile={profile} socialAccounts={socialAccounts} />}
       {activeTab === 'usage' && <UsageSection />}
       {activeTab === 'billing' && <BillingSection />}
+      {activeTab === 'feedback' && <FeedbackSection />}
     </div>
   )
 }
