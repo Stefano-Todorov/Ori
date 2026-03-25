@@ -30,8 +30,9 @@ export async function updateSession(request: NextRequest) {
   const isOnboarding = request.nextUrl.pathname.startsWith('/onboarding')
   const isPublic = request.nextUrl.pathname === '/' ||
     request.nextUrl.pathname.startsWith('/legal')
+  const isApi = request.nextUrl.pathname.startsWith('/api/')
 
-  if (!user && !isAuthPage && !isPublic) {
+  if (!user && !isAuthPage && !isPublic && !isApi) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

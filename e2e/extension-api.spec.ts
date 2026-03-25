@@ -128,9 +128,9 @@ test.describe('Extension APIs — authenticated', () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty('competitors');
-    expect(body).toHaveProperty('tags');
+    expect(body).toHaveProperty('allTags');
     expect(Array.isArray(body.competitors)).toBe(true);
-    expect(Array.isArray(body.tags)).toBe(true);
+    expect(Array.isArray(body.allTags)).toBe(true);
   });
 
   test('POST /api/extension/save — save inspiration', async ({ request }) => {

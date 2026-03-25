@@ -22,7 +22,7 @@ test.describe('Authenticated flows', () => {
   test('dashboard loads after login', async ({ page }) => {
     await expect(page).toHaveURL(/\/dashboard/);
     // Should see sidebar navigation
-    await expect(page.getByText('Orianna')).toBeVisible();
+    await expect(page.getByText('Orianna').first()).toBeVisible();
   });
 
   test('scripts page loads', async ({ page }) => {
