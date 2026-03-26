@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
 
 # next.js
 /.next/
@@ -33,6 +35,9 @@ yarn-error.log*
 # env files
 .env*
 !.env.example
+
+# supabase
+supabase/.temp
 
 # vercel
 .vercel
