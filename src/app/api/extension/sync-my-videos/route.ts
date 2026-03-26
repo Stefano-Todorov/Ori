@@ -16,6 +16,7 @@ const PostSchema = z.object({
   hashtags: z.array(z.string()).default([]),
   posted_at: z.string().nullish(),
   thumbnail: z.string().nullish(),
+  thumbnail_base64: z.string().nullish(),
   duration_seconds: z.number().nullish(),
 })
 
@@ -143,36 +144,30 @@ export async function POST(request: NextRequest) {
 
     synced = postRecords.length
 
-    // Download and store thumbnails in Supabase Storage (CDN URLs expire)
+    // Upload base64 thumbnails to Supabase Storage (CDN URLs expire)
     const serviceClient = createServiceClient()
-    const thumbsToUpload = postRecords.filter(p => p.thumbnail_url && !p.thumbnail_url.includes('supabase'))
-    if (thumbsToUpload.length > 0) {
+    const postsWithB64 = rawPosts.filter(p => p.thumbnail_base64 && p.url)
+    if (postsWithB64.length > 0) {
       const BATCH = 5
-      for (let i = 0; i < thumbsToUpload.length; i += BATCH) {
-        const batch = thumbsToUpload.slice(i, i + BATCH)
+      for (let i = 0; i < postsWithB64.length; i += BATCH) {
+        const batch = postsWithB64.slice(i, i + BATCH)
         await Promise.all(batch.map(async (post) => {
           try {
-            const res = await fetch(post.thumbnail_url!, {
-              headers: { 'User-Agent': 'Mozilla/5.0' },
-              signal: AbortSignal.timeout(5000),
-            })
-            if (!res.ok) return
-            const contentType = res.headers.get('content-type') ?? 'image/jpeg'
-            const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg'
-            const buffer = Buffer.from(await res.arrayBuffer())
-            const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+            const buffer = Buffer.from(post.thumbnail_base64!, 'base64')
+            const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
 
             const { error: uploadError } = await serviceClient.storage
               .from('thumbnails')
-              .upload(path, buffer, { contentType, upsert: false })
+              .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
 
             if (!uploadError) {
               const { data: publicUrl } = serviceClient.storage.from('thumbnails').getPublicUrl(path)
+              const normalizedUrl = normalizeUrl(post.url!)
               await supabase
                 .from('posts')
                 .update({ thumbnail_url: publicUrl.publicUrl })
                 .eq('user_id', user.id)
-                .eq('url', post.url)
+                .eq('url', normalizedUrl)
             }
           } catch {
             // Skip failed thumbnails silently
