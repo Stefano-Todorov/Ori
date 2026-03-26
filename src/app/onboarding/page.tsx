@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { updateProfile } from '@/app/actions'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -53,22 +53,20 @@ function OnboardingForm() {
 
   async function handleFinish() {
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
 
-    await supabase
-      .from('profiles')
-      .upsert({
-        user_id: user.id,
-        email: user.email ?? '',
-        niche,
-        sub_niche: subNiche || null,
-        goals,
-        platforms,
-        posting_target: postingTarget,
-        onboarding_completed: true,
-      }, { onConflict: 'user_id' })
+    const result = await updateProfile({
+      niche,
+      sub_niche: subNiche || null,
+      goals,
+      platforms,
+      posting_target: postingTarget,
+      onboarding_completed: true,
+    })
+
+    if (result?.error) {
+      setLoading(false)
+      return
+    }
 
     if (plan) {
       router.push(`/dashboard/settings?tab=billing&plan=${plan}${billing ? `&billing=${billing}` : ''}`)

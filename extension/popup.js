@@ -520,14 +520,14 @@ function render() {
       ? sortedPosts.slice(0, sortCount).map((post, i) => `
           <div class="sorted-item" title="${escHtml(post.href)}">
             <span class="sorted-rank">${i + 1}</span>
-            ${post.thumb ? `<img class="sorted-thumb" src="${post.thumb}" />` : `<div class="sorted-thumb"></div>`}
+            ${post.thumb ? `<img class="sorted-thumb" src="${escHtml(post.thumb)}" />` : `<div class="sorted-thumb"></div>`}
             <div class="sorted-metrics">
               <div class="sorted-metric-row">
                 ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">👁 ${fmt(post.views)}</span>` : ''}
                 ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">❤️ ${fmt(post.likes)}</span>` : ''}
                 ${post.comments != null ? `<span class="${sortBy === 'comments' ? 'primary' : 'val'}">💬 ${fmt(post.comments)}</span>` : ''}
               </div>
-              <div class="sorted-url">${post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '')}</div>
+              <div class="sorted-url">${escHtml(post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, ''))}</div>
             </div>
             <div class="sorted-actions">
               <button class="btn-open" data-url="${escHtml(post.href)}">Open</button>
@@ -542,8 +542,8 @@ function render() {
 
       ${isProfile ? `
         <div class="profile-header">
-          <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
-          <span class="detected-handle">@${p.handle}</span>
+          <span class="platform-badge ${(p.platform || '').toLowerCase()}">${escHtml(p.platform)}</span>
+          <span class="detected-handle">@${escHtml(p.handle)}</span>
         </div>
 
         <div class="sort-box">
