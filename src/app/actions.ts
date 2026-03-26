@@ -6,13 +6,17 @@ import type { Platform } from '@/lib/types'
 
 export async function deletePost(id: string) {
   const supabase = await createClient()
-  await supabase.from('posts').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('posts').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/posts')
 }
 
 export async function deleteScript(id: string) {
   const supabase = await createClient()
-  await supabase.from('scripts').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('scripts').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/scripts')
 }
 
@@ -53,7 +57,9 @@ export async function deleteCompetitor(id: string, deletePosts: boolean = false)
 
 export async function updateScriptStatus(id: string, status: 'draft' | 'used' | 'archived') {
   const supabase = await createClient()
-  await supabase.from('scripts').update({ status }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('scripts').update({ status }).eq('id', id).eq('user_id', user.id)
 }
 
 export async function addIdea(
@@ -219,7 +225,9 @@ async function archiveOldInspo(supabase: any, userId: string) {
 
 export async function deleteSwipePost(id: string) {
   const supabase = await createClient()
-  await supabase.from('posts').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('posts').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/inspo')
 }
 
@@ -232,6 +240,7 @@ export async function updateProfile(fields: {
   posting_target?: number
   telegram_chat_id?: string | null
   auto_sync_own_profile?: boolean
+  onboarding_completed?: boolean
 }) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -248,26 +257,34 @@ export async function updateProfile(fields: {
 
 export async function deleteIdea(id: string) {
   const supabase = await createClient()
-  await supabase.from('content_ideas').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
 }
 
 export async function updateIdeaStatus(id: string, status: 'new' | 'in_progress' | 'done' | 'archived') {
   const supabase = await createClient()
-  await supabase.from('content_ideas').update({ status }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update({ status }).eq('id', id).eq('user_id', user.id)
 }
 
 export async function bulkDeleteIdeas(ids: string[]) {
   if (!ids.length) return
   const supabase = await createClient()
-  await supabase.from('content_ideas').delete().in('id', ids)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').delete().in('id', ids).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
 }
 
 export async function bulkUpdateIdeaStatus(ids: string[], status: 'new' | 'in_progress' | 'done' | 'archived') {
   if (!ids.length) return
   const supabase = await createClient()
-  await supabase.from('content_ideas').update({ status }).in('id', ids)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update({ status }).in('id', ids).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
 }
 
@@ -310,7 +327,9 @@ export async function updateIdea(
   }
 ) {
   const supabase = await createClient()
-  await supabase.from('content_ideas').update(fields).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update(fields).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
 }
 
@@ -342,7 +361,9 @@ export async function schedulePost(fields: {
 
 export async function deleteScheduledPost(id: string) {
   const supabase = await createClient()
-  await supabase.from('scheduled_posts').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('scheduled_posts').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/schedule')
   revalidatePath('/dashboard')
 }
@@ -482,33 +503,43 @@ export async function unlinkCompetitor(competitorId: string) {
 
 export async function updateCompetitorUrl(id: string, profileUrl: string) {
   const supabase = await createClient()
-  await supabase.from('competitors').update({ profile_url: profileUrl || null }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('competitors').update({ profile_url: profileUrl || null }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/competitors')
 }
 
 export async function updateCompetitorNotes(id: string, notes: string) {
   const supabase = await createClient()
-  await supabase.from('competitors').update({ notes: notes || null }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('competitors').update({ notes: notes || null }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/competitors')
 }
 
 export async function updatePostNotes(id: string, notes: string) {
   const supabase = await createClient()
-  await supabase.from('posts').update({ ai_notes: notes || null }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('posts').update({ ai_notes: notes || null }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/competitors')
   revalidatePath('/dashboard/inspo')
 }
 
 export async function updatePostTitle(id: string, title: string) {
   const supabase = await createClient()
-  await supabase.from('posts').update({ title: title || null }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('posts').update({ title: title || null }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/competitors')
   revalidatePath('/dashboard/inspo')
 }
 
 export async function updatePostTags(id: string, tags: string[]) {
   const supabase = await createClient()
-  await supabase.from('posts').update({ tags }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('posts').update({ tags }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/inspo')
 }
 
@@ -556,7 +587,9 @@ export async function deleteInspoTag(tag: string) {
 
 export async function updateIdeaTags(id: string, tags: string[]) {
   const supabase = await createClient()
-  await supabase.from('content_ideas').update({ tags }).eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update({ tags }).eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
 }
 
@@ -686,7 +719,9 @@ export async function addFollowerSnapshot(platform: Platform, count: number, rec
 
 export async function deleteFollowerSnapshot(id: string) {
   const supabase = await createClient()
-  await supabase.from('follower_snapshots').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('follower_snapshots').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard')
 }
 
@@ -694,7 +729,9 @@ export async function deleteFollowerSnapshot(id: string) {
 
 export async function updateProductionStatus(ideaId: string, status: 'new' | 'recording' | 'editing' | 'posted') {
   const supabase = await createClient()
-  await supabase.from('content_ideas').update({ production_status: status }).eq('id', ideaId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update({ production_status: status }).eq('id', ideaId).eq('user_id', user.id)
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/ideas')
   revalidatePath('/dashboard/schedule')
@@ -703,7 +740,9 @@ export async function updateProductionStatus(ideaId: string, status: 'new' | 're
 export async function bulkUpdateProductionStatus(ids: string[], status: 'new' | 'recording' | 'editing' | 'posted') {
   if (!ids.length) return
   const supabase = await createClient()
-  await supabase.from('content_ideas').update({ production_status: status }).in('id', ids)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('content_ideas').update({ production_status: status }).in('id', ids).eq('user_id', user.id)
   revalidatePath('/dashboard/ideas')
   revalidatePath('/dashboard')
 }
@@ -729,13 +768,17 @@ export async function addRecordingDay(recording_date: string, notes?: string) {
 
 export async function deleteRecordingDay(id: string) {
   const supabase = await createClient()
-  await supabase.from('recording_days').delete().eq('id', id)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await supabase.from('recording_days').delete().eq('id', id).eq('user_id', user.id)
   revalidatePath('/dashboard/schedule')
   revalidatePath('/dashboard')
 }
 
 export async function addIdeaToRecordingDay(recordingDayId: string, contentIdeaId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   const { error } = await supabase.from('recording_day_ideas').upsert({
     recording_day_id: recordingDayId,
     content_idea_id: contentIdeaId,
@@ -748,6 +791,8 @@ export async function addIdeaToRecordingDay(recordingDayId: string, contentIdeaI
 
 export async function removeIdeaFromRecordingDay(recordingDayId: string, contentIdeaId: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
   await supabase
     .from('recording_day_ideas')
     .delete()
@@ -784,6 +829,7 @@ export async function submitFeedback(fields: {
   subject: string
   description: string
   page_url?: string
+  image_url?: string
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -795,6 +841,7 @@ export async function submitFeedback(fields: {
     subject: fields.subject,
     description: fields.description,
     page_url: fields.page_url || null,
+    image_url: fields.image_url || null,
   })
 
   if (error) return { error: error.message }

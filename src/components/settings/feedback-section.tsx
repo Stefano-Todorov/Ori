@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bug, Lightbulb, MessageSquare, Send, Check, Loader2, Clock } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Bug, Lightbulb, MessageSquare, Send, Check, Loader2, Clock, ImagePlus, X } from 'lucide-react'
 import { submitFeedback, getUserFeedback } from '@/app/actions'
+import { createClient as createBrowserClient } from '@/lib/supabase/client'
 
 type FeedbackType = 'bug' | 'feature' | 'other'
 
@@ -36,6 +37,9 @@ export function FeedbackSection() {
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useState<FeedbackItem[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     getUserFeedback().then(data => {
@@ -44,6 +48,29 @@ export function FeedbackSection() {
     })
   }, [])
 
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB')
+      return
+    }
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
+    setError(null)
+  }
+
+  function removeImage() {
+    setImageFile(null)
+    if (imagePreview) URL.revokeObjectURL(imagePreview)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!subject.trim() || !description.trim()) return
@@ -51,11 +78,30 @@ export function FeedbackSection() {
     setSubmitting(true)
     setError(null)
 
+    let image_url: string | undefined
+
+    if (imageFile) {
+      const supabase = createBrowserClient()
+      const ext = imageFile.name.split('.').pop() || 'png'
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('feedback')
+        .upload(path, imageFile)
+      if (uploadError) {
+        setSubmitting(false)
+        setError('Failed to upload image: ' + uploadError.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('feedback').getPublicUrl(path)
+      image_url = urlData.publicUrl
+    }
+
     const result = await submitFeedback({
       type,
       subject: subject.trim(),
       description: description.trim(),
       page_url: typeof window !== 'undefined' ? window.location.href : undefined,
+      image_url,
     })
 
     setSubmitting(false)
@@ -66,6 +112,7 @@ export function FeedbackSection() {
       setSubmitted(true)
       setSubject('')
       setDescription('')
+      removeImage()
       // Refresh history
       const data = await getUserFeedback()
       setHistory(data as FeedbackItem[])
@@ -141,6 +188,45 @@ export function FeedbackSection() {
               rows={4}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
               required
+            />
+          </div>
+
+          {/* Image attachment */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              Screenshot <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            {imagePreview ? (
+              <div className="relative inline-block">
+                <img
+                  src={imagePreview}
+                  alt="Screenshot preview"
+                  className="max-h-32 rounded-lg border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              >
+                <ImagePlus size={16} />
+                Attach a screenshot
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
             />
           </div>
 
