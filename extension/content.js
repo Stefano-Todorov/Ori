@@ -1561,6 +1561,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
+  // Helper: convert image URL to base64 (runs on page, has CDN access)
+  async function imgUrlToBase64(url) {
+    if (!url) return null
+    try {
+      const res = await fetch(url)
+      if (!res.ok) return null
+      const blob = await res.blob()
+      const buf = await blob.arrayBuffer()
+      const bytes = new Uint8Array(buf)
+      let binary = ''
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+      return btoa(binary)
+    } catch { return null }
+  }
+
   // ─── EXTRACT_OWN_PROFILE: scrape profile posts + follower count for sync ──
   if (msg.type === 'EXTRACT_OWN_PROFILE') {
     (async () => {
@@ -1682,7 +1697,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      sendResponse({ platform, handle, follower_count: followerCount, posts })
+      // Convert thumbnail URLs to base64 while we're on the page (CDN blocks external fetches)
+      const postsWithThumbs = await Promise.all(posts.map(async (p) => {
+        if (!p.thumbnail) return p
+        const b64 = await imgUrlToBase64(p.thumbnail)
+        return { ...p, thumbnail_base64: b64 }
+      }))
+
+      sendResponse({ platform, handle, follower_count: followerCount, posts: postsWithThumbs })
     })()
     return true
   }

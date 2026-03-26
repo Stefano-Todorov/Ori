@@ -227,13 +227,8 @@ async function handleMessage(msg) {
     case 'SYNC_MY_VIDEOS': {
       const { platform, follower_count, posts } = msg
       if (!posts || posts.length === 0) return { synced: 0, new: 0, updated: 0, suggested_links: [] }
-      // Convert thumbnails to base64 in the browser (CDN blocks server-side fetches)
-      const postsWithThumbs = await Promise.all(posts.map(async (p) => {
-        if (!p.thumbnail) return p
-        const b64 = await fetchThumbnailBase64(p.thumbnail)
-        return { ...p, thumbnail_base64: b64 }
-      }))
-      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts: postsWithThumbs })
+      // thumbnail_base64 is already set by content script (runs on the page, has CDN access)
+      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts })
     }
 
     case 'SYNC_TAGS': {
