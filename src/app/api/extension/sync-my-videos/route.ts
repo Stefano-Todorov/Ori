@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
+import { createServiceClient } from '@/lib/supabase/service'
 import { checkFeature } from '@/lib/usage'
 import { z } from 'zod'
 
@@ -141,6 +142,44 @@ export async function POST(request: NextRequest) {
     }
 
     synced = postRecords.length
+
+    // Download and store thumbnails in Supabase Storage (CDN URLs expire)
+    const serviceClient = createServiceClient()
+    const thumbsToUpload = postRecords.filter(p => p.thumbnail_url && !p.thumbnail_url.includes('supabase'))
+    if (thumbsToUpload.length > 0) {
+      const BATCH = 5
+      for (let i = 0; i < thumbsToUpload.length; i += BATCH) {
+        const batch = thumbsToUpload.slice(i, i + BATCH)
+        await Promise.all(batch.map(async (post) => {
+          try {
+            const res = await fetch(post.thumbnail_url!, {
+              headers: { 'User-Agent': 'Mozilla/5.0' },
+              signal: AbortSignal.timeout(5000),
+            })
+            if (!res.ok) return
+            const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+            const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg'
+            const buffer = Buffer.from(await res.arrayBuffer())
+            const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+            const { error: uploadError } = await serviceClient.storage
+              .from('thumbnails')
+              .upload(path, buffer, { contentType, upsert: false })
+
+            if (!uploadError) {
+              const { data: publicUrl } = serviceClient.storage.from('thumbnails').getPublicUrl(path)
+              await supabase
+                .from('posts')
+                .update({ thumbnail_url: publicUrl.publicUrl })
+                .eq('user_id', user.id)
+                .eq('url', post.url)
+            }
+          } catch {
+            // Skip failed thumbnails silently
+          }
+        }))
+      }
+    }
   }
 
   // Follower snapshot (1 per platform per day, handled by unique constraint)

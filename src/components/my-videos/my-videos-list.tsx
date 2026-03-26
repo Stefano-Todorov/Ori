@@ -257,6 +257,7 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                     src={post.thumbnail_url}
                     alt=""
                     className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
                     onError={() => handleThumbError(post.id)}
                   />
                   <Badge
