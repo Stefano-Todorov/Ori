@@ -40,7 +40,10 @@ export async function POST(request: NextRequest) {
     .eq('id', postId)
     .eq('user_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[posts/link-script] DB error:', error.message)
+    return NextResponse.json({ error: 'Failed to link script' }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }

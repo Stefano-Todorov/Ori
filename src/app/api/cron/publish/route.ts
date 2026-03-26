@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     .limit(10)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[cron/publish] DB error:', error.message)
+    return NextResponse.json({ error: 'Failed to fetch scheduled posts' }, { status: 500 })
   }
 
   if (!duePosts || duePosts.length === 0) {

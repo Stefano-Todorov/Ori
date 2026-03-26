@@ -21,9 +21,10 @@ async function getUser(request: NextRequest) {
     const { data: { user }, error } = await supabase.auth.getUser(authHeader.slice(7))
     if (!error && user) return { user, supabase }
   }
-  const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
-  if (!error && user) return { user, supabase: createServiceClient() }
+  // Fallback to cookie auth — use the cookie-authenticated client (respects RLS)
+  const cookieClient = await createClient()
+  const { data: { user: cookieUser }, error: cookieError } = await cookieClient.auth.getUser()
+  if (!cookieError && cookieUser) return { user: cookieUser, supabase: cookieClient }
   return null
 }
 

@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkUsage, incrementUsage } from '@/lib/usage'
 
+const ALLOWED_DOWNLOAD_DOMAINS = [
+  'tiktok.com', 'tiktokcdn.com', 'muscdn.com',
+  'instagram.com', 'cdninstagram.com', 'fbcdn.net',
+  'youtube.com', 'youtu.be', 'ytimg.com', 'yt3.ggpht.com',
+  'tikwm.com', 'tikcdn.io', 'snaptik.app', 'ssstik.io',
+]
+
+function isAllowedDownloadUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname
+    return ALLOWED_DOWNLOAD_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d))
+  } catch {
+    return false
+  }
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,6 +36,7 @@ export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url')
   const platform = req.nextUrl.searchParams.get('platform') ?? ''
   if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  if (!isAllowedDownloadUrl(url)) return NextResponse.json({ error: 'URL domain not allowed' }, { status: 400 })
 
   try {
     // Increment usage upfront (check already passed above)

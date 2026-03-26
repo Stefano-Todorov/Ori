@@ -161,6 +161,16 @@ function decodeHTMLEntities(text: string): string {
     .replace(/&apos;/g, "'")
 }
 
+function isAllowedSocialUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname
+    const allowed = ['tiktok.com', 'instagram.com', 'youtube.com', 'youtu.be']
+    return allowed.some(d => hostname === d || hostname.endsWith('.' + d))
+  } catch {
+    return false
+  }
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -168,6 +178,7 @@ export async function GET(req: NextRequest) {
 
   const url = req.nextUrl.searchParams.get('url')
   if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  if (!isAllowedSocialUrl(url)) return NextResponse.json({ error: 'URL must be from TikTok, Instagram, or YouTube' }, { status: 400 })
 
   const platform = detectPlatform(url)
 

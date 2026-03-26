@@ -104,7 +104,10 @@ export async function POST(request: NextRequest) {
   }))
 
   const { error } = await supabase.from('posts').insert(postRecords)
-  if (error) return errorResponse(error.message, 500)
+  if (error) {
+    console.error('[extension/ingest] DB error:', error.message)
+    return errorResponse('Failed to save posts', 500)
+  }
 
   revalidatePath('/dashboard/inspo')
 

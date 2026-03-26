@@ -131,7 +131,10 @@ export async function POST(request: NextRequest) {
   })
 
   const { error } = await supabase.from('posts').insert(posts)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[posts/upload-csv] DB error:', error.message)
+    return NextResponse.json({ error: 'Failed to import posts' }, { status: 500 })
+  }
 
   return NextResponse.json({ imported: posts.length })
 }

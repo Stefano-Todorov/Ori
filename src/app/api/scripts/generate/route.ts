@@ -204,7 +204,10 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[scripts/generate] DB error:', error.message)
+    return NextResponse.json({ error: 'Failed to save script' }, { status: 500 })
+  }
 
   await incrementUsage(user.id, 'script_generations')
 

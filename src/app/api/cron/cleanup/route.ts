@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
     .select('id')
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error('[cron/cleanup] DB error:', error.message)
+    return NextResponse.json({ error: 'Cleanup failed' }, { status: 500 })
   }
 
   return NextResponse.json({ deleted: deleted?.length ?? 0 })

@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabase.from('content_ideas').insert(rows)
   if (error) {
-    return errorResponse(error.message, 500)
+    console.error('[extension/ideas] DB error:', error.message)
+    return errorResponse('Failed to save ideas', 500)
   }
 
   return jsonResponse({ ok: true, count: rows.length })

@@ -149,7 +149,10 @@ export async function POST(req: NextRequest) {
     }
 
     const { error } = await supabase.from('posts').insert(postRow)
-    if (error) return errorResponse(error.message, 500)
+    if (error) {
+      console.error('[extension/save] DB error:', error.message)
+      return errorResponse('Failed to save post', 500)
+    }
 
     // Auto-archive oldest inspo posts beyond 100
     await archiveOldInspo(supabase, user.id)
@@ -228,7 +231,10 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await supabase.from('posts').insert(postRow)
-  if (error) return errorResponse(error.message, 500)
+  if (error) {
+    console.error('[extension/save] DB error:', error.message)
+    return errorResponse('Failed to save post', 500)
+  }
 
   // Auto-archive oldest inspo posts beyond 100
   if (type === 'swipe') {

@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+
+const ALLOWED_DOMAINS = [
+  'tiktok.com', 'tiktokcdn.com',
+  'instagram.com', 'cdninstagram.com', 'fbcdn.net',
+  'youtube.com', 'youtu.be', 'ytimg.com', 'yt3.ggpht.com',
+  'pexels.com', 'unsplash.com',
+]
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname
+    return ALLOWED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d))
+  } catch {
+    return false
+  }
+}
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const url = req.nextUrl.searchParams.get('url')
   if (!url) return NextResponse.json({ thumbnail: null })
+  if (!isAllowedUrl(url)) return NextResponse.json({ error: 'URL domain not allowed' }, { status: 400 })
 
   try {
     // Try oEmbed for known platforms
@@ -19,7 +41,6 @@ async function fetchOEmbed(url: string): Promise<string | null> {
   if (url.includes('tiktok.com')) {
     oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`
   } else if (url.includes('instagram.com')) {
-    oembedUrl = `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=IGQVJ`
     // Instagram oEmbed requires a token, fall back to og:image
     return null
   } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
