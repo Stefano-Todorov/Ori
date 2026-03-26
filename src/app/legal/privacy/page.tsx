@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div className="max-w-3xl mx-auto px-6 py-16 space-y-8">
         <div>
           <h1 className="text-3xl font-bold">Privacy Policy</h1>
-          <p className="text-muted-foreground mt-2">Last updated: March 2025</p>
+          <p className="text-muted-foreground mt-2">Last updated: March 2026</p>
         </div>
 
         <section className="space-y-3">
@@ -52,7 +52,22 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">5. Data Security</h2>
+          <h2 className="text-xl font-semibold">5. Chrome Extension</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            The Orianna Chrome extension enhances the platform by letting you save content inspiration
+            while browsing TikTok and Instagram. Here is what the extension accesses and how:
+          </p>
+          <ul className="text-muted-foreground space-y-2 list-disc list-inside leading-relaxed">
+            <li><strong>Page content extraction:</strong> When you click &quot;Save&quot; on a TikTok or Instagram page, the extension reads publicly visible post metadata from the current page — including the caption, hashtags, view/like/comment counts, thumbnail URL, and creator handle. This data is only captured when you explicitly choose to save a post.</li>
+            <li><strong>Authentication tokens:</strong> The extension stores your Orianna login session (access token, refresh token, and email) in local browser storage to keep you signed in. These are never shared with third parties.</li>
+            <li><strong>Permissions used:</strong> The extension uses <em>activeTab</em> (to read the current page when you click Save), <em>storage</em> (to store your login session locally), <em>tabs</em> (to detect when you&apos;re on a supported site), and <em>scripting</em> (to extract post data from the page). It only runs on tiktok.com and instagram.com.</li>
+            <li><strong>Data sent to our servers:</strong> When you save a post, the extracted metadata is sent to Orianna&apos;s servers and stored in your account as part of your swipe file. No data is collected passively or in the background — the extension only acts when you interact with it.</li>
+            <li><strong>No browsing history or personal data:</strong> The extension does not track your browsing history, collect personal information beyond your Orianna login, or run any background data collection.</li>
+          </ul>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">6. Data Security</h2>
           <p className="text-muted-foreground leading-relaxed">
             We use Supabase for secure data storage with row-level security policies ensuring you can only access your own data.
             OAuth tokens are stored encrypted and are used only to perform actions you explicitly authorize.
@@ -61,7 +76,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">6. Data Retention</h2>
+          <h2 className="text-xl font-semibold">7. Data Retention</h2>
           <p className="text-muted-foreground leading-relaxed">
             Video files uploaded for scheduling are retained in storage and can be deleted by you at any time.
             Your account data is retained as long as your account is active.
@@ -70,7 +85,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">7. Your Rights</h2>
+          <h2 className="text-xl font-semibold">8. Your Rights</h2>
           <p className="text-muted-foreground leading-relaxed">
             You have the right to access, correct, or delete your personal data at any time.
             You can disconnect social accounts and revoke our access at any point through Settings.
@@ -79,7 +94,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold">8. Contact</h2>
+          <h2 className="text-xl font-semibold">9. Contact</h2>
           <p className="text-muted-foreground leading-relaxed">
             If you have questions about this Privacy Policy or how we handle your data, please contact us through the app or at the email address on file with your account.
           </p>
