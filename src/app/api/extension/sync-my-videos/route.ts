@@ -24,6 +24,18 @@ const SyncSchema = z.object({
   posts: z.array(PostSchema),
 })
 
+/** Normalize a social media URL by stripping query params, hash, and trailing slashes */
+function normalizeUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    u.search = ''
+    u.hash = ''
+    return u.origin + u.pathname.replace(/\/+$/, '')
+  } catch {
+    return url
+  }
+}
+
 /** Tokenize text into lowercase words (3+ chars), stripping punctuation */
 function tokenize(text: string): Set<string> {
   return new Set(
@@ -78,7 +90,7 @@ export async function POST(request: NextRequest) {
     .map((p) => ({
       user_id: user.id,
       platform,
-      url: p.url!,
+      url: normalizeUrl(p.url!),
       caption: p.caption ?? null,
       hashtags: p.hashtags,
       views: p.views,
@@ -124,7 +136,8 @@ export async function POST(request: NextRequest) {
       .upsert(postRecords, { onConflict: 'user_id,url', ignoreDuplicates: false })
 
     if (error) {
-      return errorResponse(error.message, 500)
+      console.error('[extension/sync-my-videos] DB error:', error.message)
+      return errorResponse('Failed to sync videos', 500)
     }
 
     synced = postRecords.length

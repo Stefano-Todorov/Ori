@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, Loader2, Zap } from 'lucide-react'
+import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, Loader2, Zap, VideoIcon } from 'lucide-react'
 import { linkVideoToIdea, unlinkVideoFromIdea } from '@/app/actions'
 import type { Post, ContentIdea, Script } from '@/lib/types'
 
@@ -34,6 +34,19 @@ function fmt(n: number | null | undefined): string {
   return n.toLocaleString()
 }
 
+/** Normalize a social media URL by stripping query params and trailing slashes */
+function normalizeUrl(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(url)
+    u.search = ''
+    u.hash = ''
+    return u.pathname.replace(/\/+$/, '')
+  } catch {
+    return url
+  }
+}
+
 function timeAgo(date: string): string {
   const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60000)
@@ -54,11 +67,25 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
   const [scriptText, setScriptText] = useState('')
   const [scoring, setScoring] = useState<string | null>(null)
   const [evalResults, setEvalResults] = useState<Record<string, { score: number; tags: string[] }>>({})
+  const [brokenThumbs, setBrokenThumbs] = useState<Set<string>>(new Set())
+
+  const handleThumbError = useCallback((postId: string) => {
+    setBrokenThumbs(prev => new Set(prev).add(postId))
+  }, [])
 
   const availableIdeas = ideas.filter(i => !i.linked_post_id && i.status !== 'archived')
 
   const filteredPosts = useMemo(() => {
-    let result = [...posts]
+    // Deduplicate by normalized URL (keep the one with more views)
+    const seen = new Map<string, Post>()
+    for (const p of posts) {
+      const key = normalizeUrl(p.url) ?? p.id
+      const existing = seen.get(key)
+      if (!existing || (p.views ?? 0) > (existing.views ?? 0)) {
+        seen.set(key, p)
+      }
+    }
+    let result = [...seen.values()]
 
     if (platformFilter !== 'all') {
       result = result.filter(p => p.platform === platformFilter)
@@ -224,12 +251,13 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
           return (
             <Card key={post.id} className="overflow-hidden">
               {/* Thumbnail */}
-              {post.thumbnail_url && (
+              {post.thumbnail_url && !brokenThumbs.has(post.id) ? (
                 <div className="relative aspect-[3/4] overflow-hidden bg-muted">
                   <img
                     src={post.thumbnail_url}
                     alt=""
                     className="w-full h-full object-cover"
+                    onError={() => handleThumbError(post.id)}
                   />
                   <Badge
                     variant="outline"
@@ -238,13 +266,12 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                     {post.platform}
                   </Badge>
                 </div>
-              )}
-
-              {!post.thumbnail_url && (
-                <div className="px-3 pt-3">
+              ) : (
+                <div className="relative aspect-[3/4] overflow-hidden bg-muted flex items-center justify-center">
+                  <VideoIcon className="h-8 w-8 text-muted-foreground/40" />
                   <Badge
                     variant="outline"
-                    className={`text-[10px] ${PLATFORM_COLORS[post.platform] ?? ''}`}
+                    className={`absolute top-2 left-2 text-[10px] ${PLATFORM_COLORS[post.platform] ?? ''}`}
                   >
                     {post.platform}
                   </Badge>
