@@ -1768,22 +1768,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      // Convert thumbnails to base64 in batches of 5 (avoid hanging on 80+ parallel fetches)
-      const postsWithThumbs = [...posts]
-      for (let i = 0; i < postsWithThumbs.length; i += 5) {
-        const batch = postsWithThumbs.slice(i, i + 5)
-        await Promise.all(batch.map(async (p, j) => {
-          if (!p.thumbnail) return
-          const b64 = await imgUrlToBase64(p.thumbnail)
-          if (b64) postsWithThumbs[i + j] = { ...p, thumbnail_base64: b64 }
-        }))
-      }
+      const thumbCount = posts.filter(p => p.thumbnail).length
+      console.log(`[Orianna] ${posts.length} posts ready, ${thumbCount} have thumbnail URLs`)
 
-      const thumbCount = postsWithThumbs.filter(p => p.thumbnail).length
-      const b64Count = postsWithThumbs.filter(p => p.thumbnail_base64).length
-      console.log(`[Orianna] Thumbnails: ${thumbCount} have URLs, ${b64Count} converted to base64, ${thumbCount - b64Count} FAILED`)
-
-      sendResponse({ platform, handle, follower_count: followerCount, posts: postsWithThumbs })
+      sendResponse({ platform, handle, follower_count: followerCount, posts })
     })()
     return true
   }
