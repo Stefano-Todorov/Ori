@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const serviceClient = createServiceClient()
   const { data: profile } = await serviceClient
     .from('profiles')
-    .select('stripe_customer_id')
+    .select('stripe_customer_id, stripe_subscription_id')
     .eq('user_id', user.id)
     .single()
 
@@ -57,6 +57,21 @@ export async function POST(req: NextRequest) {
       .from('profiles')
       .update({ stripe_customer_id: customerId })
       .eq('user_id', user.id)
+  }
+
+  // If user already has an active subscription, cancel it at period end
+  // so it doesn't overlap with the new one
+  if (profile?.stripe_subscription_id) {
+    try {
+      const existing = await getStripe().subscriptions.retrieve(profile.stripe_subscription_id)
+      if (existing.status === 'active' || existing.status === 'trialing') {
+        await getStripe().subscriptions.cancel(profile.stripe_subscription_id, {
+          prorate: true,
+        })
+      }
+    } catch {
+      // Subscription may already be cancelled or not found — continue
+    }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? req.nextUrl.origin

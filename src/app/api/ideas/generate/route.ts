@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
@@ -23,6 +24,9 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`${user.id}:idea-generate`, RATE_LIMITS['idea-generate'])
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   // Check usage limit
   const usage = await checkUsage(user.id, 'idea_generations')

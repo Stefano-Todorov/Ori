@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL, buildSystemPrompt } from '@/lib/claude'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`${user.id}:coach`, RATE_LIMITS.coach)
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   // Check usage limit
   const usage = await checkUsage(user.id, 'coach_messages')

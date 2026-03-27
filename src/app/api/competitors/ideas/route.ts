@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { getCorsHeaders } from '@/lib/extension-auth'
 
 export async function OPTIONS(req: NextRequest) {
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getCorsHeaders(request) })
   }
   const { user, supabase } = auth
+
+  const rl = checkRateLimit(`${user.id}:competitor-ideas`, RATE_LIMITS['competitor-ideas'])
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: getCorsHeaders(request) })
 
   // Check usage limit
   const usage = await checkUsage(user.id, 'competitor_ideas')

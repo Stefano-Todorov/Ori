@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
 const ALLOWED_DOWNLOAD_DOMAINS = [
   'tiktok.com', 'tiktokcdn.com', 'muscdn.com',
@@ -22,6 +23,9 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`${user.id}:download`, RATE_LIMITS.download)
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   // Check usage limit
   const usage = await checkUsage(user.id, 'downloads')

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 import { evalScript, buildScriptText } from '@/lib/eval'
 import { z } from 'zod'
 
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = checkRateLimit(`${user.id}:script-generate`, RATE_LIMITS['script-generate'])
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   // Check usage limit
   const usage = await checkUsage(user.id, 'script_generations')

@@ -69,6 +69,14 @@ export const RATE_LIMITS = {
   'extension-ideas':          { maxTokens: 10, refillRate: 10 / 60 },
   'extension-sync-tags':      { maxTokens: 15, refillRate: 15 / 60 },
   'extension-sync-my-videos': { maxTokens: 3,  refillRate: 3 / 60 },
+  // AI routes — burst protection (monthly limits in usage.ts handle the cap)
+  'coach':                    { maxTokens: 5,  refillRate: 5 / 60 },
+  'script-generate':          { maxTokens: 3,  refillRate: 3 / 60 },
+  'idea-generate':            { maxTokens: 3,  refillRate: 3 / 60 },
+  'competitor-analyze':       { maxTokens: 3,  refillRate: 3 / 60 },
+  'competitor-ideas':         { maxTokens: 3,  refillRate: 3 / 60 },
+  'post-eval':                { maxTokens: 5,  refillRate: 5 / 60 },
+  'download':                 { maxTokens: 5,  refillRate: 5 / 60 },
 } as const satisfies Record<string, RateLimitConfig>
 
 export type RateLimitKey = keyof typeof RATE_LIMITS
