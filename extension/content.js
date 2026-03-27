@@ -1676,6 +1676,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             const metrics = igMetrics.get(link) ?? {}
             const cached = igMetricsCache.get(sc)
 
+            // Try API/cache thumb first, fall back to DOM img
+            let thumb = metrics?.thumb ?? cached?.thumb ?? null
+            if (!thumb) {
+              const container = link.closest('div') ?? link
+              const imgs = container.querySelectorAll('img')
+              for (const img of imgs) {
+                const src = img.src || img.getAttribute('data-src') || ''
+                if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
+              }
+              // Also try the link itself if it contains an img
+              if (!thumb) {
+                const innerImg = link.querySelector('img')
+                if (innerImg) {
+                  const src = innerImg.src || ''
+                  if (src && !src.startsWith('data:') && src.length > 50) thumb = src
+                }
+              }
+            }
+
             posts.push({
               url: href,
               caption: cached?.caption || null,
@@ -1685,7 +1704,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
               shares: 0,
               saves: cached?.saves ?? 0,
               hashtags: extractHashtags(cached?.caption || ''),
-              thumbnail: metrics?.thumb ?? cached?.thumb ?? null,
+              thumbnail: thumb,
               posted_at: cached?.posted_at || null,
             })
           }
