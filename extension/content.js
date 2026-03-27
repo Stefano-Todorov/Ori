@@ -1663,7 +1663,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const grid = findGridAndItems()
 
         if (grid && grid.items) {
+          console.log('[Orianna] DOM grid items:', grid.items.length)
           const igMetrics = await fetchInstagramMetrics(grid.items)
+          console.log('[Orianna] igMetricsCache size after fetch:', igMetricsCache.size)
           const seenShortcodes = new Set()
 
           // 1) DOM-visible posts (can fall back to DOM images for thumbnails)
@@ -1707,9 +1709,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             })
           }
 
+          console.log('[Orianna] DOM posts collected:', seenShortcodes.size)
+
           // 2) API-only posts not in DOM (from igMetricsCache)
+          let apiOnlyCount = 0
           for (const [sc, cached] of igMetricsCache) {
             if (seenShortcodes.has(sc)) continue
+            apiOnlyCount++
             posts.push({
               url: `https://www.instagram.com/reel/${sc}/`,
               caption: cached.caption || null,
@@ -1723,6 +1729,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
               posted_at: cached.posted_at || null,
             })
           }
+          console.log('[Orianna] API-only posts added:', apiOnlyCount)
+          console.log('[Orianna] Total posts to sync:', posts.length)
         } else {
           // No grid in DOM — still try the API
           await fetchInstagramMetrics([])
