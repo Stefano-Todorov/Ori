@@ -1561,14 +1561,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
-  // Helper: convert image URL to base64 (runs on page, has CDN access)
+  // Helper: convert image URL to compressed base64 thumbnail (runs on page, has CDN access)
   async function imgUrlToBase64(url) {
     if (!url) return null
     try {
       const res = await fetch(url)
       if (!res.ok) return null
       const blob = await res.blob()
-      const buf = await blob.arrayBuffer()
+      // Resize to small thumbnail using canvas (saves bandwidth)
+      const bmp = await createImageBitmap(blob)
+      const MAX = 200
+      const scale = Math.min(MAX / bmp.width, MAX / bmp.height, 1)
+      const w = Math.round(bmp.width * scale)
+      const h = Math.round(bmp.height * scale)
+      const canvas = new OffscreenCanvas(w, h)
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(bmp, 0, 0, w, h)
+      bmp.close()
+      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 })
+      const buf = await outBlob.arrayBuffer()
       const bytes = new Uint8Array(buf)
       let binary = ''
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
