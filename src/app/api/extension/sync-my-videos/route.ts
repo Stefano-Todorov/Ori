@@ -116,26 +116,38 @@ export async function POST(request: NextRequest) {
   let updatedCount = 0
 
   if (postRecords.length > 0) {
-    // Find which URLs already exist to count new vs updated
+    // Fetch existing posts so we never overwrite good data with null
     const incomingUrls = postRecords.map(p => p.url)
-    const existingUrls = new Set<string>()
+    const existingMap = new Map<string, { url: string; posted_at: string | null; thumbnail_url: string | null; caption: string | null }>()
     for (let i = 0; i < incomingUrls.length; i += 100) {
       const chunk = incomingUrls.slice(i, i + 100)
       const { data: existing } = await supabase
         .from('posts')
-        .select('url')
+        .select('url, posted_at, thumbnail_url, caption')
         .eq('user_id', user.id)
         .in('url', chunk)
-      if (existing) existing.forEach((p: { url: string }) => { if (p.url) existingUrls.add(p.url) })
+      if (existing) existing.forEach((p) => { if (p.url) existingMap.set(p.url, p) })
     }
 
-    newCount = postRecords.filter(p => !existingUrls.has(p.url)).length
-    updatedCount = postRecords.filter(p => existingUrls.has(p.url)).length
+    newCount = postRecords.filter(p => !existingMap.has(p.url)).length
+    updatedCount = postRecords.filter(p => existingMap.has(p.url)).length
+
+    // Merge: keep existing non-null values when new data is null
+    const mergedRecords = postRecords.map(p => {
+      const existing = existingMap.get(p.url)
+      if (!existing) return p
+      return {
+        ...p,
+        posted_at: p.posted_at ?? existing.posted_at,
+        thumbnail_url: p.thumbnail_url ?? existing.thumbnail_url,
+        caption: p.caption ?? existing.caption,
+      }
+    })
 
     // Upsert: insert new posts, update metrics on existing (by user_id + url unique index)
     const { error } = await supabase
       .from('posts')
-      .upsert(postRecords, { onConflict: 'user_id,url', ignoreDuplicates: false })
+      .upsert(mergedRecords, { onConflict: 'user_id,url', ignoreDuplicates: false })
 
     if (error) {
       console.error('[extension/sync-my-videos] DB error:', error.message)
@@ -145,8 +157,14 @@ export async function POST(request: NextRequest) {
     synced = postRecords.length
 
     // Upload base64 thumbnails to Supabase Storage (CDN URLs expire)
+    // Skip posts that already have a Supabase Storage URL
     const serviceClient = createServiceClient()
-    const postsWithB64 = rawPosts.filter(p => p.thumbnail_base64 && p.url)
+    const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    const postsWithB64 = rawPosts.filter(p => {
+      if (!p.thumbnail_base64 || !p.url) return false
+      const existing = existingMap.get(normalizeUrl(p.url!))
+      return !existing?.thumbnail_url?.includes(supabaseHost)
+    })
     if (postsWithB64.length > 0) {
       const BATCH = 5
       for (let i = 0; i < postsWithB64.length; i += BATCH) {
