@@ -1602,13 +1602,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         // Fetch TikTok metrics from bridge
         await fetchTikTokMetrics()
 
-        // Get grid items
+        // Get grid items (process all loaded items — DOM limits what's available)
         const grid = findGridAndItems()
         if (grid && grid.items) {
-          const limit = msg.limit ?? 50
-          const itemsToProcess = grid.items.slice(0, limit)
-
-          for (const item of itemsToProcess) {
+          for (const item of grid.items) {
             const link = item.querySelector('a[href*="/video/"], a[href*="/photo/"]')
             const href = link?.href ?? ''
             if (!href) continue
@@ -1664,14 +1661,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
         // Use same approach as GET_SORTED_METRICS: findGridAndItems() + fetchInstagramMetrics()
         const grid = findGridAndItems()
-        const limit = msg.limit ?? 50
 
         if (grid && grid.items) {
-          const items = grid.items.slice(0, limit)
-          const igMetrics = await fetchInstagramMetrics(items)
+          const igMetrics = await fetchInstagramMetrics(grid.items)
           const seen = new Set()
 
-          for (const link of items) {
+          for (const link of grid.items) {
             const href = link.href
             if (!href || seen.has(href)) continue
             seen.add(href)
