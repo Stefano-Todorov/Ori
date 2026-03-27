@@ -1664,23 +1664,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
         if (grid && grid.items) {
           const igMetrics = await fetchInstagramMetrics(grid.items)
-          const seen = new Set()
+          const seenShortcodes = new Set()
 
+          // 1) DOM-visible posts (can fall back to DOM images for thumbnails)
           for (const link of grid.items) {
             const href = link.href
-            if (!href || seen.has(href)) continue
-            seen.add(href)
-
+            if (!href) continue
             const m = href.match(/\/(reel|p)\/([^/?]+)/)
             const sc = m?.[2]
+            if (!sc || seenShortcodes.has(sc)) continue
+            seenShortcodes.add(sc)
+
             const metrics = igMetrics.get(link) ?? {}
             const cached = igMetricsCache.get(sc)
 
             // Try API/cache thumb first, fall back to DOM img
             let thumb = metrics?.thumb ?? cached?.thumb ?? null
             if (!thumb) {
-              // The <a> link is an overlay on Instagram's grid — the image is a sibling
-              // or in a nearby parent. Walk up a few levels and search for <img>.
               let searchEl = link
               for (let up = 0; up < 5 && !thumb; up++) {
                 searchEl = searchEl.parentElement
@@ -1704,6 +1704,40 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
               hashtags: extractHashtags(cached?.caption || ''),
               thumbnail: thumb,
               posted_at: cached?.posted_at || null,
+            })
+          }
+
+          // 2) API-only posts not in DOM (from igMetricsCache)
+          for (const [sc, cached] of igMetricsCache) {
+            if (seenShortcodes.has(sc)) continue
+            posts.push({
+              url: `https://www.instagram.com/reel/${sc}/`,
+              caption: cached.caption || null,
+              views: cached.views ?? 0,
+              likes: cached.likes ?? 0,
+              comments: cached.comments ?? 0,
+              shares: 0,
+              saves: cached.saves ?? 0,
+              hashtags: extractHashtags(cached.caption || ''),
+              thumbnail: cached.thumb || null,
+              posted_at: cached.posted_at || null,
+            })
+          }
+        } else {
+          // No grid in DOM — still try the API
+          await fetchInstagramMetrics([])
+          for (const [sc, cached] of igMetricsCache) {
+            posts.push({
+              url: `https://www.instagram.com/reel/${sc}/`,
+              caption: cached.caption || null,
+              views: cached.views ?? 0,
+              likes: cached.likes ?? 0,
+              comments: cached.comments ?? 0,
+              shares: 0,
+              saves: cached.saves ?? 0,
+              hashtags: extractHashtags(cached.caption || ''),
+              thumbnail: cached.thumb || null,
+              posted_at: cached.posted_at || null,
             })
           }
         }
