@@ -1107,7 +1107,11 @@ function cacheMediaNode(node) {
     likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
     comments: node.comment_count ?? node.edge_media_to_comment?.count ?? null,
     saves: node.save_count ?? null,
-    thumb: node.display_url ?? node.thumbnail_src ?? node.image_versions2?.candidates?.[0]?.url ?? null,
+    thumb: node.display_url ?? node.thumbnail_src
+      ?? node.image_versions2?.candidates?.[0]?.url
+      ?? node.carousel_media?.[0]?.image_versions2?.candidates?.[0]?.url
+      ?? node.carousel_media?.[0]?.display_url
+      ?? null,
     posted_at: postedAt,
     caption: captionText,
   })
@@ -1700,14 +1704,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             // Try API/cache thumb first, fall back to DOM img
             let thumb = metrics?.thumb ?? cached?.thumb ?? null
             if (!thumb) {
-              let searchEl = link
-              for (let up = 0; up < 5 && !thumb; up++) {
-                searchEl = searchEl.parentElement
-                if (!searchEl) break
-                const imgs = searchEl.querySelectorAll('img')
-                for (const img of imgs) {
-                  const src = img.src || img.srcset?.split(',')[0]?.trim()?.split(' ')[0] || ''
-                  if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
+              // Search inside the link first
+              const innerImgs = link.querySelectorAll('img')
+              for (const img of innerImgs) {
+                const src = img.src || img.srcset?.split(',')[0]?.trim()?.split(' ')[0] || ''
+                if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
+              }
+              // Then walk up the DOM to find sibling images
+              if (!thumb) {
+                let searchEl = link
+                for (let up = 0; up < 5 && !thumb; up++) {
+                  searchEl = searchEl.parentElement
+                  if (!searchEl) break
+                  const imgs = searchEl.querySelectorAll('img')
+                  for (const img of imgs) {
+                    const src = img.src || img.srcset?.split(',')[0]?.trim()?.split(' ')[0] || ''
+                    if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
+                  }
                 }
               }
             }
@@ -1768,7 +1781,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      console.log('[Orianna] Reached sendResponse, posts:', posts.length)
+      const withThumb = posts.filter(p => p.thumbnail).length
+      const withDate = posts.filter(p => p.posted_at).length
+      console.log(`[Orianna] Ready: ${posts.length} posts, ${withThumb} thumbnails, ${withDate} dates, ${posts.length - withThumb} missing thumbs, ${posts.length - withDate} missing dates`)
       try {
         sendResponse({ platform, handle, follower_count: followerCount, posts })
         console.log('[Orianna] sendResponse called successfully')
