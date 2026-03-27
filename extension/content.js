@@ -1563,11 +1563,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
-  // Helper: convert image URL to tiny compressed base64 thumbnail (~3KB each)
+  // Helper: convert image URL to tiny compressed base64 thumbnail
   async function imgUrlToBase64(url) {
     if (!url) return null
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
       if (!res.ok) return null
       const blob = await res.blob()
       const bmp = await createImageBitmap(blob)
@@ -1763,12 +1763,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      // Convert thumbnails to tiny base64 for permanent storage
-      const postsWithThumbs = await Promise.all(posts.map(async (p) => {
-        if (!p.thumbnail) return p
-        const b64 = await imgUrlToBase64(p.thumbnail)
-        return b64 ? { ...p, thumbnail_base64: b64 } : p
-      }))
+      // Convert thumbnails to base64 in batches of 5 (avoid hanging on 80+ parallel fetches)
+      const postsWithThumbs = [...posts]
+      for (let i = 0; i < postsWithThumbs.length; i += 5) {
+        const batch = postsWithThumbs.slice(i, i + 5)
+        await Promise.all(batch.map(async (p, j) => {
+          if (!p.thumbnail) return
+          const b64 = await imgUrlToBase64(p.thumbnail)
+          if (b64) postsWithThumbs[i + j] = { ...p, thumbnail_base64: b64 }
+        }))
+      }
 
       const thumbCount = postsWithThumbs.filter(p => p.thumbnail).length
       const b64Count = postsWithThumbs.filter(p => p.thumbnail_base64).length
