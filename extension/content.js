@@ -1195,7 +1195,7 @@ async function fetchInstagramMetrics(items) {
             if (userId) {
               console.log('[Orianna] Got user ID:', userId, '— fetching feed...')
               let nextMaxId = null
-              for (let page = 0; page < 5; page++) {
+              for (let page = 0; ; page++) {
                 const feedUrl = `https://www.instagram.com/api/v1/feed/user/${userId}/?count=50${nextMaxId ? `&max_id=${nextMaxId}` : ''}`
                 const feedRes = await fetchWithRetry(feedUrl, { headers: igHeaders })
                 if (!feedRes) break
@@ -1211,7 +1211,7 @@ async function fetchInstagramMetrics(items) {
               // Also fetch reels — feed endpoint often excludes them
               try {
                 let reelsMaxId = null
-                for (let page = 0; page < 10; page++) {
+                for (let page = 0; ; page++) {
                   const reelsUrl = `https://www.instagram.com/api/v1/clips/user/?target_user_id=${userId}&page_size=50${reelsMaxId ? `&max_id=${reelsMaxId}` : ''}`
                   const reelsRes = await fetchWithRetry(reelsUrl, {
                     method: 'POST',
