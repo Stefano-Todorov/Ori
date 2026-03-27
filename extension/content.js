@@ -1782,15 +1782,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      const withThumb = posts.filter(p => p.thumbnail).length
-      const withDate = posts.filter(p => p.posted_at).length
-      console.log(`[Orianna] Ready: ${posts.length} posts, ${withThumb} thumbnails, ${withDate} dates, ${posts.length - withThumb} missing thumbs, ${posts.length - withDate} missing dates`)
-      try {
-        sendResponse({ platform, handle, follower_count: followerCount, posts })
-        console.log('[Orianna] sendResponse called successfully')
-      } catch (err) {
-        console.error('[Orianna] sendResponse FAILED:', err)
-      }
+      console.log(`[Orianna] Syncing ${posts.length} posts (${posts.filter(p => p.thumbnail).length} thumbnails, ${posts.filter(p => p.posted_at).length} dates)`)
+      sendResponse({ platform, handle, follower_count: followerCount, posts })
     })()
     return true
   }
