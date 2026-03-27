@@ -5,6 +5,23 @@ import { checkRateLimit, RATE_LIMITS, type RateLimitKey } from '@/lib/rate-limit
 import type { User } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+const APP_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://ori-nine.vercel.app'
+
+function getAllowedOrigin(origin: string | null): string {
+  if (!origin) return APP_ORIGIN
+  if (origin === APP_ORIGIN) return origin
+  if (origin.startsWith('chrome-extension://')) return origin
+  return APP_ORIGIN
+}
+
+export function getCorsHeaders(request?: NextRequest) {
+  const origin = request?.headers.get('origin') ?? null
+  return {
+    'Access-Control-Allow-Origin': getAllowedOrigin(origin),
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  }
+}
+
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
@@ -81,7 +98,7 @@ export async function authenticateExtensionRequest(
       {
         status: 429,
         headers: {
-          ...corsHeaders,
+          ...getCorsHeaders(req),
           'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)),
         },
       },

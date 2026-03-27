@@ -20,18 +20,40 @@ export async function POST(request: NextRequest) {
     }, { status: 429 })
   }
 
-  const { message, history } = await request.json()
+  const body = await request.json()
+  const message = typeof body.message === 'string' ? body.message.slice(0, 10000) : ''
+  if (!message) return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+
+  // Sanitize history: only allow valid role/content pairs, cap size
+  const rawHistory = Array.isArray(body.history) ? body.history.slice(-100) : []
+  const history = rawHistory.filter(
+    (m: unknown): m is { role: 'user' | 'assistant'; content: string } =>
+      !!m && typeof m === 'object' &&
+      'role' in m && (m.role === 'user' || m.role === 'assistant') &&
+      'content' in m && typeof m.content === 'string'
+  ).map((m: { role: 'user' | 'assistant'; content: string }) => ({
+    role: m.role,
+    content: m.content.slice(0, 10000),
+  }))
 
   // Load profile, posts, competitors, scripts, and ideas for context
-  const [{ data: profile }, { data: posts }, { data: competitors }, { data: scripts }, { data: ideas }] = await Promise.all([
+  const [{ data: profile }, { data: posts }, { data: inspirationPosts }, { data: competitors }, { data: scripts }, { data: ideas }] = await Promise.all([
     supabase.from('profiles').select('*').eq('user_id', user.id).single(),
     supabase
       .from('posts')
       .select('caption, views, likes, shares, saves, engagement_rate, platform, posted_at, hook_text')
       .eq('user_id', user.id)
       .eq('is_competitor', false)
+      .eq('is_trending', false)
       .order('views', { ascending: false })
       .limit(50),
+    supabase
+      .from('posts')
+      .select('caption, views, likes, shares, saves, platform, competitor_handle')
+      .eq('user_id', user.id)
+      .eq('is_trending', true)
+      .order('views', { ascending: false })
+      .limit(30),
     supabase
       .from('competitors')
       .select('handle, platform, avg_views')
@@ -58,6 +80,7 @@ export async function POST(request: NextRequest) {
     platforms: profile?.platforms ?? [],
     postingTarget: profile?.posting_target ?? 3,
     posts: posts ?? undefined,
+    inspirationPosts: inspirationPosts ?? undefined,
     competitors: competitors ?? undefined,
     scripts: scripts ?? undefined,
     ideas: ideas ?? undefined,
@@ -73,7 +96,7 @@ export async function POST(request: NextRequest) {
 
   // Build messages array
   const messages = [
-    ...(history ?? []),
+    ...history,
     { role: 'user' as const, content: message },
   ]
 

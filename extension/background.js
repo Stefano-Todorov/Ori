@@ -7,15 +7,15 @@ const ORIANNA_API = 'https://ori-nine.vercel.app'
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
 async function getAuth() {
-  return chrome.storage.local.get(['accessToken', 'refreshToken', 'expiresAt', 'userEmail'])
+  return chrome.storage.session.get(['accessToken', 'refreshToken', 'expiresAt', 'userEmail'])
 }
 
 async function setAuth({ accessToken, refreshToken, expiresAt, userEmail }) {
-  await chrome.storage.local.set({ accessToken, refreshToken, expiresAt, userEmail })
+  await chrome.storage.session.set({ accessToken, refreshToken, expiresAt, userEmail })
 }
 
 async function clearAuth() {
-  await chrome.storage.local.remove(['accessToken', 'refreshToken', 'expiresAt', 'userEmail'])
+  await chrome.storage.session.remove(['accessToken', 'refreshToken', 'expiresAt', 'userEmail'])
 }
 
 async function getValidToken() {
@@ -241,6 +241,7 @@ async function handleMessage(msg) {
     case 'OPEN_VIDEO': {
       const { url } = msg
       if (!url) throw new Error('No video URL available')
+      if (!url.startsWith('https://')) throw new Error('Invalid URL')
       await chrome.tabs.create({ url, active: true })
       return { ok: true }
     }

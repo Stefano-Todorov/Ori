@@ -240,6 +240,7 @@ export async function updateProfile(fields: {
   posting_target?: number
   telegram_chat_id?: string | null
   auto_sync_own_profile?: boolean
+  auto_save_competitor_ideas?: boolean
   onboarding_completed?: boolean
 }) {
   const supabase = await createClient()

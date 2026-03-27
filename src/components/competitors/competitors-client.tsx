@@ -6,10 +6,10 @@ import {
   Eye, Heart, MessageCircle, Pencil, Video,
   Users, BarChart3, Trophy, Loader2, Sparkles, Lightbulb,
   X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
-  Download,
+  Download, Check,
 } from 'lucide-react'
 import { AddPostButton } from '@/components/competitors/add-post-button'
-import { deleteCompetitor, deletePost, updateCompetitorNotes, updateCompetitorUrl, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor } from '@/app/actions'
+import { deleteCompetitor, deletePost, updateCompetitorNotes, updateCompetitorUrl, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor, addIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
@@ -113,9 +113,10 @@ interface Props {
   orphanedHandles: string[]
   orphanedPostsByHandle: Record<string, Post[]>
   totalPosts: number
+  autoSaveIdeas?: boolean
 }
 
-export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts }: Props) {
+export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts, autoSaveIdeas = true }: Props) {
   const allPosts = groups.flatMap(g => g.posts)
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
@@ -146,7 +147,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
       <div className="space-y-4">
         {groups.map((group) => (
-          <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} />
+          <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} autoSaveIdeas={autoSaveIdeas} />
         ))}
 
         {orphanedHandles.map(handle => (
@@ -157,7 +158,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
             </div>
             <div className="space-y-2">
               {orphanedPostsByHandle[handle].map(post => (
-                <PostCard key={post.id} post={post} handle={handle} allTags={allTags} />
+                <PostCard key={post.id} post={post} handle={handle} allTags={allTags} autoSaveIdeas={autoSaveIdeas} />
               ))}
             </div>
           </div>
@@ -171,7 +172,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
 type PlatformFilter = 'all' | Platform
 
-function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorGroup; allCompetitors: Competitor[]; allTags: string[] }) {
+function CompetitorCard({ group, allCompetitors, allTags, autoSaveIdeas = true }: { group: CompetitorGroup; allCompetitors: Competitor[]; allTags: string[]; autoSaveIdeas?: boolean }) {
   const router = useRouter()
   const { competitors: comps, posts } = group
   const primaryComp = comps[0]
@@ -523,7 +524,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
           ) : (
             <div className="space-y-2">
               {sortedPosts.map(post => (
-                <PostCard key={post.id} post={post} handle={post.competitor_handle ?? primaryComp.handle} allTags={allTags} />
+                <PostCard key={post.id} post={post} handle={post.competitor_handle ?? primaryComp.handle} allTags={allTags} autoSaveIdeas={autoSaveIdeas} />
               ))}
             </div>
           )}
@@ -686,7 +687,7 @@ function postTitle(post: Post): string {
   return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
 }
 
-function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTags: string[] }) {
+function PostCard({ post, handle, allTags, autoSaveIdeas = true }: { post: Post; handle: string; allTags: string[]; autoSaveIdeas?: boolean }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -713,6 +714,9 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
   const [ideas, setIdeas] = useState<{ idea: string; hook_idea: string; caption: string; difficulty: string; video_type: string }[] | null>(null)
   const [ideasLoading, setIdeasLoading] = useState(false)
   const [ideasError, setIdeasError] = useState<string | null>(null)
+  const [ideasAutoSaved, setIdeasAutoSaved] = useState(false)
+  const [savedIdeaIndexes, setSavedIdeaIndexes] = useState<Set<number>>(new Set())
+  const [savingIdeaIndex, setSavingIdeaIndex] = useState<number | null>(null)
 
   const [analysisOpen, setAnalysisOpen] = useState(false)
   const [analysis, setAnalysis] = useState<string | null>(null)
@@ -737,11 +741,16 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           views: post.views,
           likes: post.likes,
           url: post.url,
+          autoSave: autoSaveIdeas,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to generate ideas')
       setIdeas(data.ideas)
+      setIdeasAutoSaved(data.saved === true)
+      if (data.saved) {
+        setSavedIdeaIndexes(new Set(data.ideas.map((_: unknown, i: number) => i)))
+      }
     } catch (err) {
       setIdeasError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -1045,33 +1054,76 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
           )}
           {ideas && (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {ideas.map((idea, i) => (
-                <div key={i} className="p-4 rounded-xl bg-[#1a1a2e] border border-white/6 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground">{idea.idea}</p>
-                    {idea.difficulty && (
-                      <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        idea.difficulty === 'easy' ? 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400'
-                          : idea.difficulty === 'hard' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-                          : 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400'
-                      }`}>
-                        {idea.difficulty}
+              {ideas.map((idea, i) => {
+                const isSaved = savedIdeaIndexes.has(i)
+                const isSaving = savingIdeaIndex === i
+
+                async function handleSaveIdea() {
+                  setSavingIdeaIndex(i)
+                  await addIdea(idea.idea, `competitor: @${handle}`, {
+                    hook_idea: idea.hook_idea || undefined,
+                    caption: idea.caption || undefined,
+                    difficulty: (['easy', 'medium', 'hard'].includes(idea.difficulty) ? idea.difficulty : undefined) as 'easy' | 'medium' | 'hard' | undefined,
+                    video_type: idea.video_type || undefined,
+                    inspiration_url: post.url || undefined,
+                  })
+                  setSavedIdeaIndexes(prev => new Set(prev).add(i))
+                  setSavingIdeaIndex(null)
+                }
+
+                return (
+                  <div key={i} className="p-4 rounded-xl bg-[#1a1a2e] border border-white/6 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium text-foreground">{idea.idea}</p>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {idea.difficulty && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            idea.difficulty === 'easy' ? 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400'
+                              : idea.difficulty === 'hard' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
+                              : 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400'
+                          }`}>
+                            {idea.difficulty}
+                          </span>
+                        )}
+                        {!isSaved && (
+                          <button
+                            onClick={handleSaveIdea}
+                            disabled={isSaving}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 transition-all disabled:opacity-50"
+                          >
+                            {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Bookmark size={10} />}
+                            Save
+                          </button>
+                        )}
+                        {isSaved && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400">
+                            <Check size={10} />
+                            Saved
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {idea.hook_idea && (
+                      <p className="text-xs italic text-muted-foreground">&ldquo;{idea.hook_idea}&rdquo;</p>
+                    )}
+                    {idea.video_type && (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                        {idea.video_type}
                       </span>
                     )}
                   </div>
-                  {idea.hook_idea && (
-                    <p className="text-xs italic text-muted-foreground">&ldquo;{idea.hook_idea}&rdquo;</p>
-                  )}
-                  {idea.video_type && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                      {idea.video_type}
-                    </span>
-                  )}
-                </div>
-              ))}
-              <p className="text-[10px] text-muted-foreground text-center pt-2">
-                ✓ These ideas have been saved to your Ideas board
-              </p>
+                )
+              })}
+              {ideasAutoSaved && (
+                <p className="text-[10px] text-muted-foreground text-center pt-2">
+                  All ideas auto-saved to your Ideas board
+                </p>
+              )}
+              {!ideasAutoSaved && (
+                <p className="text-[10px] text-muted-foreground text-center pt-2">
+                  Save individual ideas to your Ideas board using the Save button
+                </p>
+              )}
             </div>
           )}
         </DialogContent>

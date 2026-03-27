@@ -47,6 +47,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
     youtube: socialAccounts.find(a => a.platform === 'youtube')?.username ?? '',
   })
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
+  const [autoSaveIdeas, setAutoSaveIdeas] = useState(profile?.auto_save_competitor_ideas ?? true)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +77,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
       platforms,
       posting_target: postingTarget,
       auto_sync_own_profile: autoSync,
+      auto_save_competitor_ideas: autoSaveIdeas,
     })
     if (profileResult?.error) {
       setError(profileResult.error)
@@ -255,6 +257,24 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
             className={`relative w-9 h-5 rounded-full transition-colors shrink-0 mt-3 ${autoSync ? 'bg-purple-600' : 'bg-muted border border-border'}`}
           >
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${autoSync ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* AI Preferences */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <p className="text-sm font-bold text-foreground">AI Preferences</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-foreground">Auto-save competitor ideas</p>
+            <p className="text-xs text-muted-foreground">Automatically save generated ideas to your Ideas board</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAutoSaveIdeas(!autoSaveIdeas)}
+            className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${autoSaveIdeas ? 'bg-purple-600' : 'bg-muted border border-border'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${autoSaveIdeas ? 'translate-x-4' : ''}`} />
           </button>
         </div>
       </div>

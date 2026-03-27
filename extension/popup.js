@@ -564,7 +564,7 @@ function render() {
               ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Sort'}
             </button>
           </div>
-          ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${state.errors.sort}</div>` : ''}
+          ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
           ${sortedPosts.length > 0 ? `
             <div class="sort-status">
               Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
@@ -622,7 +622,7 @@ function render() {
         <div style="display:flex;flex-direction:column;gap:8px">
           <input id="email" type="email" placeholder="Email" />
           <input id="password" type="password" placeholder="Password" />
-          ${state.errors.login ? `<div class="error-msg">${state.errors.login}</div>` : ''}
+          ${state.errors.login ? `<div class="error-msg">${escHtml(state.errors.login)}</div>` : ''}
           <button class="btn btn-primary" id="login-btn" ${state.saving === 'login' ? 'disabled' : ''}>
             ${state.saving === 'login' ? '<span class="spinner"></span>' : 'Sign in'}
           </button>
@@ -798,14 +798,14 @@ function render() {
       ? sortedPosts.slice(0, sortCount).map((post, i) => `
           <div class="sorted-item" title="${escHtml(post.href)}">
             <span class="sorted-rank">${i + 1}</span>
-            ${post.thumb ? `<img class="sorted-thumb" src="${post.thumb}" />` : `<div class="sorted-thumb"></div>`}
+            ${post.thumb ? `<img class="sorted-thumb" src="${escHtml(post.thumb)}" />` : `<div class="sorted-thumb"></div>`}
             <div class="sorted-metrics">
               <div class="sorted-metric-row">
                 ${post.views != null ? `<span class="${sortBy === 'views' ? 'primary' : 'val'}">👁 ${fmt(post.views)}</span>` : ''}
                 ${post.likes != null ? `<span class="${sortBy === 'likes' ? 'primary' : 'val'}">❤️ ${fmt(post.likes)}</span>` : ''}
                 ${post.comments != null ? `<span class="${sortBy === 'comments' ? 'primary' : 'val'}">💬 ${fmt(post.comments)}</span>` : ''}
               </div>
-              <div class="sorted-url">${post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, '')}</div>
+              <div class="sorted-url">${escHtml(post.href.replace(/https?:\/\/(www\.)?(instagram|tiktok)\.com/, ''))}</div>
             </div>
             <div class="sorted-actions">
               <button class="btn-open" data-url="${escHtml(post.href)}">Open</button>
@@ -838,7 +838,7 @@ function render() {
             ${state.saving === 'syncing-videos' ? '<span class="spinner"></span> Syncing...' : '🔄 Sync My Videos'}
           </button>
           ${state.messages.sync ? `<div class="success-msg">${state.messages.sync}</div>` : ''}
-          ${state.errors.sync ? `<div class="error-msg">${state.errors.sync}</div>` : ''}
+          ${state.errors.sync ? `<div class="error-msg">${escHtml(state.errors.sync)}</div>` : ''}
         </div>
       ` : ''}
 
@@ -848,7 +848,7 @@ function render() {
             ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : mc ? `Also track on ${p.platform}` : `Track @${p.handle} as Competitor`}
           </button>
           ${state.messages.addCompetitor ? `<div class="success-msg">${state.messages.addCompetitor}</div>` : ''}
-          ${state.errors.addCompetitor ? `<div class="error-msg">${state.errors.addCompetitor}</div>` : ''}
+          ${state.errors.addCompetitor ? `<div class="error-msg">${escHtml(state.errors.addCompetitor)}</div>` : ''}
         </div>
       ` : ''}
 
@@ -871,7 +871,7 @@ function render() {
           </button>
         </div>
 
-        ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${state.errors.sort}</div>` : ''}
+        ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
 
         ${sortedPosts.length > 0 ? `
           <div class="sort-status">
@@ -993,7 +993,7 @@ function render() {
           </div>
         ` : ''}
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Inspo</a></div>` : ''}
-        ${state.errors.inspiration ? `<div class="error-msg">${state.errors.inspiration}</div>` : ''}
+        ${state.errors.inspiration ? `<div class="error-msg">${escHtml(state.errors.inspiration)}</div>` : ''}
 
         <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
@@ -1043,17 +1043,17 @@ function render() {
           </div>
         ` : ''}
         ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
-        ${state.errors.createInspo ? `<div class="error-msg">${state.errors.createInspo}</div>` : ''}
+        ${state.errors.createInspo ? `<div class="error-msg">${escHtml(state.errors.createInspo)}</div>` : ''}
 
         <button class="btn btn-secondary" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Generate Video Idea'}
         </button>
-        ${state.errors.ideas ? `<div class="error-msg">${state.errors.ideas}</div>` : ''}
+        ${state.errors.ideas ? `<div class="error-msg">${escHtml(state.errors.ideas)}</div>` : ''}
 
         <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
           ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}
         </button>
-        ${state.errors.analyze ? `<div class="error-msg">${state.errors.analyze}</div>` : ''}
+        ${state.errors.analyze ? `<div class="error-msg">${escHtml(state.errors.analyze)}</div>` : ''}
 
       </div>
 
@@ -1063,7 +1063,7 @@ function render() {
           <div class="analysis-text">${state.analysis.split('\n').map(line => {
             const l = line.trim()
             if (!l) return ''
-            return `<div class="analysis-bullet">${l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`
+            return `<div class="analysis-bullet">${escHtml(l).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`
           }).join('')}</div>
         </div>
       ` : ''}

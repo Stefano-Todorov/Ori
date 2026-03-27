@@ -37,7 +37,7 @@
     });
     if (added > 0) {
       console.log('[Orianna Bridge] Captured ' + added + ' new items (total: ' + capturedItems.length + ')');
-      window.postMessage({ type: 'ORIANNA_TT_DATA', items: capturedItems }, '*');
+      window.postMessage({ type: 'ORIANNA_TT_DATA', items: capturedItems }, window.location.origin);
     }
   }
 
@@ -241,12 +241,13 @@
 
   // ── Listen for requests from content.js ──
   window.addEventListener('message', function(e) {
+    if (e.origin !== window.location.origin) return;
     if (e.data && e.data.type === 'ORIANNA_TT_REQUEST') {
       console.log('[Orianna Bridge] Request received, have ' + capturedItems.length + ' items');
       // Re-scan SSR and script tags in case they weren't ready earlier
       tryParseSSR();
       if (capturedItems.length === 0) scanScriptTags();
-      window.postMessage({ type: 'ORIANNA_TT_DATA', items: capturedItems }, '*');
+      window.postMessage({ type: 'ORIANNA_TT_DATA', items: capturedItems }, window.location.origin);
     }
   });
 

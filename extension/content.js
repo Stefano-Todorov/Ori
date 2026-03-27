@@ -1299,6 +1299,7 @@ let ttMetricsCache = new Map() // videoId → { views, likes, comments, shares, 
 
 // Listen for data from tiktok-bridge.js (runs in MAIN world, can access page JS)
 window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin) return
   if (e.data?.type === 'ORIANNA_TT_DATA' && Array.isArray(e.data.items)) {
     for (const item of e.data.items) {
       if (item.id) {
@@ -1327,7 +1328,7 @@ async function fetchTikTokMetrics() {
 
   // Request fresh data from tiktok-bridge.js
   console.log('[Orianna] TikTok: requesting data from bridge...')
-  window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, '*')
+  window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, window.location.origin)
 
   // Wait up to 5s for bridge response, re-request at 2s if still empty
   await new Promise((resolve) => {
@@ -1341,7 +1342,7 @@ async function fetchTikTokMetrics() {
       if (ttMetricsCache.size === 0 && !reRequested) {
         reRequested = true
         console.log('[Orianna] TikTok: re-requesting from bridge...')
-        window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, '*')
+        window.postMessage({ type: 'ORIANNA_TT_REQUEST' }, window.location.origin)
       }
     }, 2000)
     setTimeout(() => { clearInterval(interval); resolve() }, 5000)

@@ -28,6 +28,7 @@ export interface CoachContext {
   competitors?: { handle: string; platform: string; avg_views: number | null }[]
   scripts?: { topic: string; status: string; hook: string; difficulty: string | null }[]
   ideas?: { idea: string; status: string; difficulty: string | null }[]
+  inspirationPosts?: { caption: string | null; views: number; likes: number; shares: number; saves: number; platform: string; competitor_handle: string | null }[]
   performanceSummary?: string | null
 }
 
@@ -108,6 +109,15 @@ CONTENT PIPELINE:
     return ''
   }).filter(Boolean).join('\n')
 
+  let inspirationSection = ''
+  if (ctx.inspirationPosts && ctx.inspirationPosts.length > 0) {
+    inspirationSection = `
+
+SAVED INSPIRATION (videos the user saved for reference — these are NOT the user's own content):
+${ctx.inspirationPosts.slice(0, 20).map(p => `- [${p.platform}]${p.competitor_handle ? ` @${p.competitor_handle}` : ''}: "${p.caption?.slice(0, 80) ?? 'no caption'}" — ${p.views.toLocaleString()} views, ${p.likes.toLocaleString()} likes`).join('\n')}
+Use these to understand what content the user finds inspiring and wants to learn from. Reference them when relevant, but never confuse them with the user's own posts.`
+  }
+
   let performanceSection = ''
   if (ctx.performanceSummary) {
     performanceSection = `
@@ -123,7 +133,7 @@ USER PROFILE:
 - Goals: ${ctx.goals}
 - Active platforms: ${ctx.platforms.join(', ')}
 - Posting target: ${ctx.postingTarget} posts per week
-${analyticsSection}${performanceSection}${competitorSection}${pipelineSection}
+${analyticsSection}${performanceSection}${competitorSection}${inspirationSection}${pipelineSection}
 
 YOUR EXPERTISE:
 ${hookSummary}

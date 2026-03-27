@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { anthropic, MODEL } from '@/lib/claude'
+import { getCorsHeaders } from '@/lib/extension-auth'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
-export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json(null, { headers: getCorsHeaders(req) })
 }
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getCorsHeaders(req) })
   }
 
   const token = authHeader.slice(7)
@@ -22,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
+    return NextResponse.json({ error: 'Invalid token' }, { status: 401, headers: getCorsHeaders(req) })
   }
 
   const { imageBase64, mediaType } = await req.json()
@@ -80,13 +76,13 @@ Return ONLY a JSON object with these exact keys, no other text:
   })
 
   const text = message.content[0]
-  if (text.type !== 'text') return NextResponse.json({ error: 'AI error' }, { status: 500, headers: corsHeaders })
+  if (text.type !== 'text') return NextResponse.json({ error: 'AI error' }, { status: 500, headers: getCorsHeaders(req) })
 
   try {
     const match = text.text.match(/\{[\s\S]*\}/)
     const data = JSON.parse(match ? match[0] : text.text)
-    return NextResponse.json(data, { headers: corsHeaders })
+    return NextResponse.json(data, { headers: getCorsHeaders(req) })
   } catch {
-    return NextResponse.json({ error: 'Could not parse response' }, { status: 500, headers: corsHeaders })
+    return NextResponse.json({ error: 'Could not parse response' }, { status: 500, headers: getCorsHeaders(req) })
   }
 }

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/service'
-import { TIERS, type TierSlug } from '@/lib/tiers'
+import { TIERS, TIER_LIST, type TierSlug } from '@/lib/tiers'
+
+const VALID_PRICE_IDS = new Set(
+  TIER_LIST.flatMap(t => [t.stripePriceId, t.stripePriceYearlyId]).filter(Boolean) as string[]
+)
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -25,6 +29,10 @@ export async function POST(req: NextRequest) {
 
   if (!priceId) {
     return NextResponse.json({ error: 'Missing priceId — check STRIPE_PRICE_* env vars are set' }, { status: 400 })
+  }
+
+  if (!VALID_PRICE_IDS.has(priceId)) {
+    return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
   }
 
   // Check if user already has a Stripe customer ID

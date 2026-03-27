@@ -4,14 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { getCorsHeaders } from '@/lib/extension-auth'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
-export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json(null, { headers: getCorsHeaders(req) })
 }
 
 async function getUser(request: NextRequest) {
@@ -31,7 +27,7 @@ async function getUser(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = await getUser(request)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getCorsHeaders(request) })
   }
   const { user, supabase } = auth
 
@@ -44,11 +40,11 @@ export async function POST(request: NextRequest) {
         ? 'AI idea generation from competitors is not available on your current plan. Upgrade to Creator or above.'
         : `You've used all ${usage.limit} competitor idea generations this month. Upgrade for more.`,
       usage,
-    }, { status: 429, headers: corsHeaders })
+    }, { status: 429, headers: getCorsHeaders(request) })
   }
 
   const body = await request.json()
-  const { postId, handle, platform, caption, hookText, views, likes, shares, saves, hashtags, duration, count: requestedCount, imageBase64 } = body
+  const { postId, handle, platform, caption, hookText, views, likes, shares, saves, hashtags, duration, count: requestedCount, imageBase64, autoSave } = body
   const count = Math.min(Math.max(requestedCount ?? 3, 1), 5)
 
   const { data: profile } = await supabase
@@ -129,7 +125,7 @@ Return ONLY the JSON array, no other text.`
 
   const content = message.content[0]
   if (content.type !== 'text') {
-    return NextResponse.json({ error: 'AI error' }, { status: 500, headers: corsHeaders })
+    return NextResponse.json({ error: 'AI error' }, { status: 500, headers: getCorsHeaders(request) })
   }
 
   let ideas: {
@@ -144,29 +140,33 @@ Return ONLY the JSON array, no other text.`
     const match = content.text.match(/\[[\s\S]*\]/)
     ideas = JSON.parse(match ? match[0] : content.text)
   } catch {
-    return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500, headers: corsHeaders })
+    return NextResponse.json({ error: 'Failed to parse ideas' }, { status: 500, headers: getCorsHeaders(request) })
   }
 
-  // Save all ideas to content_ideas
-  const inserts = ideas.map(idea => ({
-    user_id: user.id,
-    idea: idea.idea,
-    source: `competitor: @${handle}`,
-    hook_idea: idea.hook_idea || null,
-    caption: idea.caption || null,
-    difficulty: (['easy', 'medium', 'hard'].includes(idea.difficulty) ? idea.difficulty : null) as 'easy' | 'medium' | 'hard' | null,
-    video_type: idea.video_type || null,
-    inspiration_url: body.url || null,
-    status: 'new' as const,
-  }))
+  // Only auto-save ideas if autoSave flag is true
+  let saved = false
+  if (autoSave !== false) {
+    const inserts = ideas.map(idea => ({
+      user_id: user.id,
+      idea: idea.idea,
+      source: `competitor: @${handle}`,
+      hook_idea: idea.hook_idea || null,
+      caption: idea.caption || null,
+      difficulty: (['easy', 'medium', 'hard'].includes(idea.difficulty) ? idea.difficulty : null) as 'easy' | 'medium' | 'hard' | null,
+      video_type: idea.video_type || null,
+      inspiration_url: body.url || null,
+      status: 'new' as const,
+    }))
 
-  const { error } = await supabase.from('content_ideas').insert(inserts)
-  if (error) {
-    console.error('[competitors/ideas] DB error:', error.message)
-    return NextResponse.json({ error: 'Failed to save ideas' }, { status: 500, headers: corsHeaders })
+    const { error } = await supabase.from('content_ideas').insert(inserts)
+    if (error) {
+      console.error('[competitors/ideas] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to save ideas' }, { status: 500, headers: getCorsHeaders(request) })
+    }
+    saved = true
   }
 
   await incrementUsage(user.id, 'competitor_ideas')
 
-  return NextResponse.json({ count: ideas.length, ideas }, { headers: corsHeaders })
+  return NextResponse.json({ count: ideas.length, ideas, saved }, { headers: getCorsHeaders(request) })
 }

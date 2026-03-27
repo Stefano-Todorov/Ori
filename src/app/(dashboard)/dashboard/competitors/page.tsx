@@ -9,7 +9,7 @@ export default async function CompetitorsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: competitors }, { data: competitorPosts }] = await Promise.all([
+  const [{ data: competitors }, { data: competitorPosts }, { data: profile }] = await Promise.all([
     supabase
       .from('competitors')
       .select('*')
@@ -21,6 +21,11 @@ export default async function CompetitorsPage() {
       .eq('user_id', user.id)
       .eq('is_competitor', true)
       .order('views', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('auto_save_competitor_ideas')
+      .eq('user_id', user.id)
+      .single(),
   ])
 
   const allCompetitors: Competitor[] = competitors ?? []
@@ -78,6 +83,7 @@ export default async function CompetitorsPage() {
         orphanedHandles={orphanedHandles}
         orphanedPostsByHandle={orphanedPostsByHandle}
         totalPosts={totalPosts}
+        autoSaveIdeas={profile?.auto_save_competitor_ideas ?? true}
       />
     </div>
   )

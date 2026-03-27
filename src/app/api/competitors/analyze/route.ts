@@ -4,14 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
+import { getCorsHeaders } from '@/lib/extension-auth'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-}
-
-export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json(null, { headers: getCorsHeaders(req) })
 }
 
 async function getUser(request: NextRequest) {
@@ -31,7 +27,7 @@ async function getUser(request: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await getUser(req)
   if (!auth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: getCorsHeaders(req) })
   }
   const { user, supabase } = auth
 
@@ -44,7 +40,7 @@ export async function POST(req: NextRequest) {
         ? 'Post analysis is not available on your current plan. Upgrade to Creator or above.'
         : `You've used all ${usage.limit} post analyses this month. Upgrade for more.`,
       usage,
-    }, { status: 429, headers: corsHeaders })
+    }, { status: 429, headers: getCorsHeaders(req) })
   }
 
   const body = await req.json()
@@ -136,10 +132,10 @@ Format: Return ONLY the bullet points as plain text, one per line, starting with
 
   const content = message.content[0]
   if (content.type !== 'text') {
-    return NextResponse.json({ error: 'AI error' }, { status: 500, headers: corsHeaders })
+    return NextResponse.json({ error: 'AI error' }, { status: 500, headers: getCorsHeaders(req) })
   }
 
   await incrementUsage(user.id, 'competitor_analyze')
 
-  return NextResponse.json({ analysis: content.text.trim() }, { headers: corsHeaders })
+  return NextResponse.json({ analysis: content.text.trim() }, { headers: getCorsHeaders(req) })
 }
