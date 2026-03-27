@@ -1561,16 +1561,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
-  // Helper: convert image URL to compressed base64 thumbnail (runs on page, has CDN access)
+  // Helper: convert image URL to tiny compressed base64 thumbnail (~3KB each)
   async function imgUrlToBase64(url) {
     if (!url) return null
     try {
       const res = await fetch(url)
       if (!res.ok) return null
       const blob = await res.blob()
-      // Resize to small thumbnail using canvas (saves bandwidth)
       const bmp = await createImageBitmap(blob)
-      const MAX = 200
+      const MAX = 120
       const scale = Math.min(MAX / bmp.width, MAX / bmp.height, 1)
       const w = Math.round(bmp.width * scale)
       const h = Math.round(bmp.height * scale)
@@ -1578,7 +1577,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const ctx = canvas.getContext('2d')
       ctx.drawImage(bmp, 0, 0, w, h)
       bmp.close()
-      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.7 })
+      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.5 })
       const buf = await outBlob.arrayBuffer()
       const bytes = new Uint8Array(buf)
       let binary = ''
@@ -1762,7 +1761,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      sendResponse({ platform, handle, follower_count: followerCount, posts })
+      // Convert thumbnails to tiny base64 for permanent storage (~3KB each, ~300KB total for 100 posts)
+      const postsWithThumbs = await Promise.all(posts.map(async (p) => {
+        if (!p.thumbnail) return p
+        const b64 = await imgUrlToBase64(p.thumbnail)
+        return b64 ? { ...p, thumbnail_base64: b64 } : p
+      }))
+
+      sendResponse({ platform, handle, follower_count: followerCount, posts: postsWithThumbs })
     })()
     return true
   }

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
+import { createServiceClient } from '@/lib/supabase/service'
 import { checkFeature } from '@/lib/usage'
 import { z } from 'zod'
 
@@ -15,6 +16,7 @@ const PostSchema = z.object({
   hashtags: z.array(z.string()).default([]),
   posted_at: z.string().nullish(),
   thumbnail: z.string().nullish(),
+  thumbnail_base64: z.string().nullish(),
   duration_seconds: z.number().nullish(),
 })
 
@@ -153,6 +155,35 @@ export async function POST(request: NextRequest) {
     }
 
     synced = postRecords.length
+
+    // Upload base64 thumbnails to Supabase Storage for permanent URLs
+    const serviceClient = createServiceClient()
+    const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    const postsWithB64 = rawPosts.filter(p => {
+      if (!p.thumbnail_base64 || !p.url) return false
+      const existing = existingMap.get(normalizeUrl(p.url!))
+      // Skip if already has a Supabase Storage URL
+      return !existing?.thumbnail_url?.includes(supabaseHost)
+    })
+    if (postsWithB64.length > 0) {
+      await Promise.all(postsWithB64.map(async (post) => {
+        try {
+          const buffer = Buffer.from(post.thumbnail_base64!, 'base64')
+          const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+          const { error: uploadError } = await serviceClient.storage
+            .from('thumbnails')
+            .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
+          if (!uploadError) {
+            const { data: publicUrl } = serviceClient.storage.from('thumbnails').getPublicUrl(path)
+            await supabase
+              .from('posts')
+              .update({ thumbnail_url: publicUrl.publicUrl })
+              .eq('user_id', user.id)
+              .eq('url', normalizeUrl(post.url!))
+          }
+        } catch {}
+      }))
+    }
   }
 
   // Follower snapshot (1 per platform per day, handled by unique constraint)
