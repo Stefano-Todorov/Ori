@@ -1679,18 +1679,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             // Try API/cache thumb first, fall back to DOM img
             let thumb = metrics?.thumb ?? cached?.thumb ?? null
             if (!thumb) {
-              const container = link.closest('div') ?? link
-              const imgs = container.querySelectorAll('img')
-              for (const img of imgs) {
-                const src = img.src || img.getAttribute('data-src') || ''
-                if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
-              }
-              // Also try the link itself if it contains an img
-              if (!thumb) {
-                const innerImg = link.querySelector('img')
-                if (innerImg) {
-                  const src = innerImg.src || ''
-                  if (src && !src.startsWith('data:') && src.length > 50) thumb = src
+              // The <a> link is an overlay on Instagram's grid — the image is a sibling
+              // or in a nearby parent. Walk up a few levels and search for <img>.
+              let searchEl = link
+              for (let up = 0; up < 5 && !thumb; up++) {
+                searchEl = searchEl.parentElement
+                if (!searchEl) break
+                const imgs = searchEl.querySelectorAll('img')
+                for (const img of imgs) {
+                  const src = img.src || img.srcset?.split(',')[0]?.trim()?.split(' ')[0] || ''
+                  if (src && !src.startsWith('data:') && src.length > 50) { thumb = src; break }
                 }
               }
             }
