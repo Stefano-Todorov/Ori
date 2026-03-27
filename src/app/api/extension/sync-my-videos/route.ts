@@ -171,7 +171,9 @@ export async function POST(request: NextRequest) {
       // Skip if already has a Supabase Storage URL
       return !existing?.thumbnail_url?.includes(supabaseHost)
     })
+    console.log(`[sync] Posts with b64: ${postsWithB64.length} out of ${rawPosts.length} total`)
     if (postsWithB64.length > 0) {
+      let uploaded = 0, failed = 0
       await Promise.all(postsWithB64.map(async (post) => {
         try {
           const buffer = Buffer.from(post.thumbnail_base64!, 'base64')
@@ -179,16 +181,24 @@ export async function POST(request: NextRequest) {
           const { error: uploadError } = await serviceClient.storage
             .from('thumbnails')
             .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
-          if (!uploadError) {
+          if (uploadError) {
+            console.error(`[sync] Storage upload error:`, uploadError.message)
+            failed++
+          } else {
             const { data: publicUrl } = serviceClient.storage.from('thumbnails').getPublicUrl(path)
             await supabase
               .from('posts')
               .update({ thumbnail_url: publicUrl.publicUrl })
               .eq('user_id', user.id)
               .eq('url', normalizeUrl(post.url!))
+            uploaded++
           }
-        } catch {}
+        } catch (err) {
+          console.error(`[sync] Thumb upload crash:`, err)
+          failed++
+        }
       }))
+      console.log(`[sync] Thumbnails: ${uploaded} uploaded, ${failed} failed`)
     }
   }
 

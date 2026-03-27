@@ -1585,7 +1585,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       let binary = ''
       for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
       return btoa(binary)
-    } catch { return null }
+    } catch (err) { console.log('[Orianna] base64 fail:', url?.slice(0, 80), err?.message); return null }
   }
 
   // ─── EXTRACT_OWN_PROFILE: scrape profile posts + follower count for sync ──
@@ -1763,12 +1763,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      // Convert thumbnails to tiny base64 for permanent storage (~3KB each, ~300KB total for 100 posts)
+      // Convert thumbnails to tiny base64 for permanent storage
       const postsWithThumbs = await Promise.all(posts.map(async (p) => {
         if (!p.thumbnail) return p
         const b64 = await imgUrlToBase64(p.thumbnail)
         return b64 ? { ...p, thumbnail_base64: b64 } : p
       }))
+
+      const thumbCount = postsWithThumbs.filter(p => p.thumbnail).length
+      const b64Count = postsWithThumbs.filter(p => p.thumbnail_base64).length
+      console.log(`[Orianna] Thumbnails: ${thumbCount} have URLs, ${b64Count} converted to base64, ${thumbCount - b64Count} FAILED`)
 
       sendResponse({ platform, handle, follower_count: followerCount, posts: postsWithThumbs })
     })()
