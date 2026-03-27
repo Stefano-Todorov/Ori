@@ -1563,29 +1563,34 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
-  // Helper: convert image URL to tiny compressed base64 thumbnail
-  async function imgUrlToBase64(url) {
-    if (!url) return null
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(5000) })
-      if (!res.ok) return null
-      const blob = await res.blob()
-      const bmp = await createImageBitmap(blob)
-      const MAX = 300
-      const scale = Math.min(MAX / bmp.width, MAX / bmp.height, 1)
-      const w = Math.round(bmp.width * scale)
-      const h = Math.round(bmp.height * scale)
-      const canvas = new OffscreenCanvas(w, h)
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(bmp, 0, 0, w, h)
-      bmp.close()
-      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.75 })
-      const buf = await outBlob.arrayBuffer()
-      const bytes = new Uint8Array(buf)
-      let binary = ''
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-      return btoa(binary)
-    } catch (err) { console.log('[Orianna] base64 fail:', url?.slice(0, 80), err?.message); return null }
+  // Helper: convert image URL to compressed base64 thumbnail with hard 4s timeout
+  function imgUrlToBase64(url) {
+    if (!url) return Promise.resolve(null)
+    return Promise.race([
+      (async () => {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(3000) })
+          if (!res.ok) return null
+          const blob = await res.blob()
+          const bmp = await createImageBitmap(blob)
+          const MAX = 300
+          const scale = Math.min(MAX / bmp.width, MAX / bmp.height, 1)
+          const w = Math.round(bmp.width * scale)
+          const h = Math.round(bmp.height * scale)
+          const canvas = new OffscreenCanvas(w, h)
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(bmp, 0, 0, w, h)
+          bmp.close()
+          const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.75 })
+          const buf = await outBlob.arrayBuffer()
+          const bytes = new Uint8Array(buf)
+          let binary = ''
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+          return btoa(binary)
+        } catch (err) { console.log('[Orianna] base64 fail:', url?.slice(0, 80), err?.message); return null }
+      })(),
+      new Promise(resolve => setTimeout(() => { console.log('[Orianna] base64 timeout:', url?.slice(0, 80)); resolve(null) }, 4000))
+    ])
   }
 
   // ─── EXTRACT_OWN_PROFILE: scrape profile posts + follower count for sync ──
