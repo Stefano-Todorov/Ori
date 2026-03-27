@@ -1768,10 +1768,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      const thumbCount = posts.filter(p => p.thumbnail).length
-      console.log(`[Orianna] ${posts.length} posts ready, ${thumbCount} have thumbnail URLs`)
-
-      sendResponse({ platform, handle, follower_count: followerCount, posts })
+      console.log('[Orianna] Reached sendResponse, posts:', posts.length)
+      try {
+        sendResponse({ platform, handle, follower_count: followerCount, posts })
+        console.log('[Orianna] sendResponse called successfully')
+      } catch (err) {
+        console.error('[Orianna] sendResponse FAILED:', err)
+      }
     })()
     return true
   }
