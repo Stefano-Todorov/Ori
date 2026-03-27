@@ -1211,7 +1211,7 @@ async function fetchInstagramMetrics(items) {
               // Also fetch reels — feed endpoint often excludes them
               try {
                 let reelsMaxId = null
-                for (let page = 0; page < 3; page++) {
+                for (let page = 0; page < 10; page++) {
                   const reelsUrl = `https://www.instagram.com/api/v1/clips/user/?target_user_id=${userId}&page_size=50${reelsMaxId ? `&max_id=${reelsMaxId}` : ''}`
                   const reelsRes = await fetchWithRetry(reelsUrl, {
                     method: 'POST',
@@ -1221,6 +1221,7 @@ async function fetchInstagramMetrics(items) {
                   if (!reelsRes) break
                   const reelsData = await reelsRes.json()
                   const reelItems = reelsData?.items ?? []
+                  console.log(`[Orianna] Reels page ${page}: ${reelItems.length} items, more=${reelsData?.paging_info?.more_available}`)
                   for (const ri of reelItems) {
                     const node = ri?.media
                     if (node) cacheMediaNode(node)
