@@ -26,13 +26,19 @@ const SyncSchema = z.object({
   posts: z.array(PostSchema),
 })
 
-/** Normalize a social media URL by stripping query params, hash, and trailing slashes */
+/** Normalize a social media URL — canonicalize IG /reel/ and /p/ to same format */
 function normalizeUrl(url: string): string {
   try {
     const u = new URL(url)
     u.search = ''
     u.hash = ''
-    return u.origin + u.pathname.replace(/\/+$/, '')
+    const pathname = u.pathname.replace(/\/+$/, '')
+    // Instagram: /reel/XXX and /p/XXX are the same post — canonicalize to /p/
+    const igMatch = pathname.match(/\/(reel|p)\/([^/?]+)/)
+    if (igMatch && u.hostname.includes('instagram.com')) {
+      return u.origin + '/p/' + igMatch[2]
+    }
+    return u.origin + pathname
   } catch {
     return url
   }

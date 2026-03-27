@@ -34,14 +34,19 @@ function fmt(n: number | null | undefined): string {
   return n.toLocaleString()
 }
 
-/** Normalize a social media URL by stripping query params and trailing slashes */
+/** Normalize a social media URL — canonicalize IG /reel/ and /p/ to same format */
 function normalizeUrl(url: string | null): string | null {
   if (!url) return null
   try {
     const u = new URL(url)
     u.search = ''
     u.hash = ''
-    return u.pathname.replace(/\/+$/, '')
+    const pathname = u.pathname.replace(/\/+$/, '')
+    const igMatch = pathname.match(/\/(reel|p)\/([^/?]+)/)
+    if (igMatch && u.hostname.includes('instagram.com')) {
+      return '/p/' + igMatch[2]
+    }
+    return pathname
   } catch {
     return url
   }

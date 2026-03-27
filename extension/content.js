@@ -1571,7 +1571,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (!res.ok) return null
       const blob = await res.blob()
       const bmp = await createImageBitmap(blob)
-      const MAX = 120
+      const MAX = 300
       const scale = Math.min(MAX / bmp.width, MAX / bmp.height, 1)
       const w = Math.round(bmp.width * scale)
       const h = Math.round(bmp.height * scale)
@@ -1579,7 +1579,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const ctx = canvas.getContext('2d')
       ctx.drawImage(bmp, 0, 0, w, h)
       bmp.close()
-      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.5 })
+      const outBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.75 })
       const buf = await outBlob.arrayBuffer()
       const bytes = new Uint8Array(buf)
       let binary = ''
@@ -1729,7 +1729,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             if (seenShortcodes.has(sc)) continue
             apiOnlyCount++
             posts.push({
-              url: `https://www.instagram.com/reel/${sc}/`,
+              url: `https://www.instagram.com/p/${sc}/`,
               caption: cached.caption || null,
               views: cached.views ?? 0,
               likes: cached.likes ?? 0,
@@ -1748,7 +1748,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await fetchInstagramMetrics([])
           for (const [sc, cached] of igMetricsCache) {
             posts.push({
-              url: `https://www.instagram.com/reel/${sc}/`,
+              url: `https://www.instagram.com/p/${sc}/`,
               caption: cached.caption || null,
               views: cached.views ?? 0,
               likes: cached.likes ?? 0,
