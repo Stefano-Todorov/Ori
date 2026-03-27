@@ -1711,6 +1711,45 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
+      // For Instagram posts missing data, try individual API fetches
+      if (platform === 'instagram') {
+        const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? ''
+        const igHeaders = { 'X-IG-App-ID': '936619743392459', 'X-CSRFToken': csrfToken }
+        const incomplete = posts
+          .map((p, i) => ({ p, i, sc: p.url?.match(/\/(reel|p)\/([^/?]+)/)?.[2] }))
+          .filter(({ p, sc }) => sc && (!p.posted_at || !p.thumbnail))
+
+        for (let i = 0; i < incomplete.length; i += 5) {
+          const batch = incomplete.slice(i, i + 5)
+          await Promise.all(batch.map(async ({ p, i: idx, sc }) => {
+            // Skip if already in cache (fetchInstagramMetrics already tried)
+            if (igMetricsCache.has(sc) && igMetricsCache.get(sc).posted_at) return
+            try {
+              const mediaId = shortcodeToMediaId(sc)
+              const res = await fetchWithRetry(
+                `https://www.instagram.com/api/v1/media/${mediaId}/info/`,
+                { headers: igHeaders },
+                0
+              )
+              if (!res) return
+              const data = await res.json()
+              const nodes = extractMediaNodes(data)
+              nodes.forEach(cacheMediaNode)
+              const cached = igMetricsCache.get(sc)
+              if (cached) {
+                if (!p.posted_at && cached.posted_at) posts[idx].posted_at = cached.posted_at
+                if (!p.thumbnail && cached.thumb) posts[idx].thumbnail = cached.thumb
+                if (!p.caption && cached.caption) posts[idx].caption = cached.caption
+                if (cached.views) posts[idx].views = cached.views
+                if (cached.likes) posts[idx].likes = cached.likes
+                if (cached.comments) posts[idx].comments = cached.comments
+              }
+            } catch {}
+          }))
+          if (i + 5 < incomplete.length) await new Promise(r => setTimeout(r, 300))
+        }
+      }
+
       // Convert thumbnail URLs to base64 while we're on the page (CDN blocks external fetches)
       const postsWithThumbs = await Promise.all(posts.map(async (p) => {
         if (!p.thumbnail) return p
