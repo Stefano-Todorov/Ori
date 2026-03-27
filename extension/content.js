@@ -1197,6 +1197,7 @@ async function fetchInstagramMetrics(items) {
                 if (!feedRes) break
                 const feedData = await feedRes.json()
                 const nodes = extractMediaNodes(feedData)
+                console.log(`[Orianna] Feed page ${page}: ${nodes.length} nodes, more_available=${feedData.more_available}, nextMaxId=${feedData.next_max_id ? 'yes' : 'no'}`)
                 nodes.forEach(cacheMediaNode)
                 nextMaxId = feedData.next_max_id
                 if (!feedData.more_available || !nextMaxId) break
@@ -1253,7 +1254,7 @@ async function fetchInstagramMetrics(items) {
   // Fallback: fetch individual post info for unmatched shortcodes
   // The info endpoint needs numeric media IDs, not shortcodes
   if (unmatched.length > 0) {
-    const toFetch = unmatched.slice(0, 10)
+    const toFetch = unmatched.slice(0, 30)
     console.log('[Orianna] Fetching', toFetch.length, 'individual posts...')
     // Batch in groups of 5 to avoid rate limits
     for (let i = 0; i < toFetch.length; i += 5) {
