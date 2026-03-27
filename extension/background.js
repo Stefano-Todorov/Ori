@@ -227,8 +227,20 @@ async function handleMessage(msg) {
     case 'SYNC_MY_VIDEOS': {
       const { platform, follower_count, posts } = msg
       if (!posts || posts.length === 0) return { synced: 0, new: 0, updated: 0, suggested_links: [] }
-      // thumbnail_base64 is already set by content script (runs on the page, has CDN access)
-      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts })
+      // Batch posts to avoid 413 payload too large (base64 thumbnails are big)
+      const BATCH_SIZE = 15
+      let totalSynced = 0, totalNew = 0, totalUpdated = 0
+      const allLinks = []
+      for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+        const batch = posts.slice(i, i + BATCH_SIZE)
+        const result = await apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts: batch })
+        if (result.error) return result
+        totalSynced += result.synced ?? 0
+        totalNew += result.new ?? 0
+        totalUpdated += result.updated ?? 0
+        if (result.suggested_links) allLinks.push(...result.suggested_links)
+      }
+      return { synced: totalSynced, new: totalNew, updated: totalUpdated, suggested_links: allLinks.slice(0, 10) }
     }
 
     case 'SYNC_TAGS': {
