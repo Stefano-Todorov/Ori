@@ -228,18 +228,9 @@ async function handleMessage(msg) {
       const { platform, follower_count, posts } = msg
       if (!posts || posts.length === 0) return { synced: 0, new: 0, updated: 0, suggested_links: [] }
       // Batch posts to avoid 413 payload too large (base64 thumbnails are big)
-      const BATCH_SIZE = 5
-      let totalSynced = 0, totalNew = 0, totalUpdated = 0
-      const allLinks = []
-      for (let i = 0; i < posts.length; i += BATCH_SIZE) {
-        const batch = posts.slice(i, i + BATCH_SIZE)
-        const result = await apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts: batch })
-        if (result.error) return result
-        totalSynced += result.synced ?? 0
-        totalNew += result.new ?? 0
-        totalUpdated += result.updated ?? 0
-        if (result.suggested_links) allLinks.push(...result.suggested_links)
-      }
+      // Strip base64 thumbnails to keep payload small — store CDN URLs directly
+      const cleanPosts = posts.map(({ thumbnail_base64, ...rest }) => rest)
+      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts: cleanPosts })
       return { synced: totalSynced, new: totalNew, updated: totalUpdated, suggested_links: allLinks.slice(0, 10) }
     }
 

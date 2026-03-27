@@ -1762,14 +1762,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      // Convert thumbnail URLs to base64 while we're on the page (CDN blocks external fetches)
-      const postsWithThumbs = await Promise.all(posts.map(async (p) => {
-        if (!p.thumbnail) return p
-        const b64 = await imgUrlToBase64(p.thumbnail)
-        return { ...p, thumbnail_base64: b64 }
-      }))
-
-      sendResponse({ platform, handle, follower_count: followerCount, posts: postsWithThumbs })
+      sendResponse({ platform, handle, follower_count: followerCount, posts })
     })()
     return true
   }
