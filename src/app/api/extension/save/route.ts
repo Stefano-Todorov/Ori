@@ -57,8 +57,6 @@ export async function POST(req: NextRequest) {
         ? `https://instagram.com/${handle}`
         : platform === 'tiktok'
         ? `https://tiktok.com/@${handle}`
-        : platform === 'youtube'
-        ? `https://youtube.com/@${handle}`
         : null
 
       // Check if already tracked on a different platform — auto-link to same group
@@ -190,8 +188,6 @@ export async function POST(req: NextRequest) {
         ? `https://instagram.com/${handle}`
         : platform === 'tiktok'
         ? `https://tiktok.com/@${handle}`
-        : platform === 'youtube'
-        ? `https://youtube.com/@${handle}`
         : null
 
       // Auto-create new competitor

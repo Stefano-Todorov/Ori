@@ -155,16 +155,6 @@ async function fetchThumbnailForUrl(url: string): Promise<string | null> {
       }
     } catch { /* fall through */ }
   }
-  // Try YouTube oEmbed
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    try {
-      const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, { signal: AbortSignal.timeout(5000) })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.thumbnail_url) return data.thumbnail_url
-      }
-    } catch { /* fall through */ }
-  }
   // Fallback: fetch page and extract og:image
   try {
     const res = await fetch(url, {

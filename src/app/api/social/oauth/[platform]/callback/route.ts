@@ -38,9 +38,7 @@ export async function GET(
   try {
     let accountData: Record<string, unknown>
 
-    if (platform === 'youtube') {
-      accountData = await handleYouTube(code)
-    } else if (platform === 'tiktok') {
+    if (platform === 'tiktok') {
       accountData = await handleTikTok(code)
     } else if (platform === 'instagram') {
       accountData = await handleInstagram(code)
@@ -57,43 +55,6 @@ export async function GET(
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'unknown_error'
     return NextResponse.redirect(new URL(`/dashboard/settings?error=${encodeURIComponent(msg)}`, BASE_URL))
-  }
-}
-
-async function handleYouTube(code: string) {
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${BASE_URL}/api/social/oauth/youtube/callback`,
-      grant_type: 'authorization_code',
-      code,
-    }),
-  })
-  if (!tokenRes.ok) throw new Error(await tokenRes.text())
-  const tokens = await tokenRes.json()
-
-  // Get channel info
-  const channelRes = await fetch(
-    'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
-    { headers: { Authorization: `Bearer ${tokens.access_token}` } }
-  )
-  const channelData = await channelRes.json()
-  const channel = channelData.items?.[0]
-
-  return {
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token ?? null,
-    token_expires_at: tokens.expires_in
-      ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-      : null,
-    platform_user_id: channel?.id ?? null,
-    display_name: channel?.snippet?.title ?? null,
-    avatar_url: channel?.snippet?.thumbnails?.default?.url ?? null,
-    username: channel?.snippet?.customUrl ?? channel?.id ?? 'youtube',
-    scopes: ['youtube.upload', 'youtube.readonly'],
   }
 }
 

@@ -105,7 +105,6 @@ CONTENT PIPELINE:
     const key = p.toLowerCase()
     if (key === 'tiktok') return 'TikTok: Watch time > Shares > Comments > Saves > Likes. Ideal 15-30s. Raw/authentic aesthetic. Niche > broad for small creators.'
     if (key === 'instagram') return 'Instagram: Shares (Sends) are #1 signal > Saves > Replays > Comments. Ideal 15-30s. Slightly polished. 3-5 targeted hashtags. Caption strategy matters.'
-    if (key === 'youtube') return 'YouTube Shorts: CTR + Watch time are king. Ideal 30-60s. Educational content dominates. Series content drives subscribes. Keywords in title matter.'
     return ''
   }).filter(Boolean).join('\n')
 
@@ -126,7 +125,7 @@ ${ctx.performanceSummary}
 USE THESE PATTERNS: When generating scripts, hooks, or ideas, lean into the winning patterns above. Steer away from weak patterns. Reference specific pattern names when explaining your recommendations.`
   }
 
-  return `You are Orianna, an elite AI content coach and social media strategist. You specialize in short-form video content for TikTok, Instagram Reels, and YouTube Shorts. You have deep expertise in hook psychology, script frameworks, platform algorithms, and engagement mechanics.
+  return `You are Orianna, an elite AI content coach and social media strategist. You specialize in short-form video content for TikTok and Instagram Reels. You have deep expertise in hook psychology, script frameworks, platform algorithms, and engagement mechanics.
 
 USER PROFILE:
 - Niche: ${ctx.niche}${ctx.subNiche ? ` (specifically: ${ctx.subNiche})` : ''}

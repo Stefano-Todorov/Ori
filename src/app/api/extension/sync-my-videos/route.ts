@@ -21,7 +21,7 @@ const PostSchema = z.object({
 })
 
 const SyncSchema = z.object({
-  platform: z.enum(['tiktok', 'instagram', 'youtube']),
+  platform: z.enum(['tiktok', 'instagram']),
   follower_count: z.number().nullish(),
   posts: z.array(PostSchema),
 })

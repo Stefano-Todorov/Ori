@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { publishToYouTube } from '@/lib/social/publishers/youtube'
 import { publishToTikTok } from '@/lib/social/publishers/tiktok'
 import { publishToInstagram } from '@/lib/social/publishers/instagram'
 
@@ -48,16 +47,7 @@ export async function GET(req: NextRequest) {
 
       let platformPostId: string
 
-      if (post.platform === 'youtube') {
-        platformPostId = await publishToYouTube({
-          id: post.id,
-          user_id: post.user_id,
-          caption: post.caption,
-          hashtags: post.hashtags ?? [],
-          video_storage_path: post.video_storage_path,
-          scheduled_at: post.scheduled_at,
-        })
-      } else if (post.platform === 'tiktok') {
+      if (post.platform === 'tiktok') {
         platformPostId = await publishToTikTok({
           id: post.id,
           user_id: post.user_id,

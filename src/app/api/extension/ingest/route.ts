@@ -17,7 +17,7 @@ const PostSchema = z.object({
 })
 
 const IngestSchema = z.object({
-  platform: z.enum(['tiktok', 'instagram', 'youtube']),
+  platform: z.enum(['tiktok', 'instagram']),
   competitor_handle: z.string().optional(),
   is_trending: z.boolean().default(false),
   posts: z.array(PostSchema),
@@ -71,8 +71,6 @@ export async function POST(request: NextRequest) {
       ? `https://instagram.com/${cleanHandle}`
       : platform === 'tiktok'
       ? `https://tiktok.com/@${cleanHandle}`
-      : platform === 'youtube'
-      ? `https://youtube.com/@${cleanHandle}`
       : null
 
     await supabase.from('competitors').upsert({

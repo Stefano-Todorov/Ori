@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
           },
           {
             type: 'text',
-            text: `This is a screenshot of a social media post (TikTok, Instagram Reel, or YouTube Short).
+            text: `This is a screenshot of a social media post (TikTok or Instagram Reel).
 
 Extract the following information visible in the screenshot:
 - caption: the video caption or title text
@@ -54,7 +54,7 @@ Extract the following information visible in the screenshot:
 - likes: like count as a plain number
 - comments: comment count as a plain number
 - shares: share/repost count as a plain number (if visible)
-- platform: "tiktok", "instagram", or "youtube"
+- platform: "tiktok" or "instagram"
 
 If a value is not visible in the screenshot, use null.
 

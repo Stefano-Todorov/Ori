@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export interface ExtractedPost {
-  platform: 'youtube' | 'tiktok' | 'instagram' | null
+  platform: 'tiktok' | 'instagram' | null
   handle: string | null
   caption: string | null
   views: number | null
@@ -12,23 +12,9 @@ export interface ExtractedPost {
   thumbnail_url: string | null
 }
 
-function detectPlatform(url: string): 'youtube' | 'tiktok' | 'instagram' | null {
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
+function detectPlatform(url: string): 'tiktok' | 'instagram' | null {
   if (url.includes('tiktok.com')) return 'tiktok'
   if (url.includes('instagram.com')) return 'instagram'
-  return null
-}
-
-function extractYouTubeId(url: string): string | null {
-  const patterns = [
-    /[?&]v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /shorts\/([a-zA-Z0-9_-]{11})/,
-  ]
-  for (const p of patterns) {
-    const m = url.match(p)
-    if (m) return m[1]
-  }
   return null
 }
 
@@ -42,55 +28,6 @@ function extractInstagramHandle(url: string): string | null {
   if (m && !['p', 'reel', 'reels', 'stories', 'explore'].includes(m[1])) return m[1]
   // Try to get from reel/post URL structure
   return null
-}
-
-async function extractYouTube(url: string): Promise<ExtractedPost> {
-  const videoId = extractYouTubeId(url)
-
-  // Try YouTube Data API if key is available
-  const apiKey = process.env.YOUTUBE_API_KEY
-  if (videoId && apiKey) {
-    const res = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet,statistics&key=${apiKey}`
-    )
-    if (res.ok) {
-      const data = await res.json()
-      const item = data.items?.[0]
-      if (item) {
-        const handle = item.snippet?.channelTitle ?? null
-        return {
-          platform: 'youtube',
-          handle,
-          caption: item.snippet?.title ?? null,
-          views: item.statistics?.viewCount ? Number(item.statistics.viewCount) : null,
-          likes: item.statistics?.likeCount ? Number(item.statistics.likeCount) : null,
-          comments: item.statistics?.commentCount ? Number(item.statistics.commentCount) : null,
-          shares: null,
-          thumbnail_url: item.snippet?.thumbnails?.high?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
-        }
-      }
-    }
-  }
-
-  // Fallback: oEmbed (title only, no stats)
-  if (videoId) {
-    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`)
-    if (res.ok) {
-      const data = await res.json()
-      return {
-        platform: 'youtube',
-        handle: data.author_name ?? null,
-        caption: data.title ?? null,
-        views: null,
-        likes: null,
-        comments: null,
-        shares: null,
-        thumbnail_url: data.thumbnail_url ?? null,
-      }
-    }
-  }
-
-  return { platform: 'youtube', handle: null, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 }
 
 async function extractTikTok(url: string): Promise<ExtractedPost> {
@@ -164,7 +101,7 @@ function decodeHTMLEntities(text: string): string {
 function isAllowedSocialUrl(url: string): boolean {
   try {
     const hostname = new URL(url).hostname
-    const allowed = ['tiktok.com', 'instagram.com', 'youtube.com', 'youtu.be']
+    const allowed = ['tiktok.com', 'instagram.com']
     return allowed.some(d => hostname === d || hostname.endsWith('.' + d))
   } catch {
     return false
@@ -178,15 +115,14 @@ export async function GET(req: NextRequest) {
 
   const url = req.nextUrl.searchParams.get('url')
   if (!url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
-  if (!isAllowedSocialUrl(url)) return NextResponse.json({ error: 'URL must be from TikTok, Instagram, or YouTube' }, { status: 400 })
+  if (!isAllowedSocialUrl(url)) return NextResponse.json({ error: 'URL must be from TikTok or Instagram' }, { status: 400 })
 
   const platform = detectPlatform(url)
 
   try {
     let result: ExtractedPost
 
-    if (platform === 'youtube') result = await extractYouTube(url)
-    else if (platform === 'tiktok') result = await extractTikTok(url)
+    if (platform === 'tiktok') result = await extractTikTok(url)
     else if (platform === 'instagram') result = await extractInstagram(url)
     else result = { platform: null, handle: null, caption: null, views: null, likes: null, comments: null, shares: null, thumbnail_url: null }
 

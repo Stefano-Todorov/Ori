@@ -6,7 +6,6 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 const ALLOWED_DOWNLOAD_DOMAINS = [
   'tiktok.com', 'tiktokcdn.com', 'muscdn.com',
   'instagram.com', 'cdninstagram.com', 'fbcdn.net',
-  'youtube.com', 'youtu.be', 'ytimg.com', 'yt3.ggpht.com',
   'tikwm.com', 'tikcdn.io', 'snaptik.app', 'ssstik.io',
 ]
 
@@ -85,11 +84,6 @@ export async function GET(req: NextRequest) {
       } catch { /* fall through */ }
 
       return NextResponse.json({ error: 'TikTok download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
-    }
-
-    // YouTube: no server-side download possible
-    if (platform === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) {
-      return NextResponse.json({ error: 'YouTube downloads are not supported. Use the "View original" link instead.' }, { status: 400 })
     }
 
     // Instagram: use Apify Instagram scraper

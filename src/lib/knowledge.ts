@@ -37,7 +37,6 @@ export function loadPlatformKnowledge(platform: string): string {
   const sectionMap: Record<string, string> = {
     tiktok: '## TikTok',
     instagram: '## Instagram Reels',
-    youtube: '## YouTube Shorts',
   }
 
   const header = sectionMap[platformKey]

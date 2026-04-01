@@ -15,28 +15,6 @@ export async function getValidToken(userId: string, platform: Platform): Promise
     throw new Error(`No connected ${platform} account for user ${userId}`)
   }
 
-  // YouTube: refresh if expiring within 5 minutes
-  if (platform === 'youtube') {
-    const expiresAt = account.token_expires_at ? new Date(account.token_expires_at) : null
-    const needsRefresh = !expiresAt || expiresAt.getTime() - Date.now() < 5 * 60 * 1000
-
-    if (needsRefresh && account.refresh_token) {
-      const refreshed = await refreshYouTubeToken(account.refresh_token)
-      const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString()
-
-      await supabase
-        .from('social_accounts')
-        .update({
-          access_token: refreshed.access_token,
-          token_expires_at: newExpiresAt,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', account.id)
-
-      return refreshed.access_token
-    }
-  }
-
   // TikTok: always refresh before use (safe to do idempotently)
   if (platform === 'tiktok' && account.refresh_token) {
     const expiresAt = account.token_expires_at ? new Date(account.token_expires_at) : null
@@ -73,26 +51,6 @@ export async function getValidToken(userId: string, platform: Platform): Promise
   }
 
   return account.access_token
-}
-
-async function refreshYouTubeToken(refreshToken: string): Promise<{ access_token: string; expires_in: number }> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  })
-
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`YouTube token refresh failed: ${text}`)
-  }
-
-  return res.json()
 }
 
 async function refreshTikTokToken(refreshToken: string): Promise<{ access_token: string; refresh_token?: string; expires_in: number }> {

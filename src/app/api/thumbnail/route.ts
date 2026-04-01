@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 const ALLOWED_DOMAINS = [
   'tiktok.com', 'tiktokcdn.com',
   'instagram.com', 'cdninstagram.com', 'fbcdn.net',
-  'youtube.com', 'youtu.be', 'ytimg.com', 'yt3.ggpht.com',
   'pexels.com', 'unsplash.com',
 ]
 
@@ -43,8 +42,6 @@ async function fetchOEmbed(url: string): Promise<string | null> {
   } else if (url.includes('instagram.com')) {
     // Instagram oEmbed requires a token, fall back to og:image
     return null
-  } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
   }
 
   if (!oembedUrl) return null

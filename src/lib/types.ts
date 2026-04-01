@@ -1,4 +1,4 @@
-export type Platform = 'tiktok' | 'instagram' | 'youtube'
+export type Platform = 'tiktok' | 'instagram'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type PostStatus = 'draft' | 'used' | 'archived'
 export type ProductionStatus = 'new' | 'recording' | 'editing' | 'posted'

@@ -5,19 +5,6 @@ import crypto from 'crypto'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
-function buildYouTubeUrl(state: string) {
-  const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${BASE_URL}/api/social/oauth/youtube/callback`,
-    response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly',
-    access_type: 'offline',
-    prompt: 'consent',
-    state,
-  })
-  return `https://accounts.google.com/o/oauth2/v2/auth?${params}`
-}
-
 function buildTikTokUrl(state: string) {
   const params = new URLSearchParams({
     client_key: process.env.TIKTOK_CLIENT_KEY!,
@@ -54,9 +41,7 @@ export async function GET(
   cookieStore.set('oauth_state', state, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 })
 
   let authUrl: string
-  if (platform === 'youtube') {
-    authUrl = buildYouTubeUrl(state)
-  } else if (platform === 'tiktok') {
+  if (platform === 'tiktok') {
     authUrl = buildTikTokUrl(state)
   } else if (platform === 'instagram') {
     authUrl = buildInstagramUrl(state)
