@@ -138,24 +138,54 @@ if (issues === 0) {
 // ── 3. Patch notes ──────────────────────────────────────
 console.log(bold('Patch notes (changes since last extension update):\n'))
 
-// Find commits that touched extension/ since the last version tag or last ext:publish commit
+// Find commits that touched extension/ since the previous version
+// We look for the last commit where manifest.json had the OLD version string
 let patchNotes = ''
 try {
-  // Try to find last commit that bumped the extension version (i.e. previous ext:publish run)
-  const lastBumpCommit = execSync(
-    `git log --all --grep="extension" --format="%H" -1 -- extension/manifest.json`,
+  // Get all extension/ commits, skip ones from this script run (version bump only)
+  const allExtCommits = execSync(
+    `git log -50 --pretty=format:"%H %s" -- extension/`,
     { encoding: 'utf-8' }
-  ).trim()
+  ).trim().split('\n').filter(Boolean)
 
-  const sinceArg = lastBumpCommit ? `${lastBumpCommit}..HEAD` : '-20'
+  // Find the previous ext:publish boundary — a commit whose message contains the version pattern
+  // by checking manifest.json at each commit for the old version
+  let sinceArg = '-50'
+  const tagPrefix = `v${oldVersion}`
+
+  // Look for a git tag first
+  try {
+    execSync(`git rev-parse ${tagPrefix} 2>/dev/null`, { encoding: 'utf-8' })
+    sinceArg = `${tagPrefix}..HEAD`
+  } catch {
+    // No tag — find last commit that set the version to oldVersion in manifest
+    for (const line of allExtCommits) {
+      const hash = line.split(' ')[0]
+      try {
+        const manifestAtCommit = execSync(
+          `git show ${hash}:extension/manifest.json`,
+          { encoding: 'utf-8' }
+        )
+        const versionAtCommit = JSON.parse(manifestAtCommit).version
+        if (versionAtCommit !== newVersion && versionAtCommit === oldVersion) {
+          // This is the commit that set the old version — the publish boundary
+          sinceArg = `${hash}..HEAD`
+          break
+        }
+      } catch { /* skip */ }
+    }
+  }
+
   const log = execSync(
     `git log ${sinceArg} --pretty=format:"• %s" -- extension/`,
     { encoding: 'utf-8' }
   ).trim()
 
-  patchNotes = log || '(no extension commits found)'
+  // Filter out the version bump commit itself
+  patchNotes = log.split('\n')
+    .filter(l => l && !l.includes('Bump extension') && !l.includes('ext:publish'))
+    .join('\n') || '(no extension commits found)'
 } catch {
-  // Fallback: just show recent extension commits
   try {
     patchNotes = execSync(
       `git log -20 --pretty=format:"• %s" -- extension/`,
@@ -192,10 +222,22 @@ if (isWin) {
 const zipSize = (fs.statSync(ZIP_PATH).size / 1024).toFixed(1)
 console.log(green(`  extension.zip (${zipSize} KB)\n`))
 
+// ── 5. Git commit + tag ────────────────────────────────
+console.log(bold('Committing & tagging...\n'))
+try {
+  execSync('git add extension/manifest.json extension.zip', { stdio: 'pipe' })
+  execSync(`git commit -m "Bump extension to v${newVersion}"`, { stdio: 'pipe' })
+  execSync(`git tag v${newVersion}`, { stdio: 'pipe' })
+  execSync('git push && git push --tags', { stdio: 'pipe' })
+  console.log(green(`  Committed, tagged v${newVersion}, and pushed.\n`))
+} catch (e) {
+  console.log(yellow(`  Auto-commit skipped (${e.message.split('\n')[0]})\n`))
+}
+
 // ── Done ────────────────────────────────────────────────
 console.log(bold('Ready to upload!'))
 console.log(`  1. Go to https://chrome.google.com/webstore/devconsole`)
 console.log(`  2. Click Orianna → Package → Upload new package`)
 console.log(`  3. Upload ${bold('extension.zip')} from project root`)
-console.log(`  4. Paste the patch notes into "What's new" (optional)`)
+console.log(`  4. Paste the patch notes into "What's new"`)
 console.log(`  5. Submit for review\n`)
