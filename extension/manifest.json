@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Orianna — AI Content Coach for Creators",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Save inspo, track competitors, and generate video ideas while browsing TikTok and Instagram",
   "permissions": [
     "activeTab",
