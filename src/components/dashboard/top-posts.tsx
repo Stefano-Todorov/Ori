@@ -9,7 +9,6 @@ function formatNumber(n: number): string {
 const PLATFORM_PILL: Record<string, string> = {
   tiktok: 'bg-black/80 dark:bg-white/10 text-white',
   instagram: 'bg-pink-500/15 border-pink-500/30 text-pink-600 dark:text-pink-400',
-  youtube: 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400',
 }
 
 interface Props {

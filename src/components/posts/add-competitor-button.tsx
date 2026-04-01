@@ -28,7 +28,7 @@ export function AddCompetitorButton() {
 
     const result = await addCompetitor({
       handle: handle.trim(),
-      platform: platform as 'tiktok' | 'instagram' | 'youtube',
+      platform: platform as 'tiktok' | 'instagram',
       profile_url: profileUrl.trim() || undefined,
       notes: notes || undefined,
     })
@@ -70,7 +70,6 @@ export function AddCompetitorButton() {
                 <SelectContent>
                   <SelectItem value="tiktok">TikTok</SelectItem>
                   <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="youtube">YouTube</SelectItem>
                 </SelectContent>
               </Select>
             </div>

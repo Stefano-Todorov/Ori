@@ -39,7 +39,6 @@ function Thumbnail({ post }: { post: Post }) {
     const colors: Record<string, string> = {
       tiktok: 'bg-black/80 dark:bg-white/10 text-white',
       instagram: 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-500',
-      youtube: 'bg-red-500/15 text-red-500',
     }
     return (
       <div className={`w-14 h-18 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
@@ -655,7 +654,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${
                   post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
                     : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
-                    : post.platform === 'youtube' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
                     : 'bg-muted text-muted-foreground border-border'
                 }`}>
                   {post.platform}

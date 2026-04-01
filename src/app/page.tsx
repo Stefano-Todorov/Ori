@@ -67,7 +67,7 @@ const faqs = [
   },
   {
     q: 'What platforms does it support?',
-    a: 'Orianna helps you create content for TikTok, Instagram Reels, and YouTube Shorts. The Chrome extension works on TikTok and Instagram for saving inspiration.',
+    a: 'Orianna helps you create content for TikTok and Instagram Reels. The Chrome extension works on TikTok and Instagram for saving inspiration.',
   },
   {
     q: 'How is the AI coach different from ChatGPT?',
@@ -99,14 +99,6 @@ const testimonials = [
     text: 'The competitor research feature is insane. I can see exactly what hooks are working in my niche and adapt them to my style. My views doubled in a month.',
     avatar: 'RL',
     color: '#6d28d9',
-  },
-  {
-    name: 'Sarah K.',
-    handle: '@sarahcooks',
-    platform: 'YouTube Shorts',
-    text: 'The AI coach actually understands my niche. It doesn\'t give me generic advice — it references my past content and tells me exactly what to try next.',
-    avatar: 'SK',
-    color: '#a855f7',
   },
 ]
 

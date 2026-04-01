@@ -19,12 +19,11 @@ export const metadata: Metadata = {
     template: "%s | Orianna",
   },
   description:
-    "AI-powered content coach for TikTok, Instagram Reels & YouTube Shorts creators. Generate scripts, track competitors, and grow faster.",
+    "AI-powered content coach for TikTok and Instagram Reels creators. Generate scripts, track competitors, and grow faster.",
   keywords: [
     "AI content coach",
     "TikTok scripts",
     "Instagram Reels",
-    "YouTube Shorts",
     "content creator tools",
     "video script generator",
   ],

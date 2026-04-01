@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold">2. Information We Collect</h2>
           <ul className="text-muted-foreground space-y-2 list-disc list-inside leading-relaxed">
             <li><strong>Account information:</strong> Email address, display name, content niche and goals you provide during onboarding</li>
-            <li><strong>Social media tokens:</strong> OAuth access tokens for YouTube, TikTok, and Instagram used solely to publish content on your behalf</li>
+            <li><strong>Social media tokens:</strong> OAuth access tokens for TikTok and Instagram used solely to publish content on your behalf</li>
             <li><strong>Content data:</strong> Scripts, video ideas, captions, and hashtags you create within the app</li>
             <li><strong>Video files:</strong> Videos you upload for scheduled posting, stored securely and deleted after publication</li>
             <li><strong>Usage data:</strong> Basic analytics about how you use the platform to improve the service</li>
@@ -42,7 +42,6 @@ export default function PrivacyPage() {
             We integrate with the following platforms on your behalf using OAuth authorization:
           </p>
           <ul className="text-muted-foreground space-y-2 list-disc list-inside leading-relaxed">
-            <li><strong>YouTube (Google):</strong> To upload and schedule video content via the YouTube Data API v3</li>
             <li><strong>TikTok:</strong> To publish videos via the TikTok Content Posting API</li>
             <li><strong>Instagram (Meta):</strong> To publish Reels via the Instagram Graph API</li>
           </ul>

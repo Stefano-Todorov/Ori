@@ -15,7 +15,6 @@ const ALL_PLATFORMS: { key: Platform | 'all'; label: string; color: string; dark
   { key: 'all', label: 'All', color: '#7c3aed' },
   { key: 'tiktok', label: 'TikTok', color: '#000000', darkColor: '#ffffff' },
   { key: 'instagram', label: 'Instagram', color: '#E1306C' },
-  { key: 'youtube', label: 'YouTube', color: '#FF0000' },
 ]
 
 function formatNumber(n: number): string {

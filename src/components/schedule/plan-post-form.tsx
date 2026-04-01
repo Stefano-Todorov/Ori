@@ -14,7 +14,6 @@ interface Props {
 const PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'tiktok', label: 'TikTok' },
   { key: 'instagram', label: 'Instagram' },
-  { key: 'youtube', label: 'YouTube' },
 ]
 
 const DIFFICULTY_COLORS: Record<string, string> = {

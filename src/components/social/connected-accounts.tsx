@@ -6,7 +6,6 @@ import type { SocialAccount, Platform } from '@/lib/types'
 import { useSearchParams } from 'next/navigation'
 
 const PLATFORMS: { id: Platform; label: string; dotColor: string }[] = [
-  { id: 'youtube', label: 'YouTube Shorts', dotColor: 'bg-red-500' },
   { id: 'tiktok', label: 'TikTok', dotColor: 'bg-black dark:bg-white' },
   { id: 'instagram', label: 'Instagram', dotColor: 'bg-pink-500' },
 ]

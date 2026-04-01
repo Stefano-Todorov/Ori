@@ -7,10 +7,9 @@ import { Plus, X, ChevronDown, Tag, Loader2 } from 'lucide-react'
 import { addSwipePost } from '@/app/actions'
 import { TagPill } from '@/components/ui/tag-editor'
 
-const PLATFORMS = ['tiktok', 'instagram', 'youtube']
+const PLATFORMS = ['tiktok', 'instagram']
 
 function detectPlatformFromUrl(url: string): string | null {
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
   if (url.includes('tiktok.com')) return 'tiktok'
   if (url.includes('instagram.com')) return 'instagram'
   return null
@@ -125,7 +124,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
                     : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
                 }`}
               >
-                {p === 'youtube' ? 'YouTube' : p.charAt(0).toUpperCase() + p.slice(1)}
+                {p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
           </div>

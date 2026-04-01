@@ -18,7 +18,7 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold">2. Description of Service</h2>
           <p className="text-muted-foreground leading-relaxed">
             Orianna is an AI-powered content coaching platform that helps creators plan, script, and schedule video content
-            for YouTube Shorts, TikTok, and Instagram. We use artificial intelligence to assist with content ideation and
+            for TikTok and Instagram. We use artificial intelligence to assist with content ideation and
             scripting, and integrate with social media platforms to publish content on your behalf.
           </p>
         </section>

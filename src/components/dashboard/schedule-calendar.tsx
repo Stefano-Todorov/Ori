@@ -36,7 +36,6 @@ function getWeekStart(d: Date) {
 const PLATFORM_COLORS: Record<string, string> = {
   tiktok: 'bg-pink-500',
   instagram: 'bg-purple-500',
-  youtube: 'bg-red-500',
 }
 
 const VIEW_LABELS: { key: CalendarView; label: string }[] = [
@@ -157,10 +156,6 @@ export function ScheduleCalendar({ scheduledPosts }: Props) {
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
           <span>Instagram</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-          <span>YouTube</span>
         </div>
       </div>
     </div>

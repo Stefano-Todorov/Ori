@@ -64,7 +64,6 @@ function buildPlatformBreakdown(posts: Post[]) {
 const PLATFORM_COLORS: Record<string, string> = {
   Tiktok: '#000000',
   Instagram: '#E1306C',
-  Youtube: '#FF0000',
 }
 
 export function AnalyticsCharts({ posts }: Props) {

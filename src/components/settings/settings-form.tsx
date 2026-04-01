@@ -12,7 +12,6 @@ import { Sun, Moon, Monitor, RefreshCw } from 'lucide-react'
 const PLATFORMS: { id: Platform; label: string; dotColor: string; placeholder: string }[] = [
   { id: 'tiktok', label: 'TikTok', dotColor: 'bg-pink-500', placeholder: 'your_tiktok' },
   { id: 'instagram', label: 'Instagram', dotColor: 'bg-purple-500', placeholder: 'your_instagram' },
-  { id: 'youtube', label: 'YouTube Shorts', dotColor: 'bg-red-500', placeholder: 'your_channel' },
 ]
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon }
@@ -44,7 +43,6 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
   const [handles, setHandles] = useState<Record<string, string>>({
     tiktok: socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '',
     instagram: socialAccounts.find(a => a.platform === 'instagram')?.username ?? '',
-    youtube: socialAccounts.find(a => a.platform === 'youtube')?.username ?? '',
   })
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
   const [autoSaveIdeas, setAutoSaveIdeas] = useState(profile?.auto_save_competitor_ideas ?? true)

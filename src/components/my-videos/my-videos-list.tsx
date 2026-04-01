@@ -19,12 +19,11 @@ interface Props {
 }
 
 type SortKey = 'views' | 'likes' | 'comments' | 'engagement_rate' | 'posted_at'
-type PlatformFilter = 'all' | 'tiktok' | 'instagram' | 'youtube'
+type PlatformFilter = 'all' | 'tiktok' | 'instagram'
 
 const PLATFORM_COLORS: Record<string, string> = {
   tiktok: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
   instagram: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
-  youtube: 'bg-red-500/15 text-red-400 border-red-500/30',
 }
 
 function fmt(n: number | null | undefined): string {

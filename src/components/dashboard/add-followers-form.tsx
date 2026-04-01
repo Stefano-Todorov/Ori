@@ -11,7 +11,6 @@ import type { Platform, FollowerSnapshot } from '@/lib/types'
 const ALL_PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'tiktok', label: 'TikTok' },
   { key: 'instagram', label: 'Instagram' },
-  { key: 'youtube', label: 'YouTube' },
 ]
 
 interface Props {

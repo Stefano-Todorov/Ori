@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea'
 const PLATFORMS = [
   { id: 'tiktok', label: 'TikTok' },
   { id: 'instagram', label: 'Instagram' },
-  { id: 'youtube', label: 'YouTube Shorts' },
 ]
 
 const POSTING_TARGETS = [1, 3, 5, 7, 14]

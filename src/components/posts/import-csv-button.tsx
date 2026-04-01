@@ -31,17 +31,6 @@ const HOW_TO: Record<string, { title: string; steps: string[] }> = {
       'Choose CSV format and download',
     ],
   },
-  youtube: {
-    title: 'Export from YouTube Studio',
-    steps: [
-      'Go to studio.youtube.com and sign in',
-      'Click "Analytics" in the left sidebar',
-      'Click the "Advanced mode" link (bottom right of the overview)',
-      'Set your date range at the top',
-      'Click the download icon (top right) → "Export current view as CSV"',
-      'The file downloads immediately',
-    ],
-  },
 }
 
 export function ImportCsvButton() {
@@ -102,7 +91,7 @@ export function ImportCsvButton() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Import post analytics</DialogTitle>
             <DialogDescription>
-              Export your analytics CSV from TikTok, Instagram, or YouTube Studio and upload it here.
+              Export your analytics CSV from TikTok or Instagram and upload it here.
             </DialogDescription>
           </DialogHeader>
 
@@ -130,7 +119,6 @@ export function ImportCsvButton() {
                   <SelectContent>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -142,7 +130,7 @@ export function ImportCsvButton() {
                     className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/60 dark:hover:bg-[#1e1e38] transition-colors"
                     onClick={() => setShowHowTo(!showHowTo)}
                   >
-                    <span>How to get your CSV from {platform === 'youtube' ? 'YouTube' : platform === 'tiktok' ? 'TikTok' : 'Instagram'}</span>
+                    <span>How to get your CSV from {platform === 'tiktok' ? 'TikTok' : 'Instagram'}</span>
                     {showHowTo ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                   {showHowTo && (

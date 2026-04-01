@@ -856,7 +856,6 @@ function PostCard({ post, handle, allTags, autoSaveIdeas = true }: { post: Post;
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${
                   post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
                     : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
-                    : post.platform === 'youtube' ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
                     : 'bg-muted text-muted-foreground border-border'
                 }`}>
                   {post.platform}
