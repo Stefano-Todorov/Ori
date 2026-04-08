@@ -52,11 +52,19 @@ function SignupForm() {
     setError(null)
 
     const supabase = createClient()
+
+    // Capture UTM data from landing page for marketing attribution
+    let utmData: Record<string, string> = {}
+    try {
+      const stored = localStorage.getItem('orianna_utm')
+      if (stored) utmData = JSON.parse(stored)
+    } catch {}
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
+        data: { name, ...utmData },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     })

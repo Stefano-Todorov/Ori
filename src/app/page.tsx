@@ -109,6 +109,23 @@ export default function LandingPage() {
   const [yearly, setYearly] = useState(false)
   const animateRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // Capture UTM parameters for marketing attribution
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const utmSource = params.get('utm_source')
+    const utmMedium = params.get('utm_medium')
+    const utmCampaign = params.get('utm_campaign')
+    if (utmSource || utmMedium || utmCampaign) {
+      const utm = {
+        utm_source: utmSource || '',
+        utm_medium: utmMedium || '',
+        utm_campaign: utmCampaign || '',
+        landed_at: new Date().toISOString(),
+      }
+      localStorage.setItem('orianna_utm', JSON.stringify(utm))
+    }
+  }, [])
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll, { passive: true })
