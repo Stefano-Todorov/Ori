@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
-import { resend, FROM_EMAIL } from '@/lib/resend'
+import { getResend, FROM_EMAIL } from '@/lib/resend'
 import { welcomeEmail, featureHighlightEmail, upgradeNudgeEmail } from '@/lib/email-templates'
 
 // Called internally after signup to send the welcome email sequence
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         break
     }
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await getResend().emails.send({
       from: FROM_EMAIL,
       to: toEmail,
       subject: emailContent.subject,
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
       // Schedule Day 2: Feature highlight
       try {
         const scheduledAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM_EMAIL,
           to: toEmail,
           subject: featureHighlightEmail(userName || '', appUrl).subject,
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       // Schedule Day 7: Upgrade nudge
       try {
         const scheduledAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM_EMAIL,
           to: toEmail,
           subject: upgradeNudgeEmail(userName || '', appUrl).subject,
