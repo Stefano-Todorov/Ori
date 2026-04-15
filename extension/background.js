@@ -175,8 +175,12 @@ async function handleMessage(msg) {
     }
 
     case 'DOWNLOAD_VIDEO': {
-      const { videoUrl, handle, platform } = msg
-      if (!videoUrl) throw new Error('No video URL')
+      const { postUrl, handle, platform } = msg
+      if (!postUrl) return { error: 'No post URL' }
+      const resolved = await apiPost('/api/extension/resolve-video', { url: postUrl, platform })
+      if (resolved?.error) return { error: resolved.error }
+      const videoUrl = resolved?.videoUrl
+      if (!videoUrl) return { error: 'Could not resolve video URL' }
       const safeHandle = (handle || 'video').replace(/[^a-zA-Z0-9_-]/g, '_')
       const filename = `orianna/${platform || 'video'}-${safeHandle}-${Date.now()}.mp4`
       await chrome.downloads.download({ url: videoUrl, filename, saveAs: false })

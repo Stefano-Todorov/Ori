@@ -278,30 +278,14 @@ async function handleDownload() {
   if (!state.postData) return
   setState({ saving: 'download', errors: {}, messages: {} })
 
-  let videoUrl = state.postData.videoSrc ?? null
-
-  if (!videoUrl && state.postData.platform === 'instagram') {
-    const shortcodeMatch = (state.postData.url ?? '').match(/\/(reel|p)\/([^/?]+)/)
-    const shortcode = shortcodeMatch?.[2]
-    if (shortcode) {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      if (tab?.id) {
-        try {
-          const res = await chrome.tabs.sendMessage(tab.id, { type: 'GET_IG_VIDEO_URL', shortcode })
-          videoUrl = res?.videoUrl ?? null
-        } catch {}
-      }
-    }
-  }
-
-  if (!videoUrl || videoUrl.startsWith('blob:')) {
-    setState({ saving: null, errors: { download: 'Could not find a downloadable video URL on this page.' } })
+  if (!state.postData.url) {
+    setState({ saving: null, errors: { download: 'No post URL detected on this page.' } })
     return
   }
 
   const result = await chrome.runtime.sendMessage({
     type: 'DOWNLOAD_VIDEO',
-    videoUrl,
+    postUrl: state.postData.url,
     handle: state.postData.handle,
     platform: state.postData.platform,
   })

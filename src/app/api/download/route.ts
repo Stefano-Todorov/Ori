@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkUsage, incrementUsage } from '@/lib/usage'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { resolveVideoUrl } from '@/lib/video-resolve'
 
 const ALLOWED_DOWNLOAD_DOMAINS = [
   'tiktok.com', 'tiktokcdn.com', 'muscdn.com',
@@ -42,113 +43,16 @@ export async function GET(req: NextRequest) {
   if (!isAllowedDownloadUrl(url)) return NextResponse.json({ error: 'URL domain not allowed' }, { status: 400 })
 
   try {
-    // Increment usage upfront (check already passed above)
     await incrementUsage(user.id, 'downloads')
-
-    // TikTok: try multiple download APIs
-    if (platform === 'tiktok' || url.includes('tiktok.com')) {
-      // Method 1: tikwm.com API
-      try {
-        const res = await fetch('https://www.tikwm.com/api/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `url=${encodeURIComponent(url)}&hd=1`,
-          signal: AbortSignal.timeout(15000),
-        })
-        if (res.ok) {
-          const json = await res.json()
-          const videoUrl = json?.data?.hdplay || json?.data?.play
-          if (videoUrl) {
-            const streamResult = await streamVideo(videoUrl, 'tiktok')
-            if (streamResult) return streamResult
-          }
-        }
-      } catch { /* try next method */ }
-
-      // Method 2: tikcdn.io API
-      try {
-        const res = await fetch(`https://tikcdn.io/ssstik/${extractTikTokId(url)}`, {
-          signal: AbortSignal.timeout(15000),
-        })
-        if (res.ok && res.headers.get('content-type')?.includes('video')) {
-          return new NextResponse(res.body, {
-            headers: {
-              'Content-Type': 'video/mp4',
-              'Content-Disposition': `attachment; filename="video_tiktok_${Date.now()}.mp4"`,
-              ...(res.headers.get('content-length')
-                ? { 'Content-Length': res.headers.get('content-length')! }
-                : {}),
-            },
-          })
-        }
-      } catch { /* fall through */ }
-
-      return NextResponse.json({ error: 'TikTok download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
+    const resolvedPlatform = platform || (url.includes('tiktok.com') ? 'tiktok' : url.includes('instagram') ? 'instagram' : '')
+    const videoUrl = await resolveVideoUrl(url, resolvedPlatform)
+    if (videoUrl) {
+      const streamResult = await streamVideo(videoUrl, resolvedPlatform || 'video')
+      if (streamResult) return streamResult
     }
-
-    // Instagram: use Apify Instagram scraper
-    if (platform === 'instagram' || url.includes('instagram.com') || url.includes('cdninstagram.com')) {
-      // If it's already a direct CDN URL, just proxy it
-      if (url.includes('cdninstagram.com') || url.includes('fbcdn.net')) {
-        const streamResult = await streamVideo(url, 'instagram')
-        if (streamResult) return streamResult
-      }
-
-      const videoUrl = await fetchInstagramVideoViaApify(url)
-      if (videoUrl) {
-        const streamResult = await streamVideo(videoUrl, 'instagram')
-        if (streamResult) return streamResult
-      }
-
-      return NextResponse.json({ error: 'Instagram download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
-    }
-
-    // Generic: try proxying the URL directly (for any direct video URL)
-    const streamResult = await streamVideo(url, platform || 'video')
-    if (streamResult) return streamResult
-    return NextResponse.json({ error: 'Download failed. Unsupported platform or URL.' }, { status: 400 })
+    return NextResponse.json({ error: 'Download failed. The video may be private or the download service is temporarily unavailable.' }, { status: 400 })
   } catch {
     return NextResponse.json({ error: 'Download failed. Try again later.' }, { status: 500 })
-  }
-}
-
-async function fetchInstagramVideoViaApify(postUrl: string): Promise<string | null> {
-  const token = process.env.APIFY_API_TOKEN
-  if (!token) {
-    console.error('APIFY_API_TOKEN not set')
-    return null
-  }
-
-  try {
-    // Run the Apify Instagram Scraper actor synchronously
-    const res = await fetch(
-      'https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=' + token,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          directUrls: [postUrl],
-          resultsType: 'posts',
-          resultsLimit: 1,
-        }),
-        signal: AbortSignal.timeout(60000), // Apify can take a while
-      }
-    )
-
-    if (!res.ok) {
-      console.error('Apify error:', res.status, await res.text().catch(() => ''))
-      return null
-    }
-
-    const items = await res.json()
-    if (!Array.isArray(items) || items.length === 0) return null
-
-    const item = items[0]
-    // The actor returns videoUrl directly
-    return item.videoUrl ?? item.video_url ?? null
-  } catch (err) {
-    console.error('Apify fetch error:', err)
-    return null
   }
 }
 
@@ -179,7 +83,3 @@ async function streamVideo(videoUrl: string, platform: string): Promise<NextResp
   return null
 }
 
-function extractTikTokId(url: string): string {
-  const match = url.match(/\/video\/(\d+)/)
-  return match?.[1] ?? ''
-}
