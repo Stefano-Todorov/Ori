@@ -25,11 +25,8 @@ One click to save any TikTok or Instagram video to your personal inspo feed. Tag
 🔍 Competitor Research on Autopilot
 Orianna detects when you're on a tracked competitor's profile. Sort their posts by views, likes, or comments to find their top performers — see exactly what's working for them.
 
-🧠 AI-Powered Video Ideas
-Not generic "post more Reels" advice. Orianna knows your niche, your style, and your past content. Every idea is built for YOU — hooks, angles, and all.
-
-📊 Post Analysis
-Ever wonder why a video blew up? Get an AI breakdown of the hook, format, pacing, and content that made it work. Then steal the framework (ethically 😉).
+🧠 AI Coach + Script Generator (in-app)
+In the Orianna dashboard, chat with an AI coach that knows your niche, your past content, and your goals — then generate full scripts (hook, body, CTA, hashtags) for any idea you saved.
 
 📥 Bulk Import
 On TikTok favorites or Instagram saved posts? Import them all to Orianna in one click. No more losing saved posts in the void.
