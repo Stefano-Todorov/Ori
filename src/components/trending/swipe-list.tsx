@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Trash2, ExternalLink, Eye, Heart, MessageCircle, BarChart3,
-  ChevronDown, Calendar, Pencil, Loader2, Sparkles, Lightbulb,
+  ChevronDown, Calendar, Pencil, Loader2,
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
   Download,
 } from 'lucide-react'
@@ -506,79 +506,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
   // Create idea panel state
   const [createIdeaOpen, setCreateIdeaOpen] = useState(false)
 
-  // Ideas modal state
-  const [ideasOpen, setIdeasOpen] = useState(false)
-  const [ideas, setIdeas] = useState<{ idea: string; hook_idea: string; caption: string; difficulty: string; video_type: string }[] | null>(null)
-  const [ideasLoading, setIdeasLoading] = useState(false)
-  const [ideasError, setIdeasError] = useState<string | null>(null)
-
-  // Analysis modal state
-  const [analysisOpen, setAnalysisOpen] = useState(false)
-  const [analysis, setAnalysis] = useState<string | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(false)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
-
-  async function handleGetIdeas() {
-    setIdeasOpen(true)
-    if (ideas) return
-    setIdeasLoading(true)
-    setIdeasError(null)
-    try {
-      const res = await fetch('/api/competitors/ideas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          postId: post.id,
-          handle: post.competitor_handle || 'unknown',
-          platform: post.platform,
-          caption: post.caption,
-          hookText: post.hook_text,
-          views: post.views,
-          likes: post.likes,
-          url: post.url,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to generate ideas')
-      setIdeas(data.ideas)
-    } catch (err) {
-      setIdeasError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setIdeasLoading(false)
-    }
-  }
-
-  async function handleAnalyze() {
-    setAnalysisOpen(true)
-    if (analysis) return
-    setAnalysisLoading(true)
-    setAnalysisError(null)
-    try {
-      const res = await fetch('/api/competitors/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          handle: post.competitor_handle || 'unknown',
-          platform: post.platform,
-          caption: post.caption,
-          hookText: post.hook_text,
-          views: post.views,
-          likes: post.likes,
-          comments: post.comments,
-          url: post.url,
-          thumbnailUrl: post.thumbnail_url,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to analyze')
-      setAnalysis(data.analysis)
-    } catch (err) {
-      setAnalysisError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setAnalysisLoading(false)
-    }
-  }
-
   // Download state
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
@@ -788,20 +715,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
               <button
-                onClick={(e) => { e.stopPropagation(); handleGetIdeas() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-all"
-              >
-                <Sparkles size={12} />
-                Get Ideas
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); handleAnalyze() }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-              >
-                <Lightbulb size={12} />
-                Why it worked
-              </button>
-              <button
                 onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
                 className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
               >
@@ -833,68 +746,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
           </div>
         )}
       </div>
-
-      {/* Ideas Dialog */}
-      <Dialog open={ideasOpen} onOpenChange={setIdeasOpen}>
-        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Ideas inspired by this post</DialogTitle>
-          </DialogHeader>
-          {ideasLoading && (
-            <div className="flex items-center gap-2 py-8 justify-center">
-              <Loader2 size={16} className="animate-spin text-purple-500" />
-              <span className="text-sm text-muted-foreground">Generating ideas...</span>
-            </div>
-          )}
-          {ideasError && <p className="text-sm text-destructive py-4">{ideasError}</p>}
-          {ideas && (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {ideas.map((idea, i) => (
-                <div key={i} className="p-3 rounded-xl bg-muted/30 dark:bg-[#1a1a2e] border border-border dark:border-white/6 space-y-1">
-                  <p className="text-sm font-medium text-foreground">{idea.idea}</p>
-                  {idea.hook_idea && <p className="text-xs text-muted-foreground italic">&ldquo;{idea.hook_idea}&rdquo;</p>}
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                    {idea.video_type && <span className="px-1.5 py-0.5 rounded bg-muted dark:bg-white/5">{idea.video_type}</span>}
-                    {idea.difficulty && <span className="px-1.5 py-0.5 rounded bg-muted dark:bg-white/5">{idea.difficulty}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Analysis Dialog */}
-      <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
-        <DialogContent className="max-w-lg bg-background dark:bg-[#16161e] border-border dark:border-white/10 rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Why it worked</DialogTitle>
-          </DialogHeader>
-          {analysisLoading && (
-            <div className="flex items-center gap-2 py-8 justify-center">
-              <Loader2 size={16} className="animate-spin text-purple-500" />
-              <span className="text-sm text-muted-foreground">Analyzing what made this post perform...</span>
-            </div>
-          )}
-          {analysisError && <p className="text-sm text-destructive py-4">{analysisError}</p>}
-          {analysis && (
-            <div className="space-y-1.5">
-              {analysis.split('\n').filter(Boolean).map((line, i) => {
-                const match = line.match(/^-\s*\*\*(.+?)\*\*:?\s*(.*)/)
-                if (match) {
-                  return (
-                    <div key={i} className="flex gap-2 text-sm">
-                      <span className="font-bold text-foreground shrink-0">{match[1]}:</span>
-                      <span className="text-muted-foreground">{match[2]}</span>
-                    </div>
-                  )
-                }
-                return <p key={i} className="text-sm text-muted-foreground">{line}</p>
-              })}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Create Idea Panel */}
       <Dialog open={createIdeaOpen} onOpenChange={setCreateIdeaOpen}>

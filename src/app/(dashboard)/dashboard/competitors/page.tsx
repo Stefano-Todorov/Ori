@@ -83,7 +83,6 @@ export default async function CompetitorsPage() {
         orphanedHandles={orphanedHandles}
         orphanedPostsByHandle={orphanedPostsByHandle}
         totalPosts={totalPosts}
-        autoSaveIdeas={profile?.auto_save_competitor_ideas ?? true}
       />
     </div>
   )

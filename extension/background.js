@@ -145,7 +145,11 @@ async function handleMessage(msg) {
     }
 
     case 'SAVE_POST': {
-      return apiPost('/api/extension/save', msg.payload)
+      const payload = { ...msg.payload }
+      if (payload.thumbnail && !payload.thumbnail_base64) {
+        payload.thumbnail_base64 = await fetchThumbnailBase64(payload.thumbnail)
+      }
+      return apiPost('/api/extension/save', payload)
     }
 
     case 'ADD_COMPETITOR': {
@@ -157,15 +161,15 @@ async function handleMessage(msg) {
     }
 
     case 'CREATE_IDEAS': {
-      const payload = {
-        ideas: msg.ideas.map(i => ({
-          idea: i.idea,
-          inspiration_url: i.url,
-          thumbnail_url: i.thumbnail,
-          source: `extension: @${i.handle} (${i.platform})`,
-          tags: i.tags ?? [],
-        })),
-      }
+      const ideas = await Promise.all(msg.ideas.map(async i => ({
+        idea: i.idea,
+        inspiration_url: i.url,
+        thumbnail_url: i.thumbnail,
+        thumbnail_base64: i.thumbnail ? await fetchThumbnailBase64(i.thumbnail) : null,
+        source: `extension: @${i.handle} (${i.platform})`,
+        tags: i.tags ?? [],
+      })))
+      const payload = { ideas }
       console.log('[Orianna BG] CREATE_IDEAS payload:', JSON.stringify(payload))
       return apiPost('/api/extension/ideas', payload)
     }

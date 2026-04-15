@@ -1061,6 +1061,8 @@ function findGridBySharedParent(linkSel, platform) {
 
 // Instagram — fetch metrics from embedded page data or GraphQL
 let igMetricsCache = new Map() // shortcode → { views, likes, comments }
+let currentProfileUserId = null // IG user ID of the most recently fetched profile — used to filter stale cache entries
+let currentProfileFollowerCount = null // follower count from web_profile_info; IG's DOM/meta scraping is flaky
 
 // Recursively search an object for media nodes with shortcodes
 function extractMediaNodes(obj, results = []) {
@@ -1102,6 +1104,7 @@ function cacheMediaNode(node) {
   let postedAt = null
   const takenAt = parseInt(node.taken_at) || parseInt(node.taken_at_timestamp) || parseInt(node.device_timestamp) || 0
   if (takenAt > 0) postedAt = new Date(takenAt * 1000).toISOString()
+  const ownerId = node.owner?.id ?? node.owner?.pk ?? node.user?.pk ?? node.user?.id ?? null
   igMetricsCache.set(sc, {
     views: node.video_view_count ?? node.play_count ?? null,
     likes: node.like_count ?? node.edge_liked_by?.count ?? node.edge_media_preview_like?.count ?? null,
@@ -1114,6 +1117,7 @@ function cacheMediaNode(node) {
       ?? null,
     posted_at: postedAt,
     caption: captionText,
+    ownerId: ownerId ? String(ownerId) : null,
   })
 }
 
@@ -1191,8 +1195,13 @@ async function fetchInstagramMetrics(items) {
             const profileNodes = extractMediaNodes(profileData)
             profileNodes.forEach(cacheMediaNode)
 
+            const followerCountFromApi = profileData?.data?.user?.edge_followed_by?.count
+              ?? profileData?.data?.user?.follower_count
+              ?? null
+            if (followerCountFromApi != null) currentProfileFollowerCount = followerCountFromApi
             const userId = profileData?.data?.user?.id
             if (userId) {
+              currentProfileUserId = String(userId)
               console.log('[Orianna] Got user ID:', userId, '— fetching feed...')
               let nextMaxId = null
               for (let page = 0; ; page++) {
@@ -1609,6 +1618,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (host.includes('tiktok.com')) {
         platform = 'tiktok'
+        // Defensive: drop any stale TT cache from a previously viewed profile.
+        ttMetricsCache = new Map()
         const handleMatch = window.location.href.match(/tiktok\.com\/@([^/?]+)/)
         handle = handleMatch?.[1] ?? null
 
@@ -1662,6 +1673,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       } else if (host.includes('instagram.com')) {
         platform = 'instagram'
+        // Drop any cached metrics from previously-viewed profiles before syncing.
+        // Why: IG is an SPA; a user can view someone else's profile, then navigate to their
+        // own and click Sync — without this, stale entries from Profile A would be shipped
+        // as if they belonged to the user. See plan: linked-humming-sprout.md
+        igMetricsCache.clear()
+        currentProfileUserId = null
+        currentProfileFollowerCount = null
         const pathMatch = window.location.href.match(/instagram\.com\/([a-zA-Z0-9._]+)(?:\/reels)?\/?/)
         handle = pathMatch?.[1] ?? null
 
@@ -1746,6 +1764,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           let apiOnlyCount = 0
           for (const [sc, cached] of igMetricsCache) {
             if (seenShortcodes.has(sc)) continue
+            // Guard: only include posts owned by the profile we're syncing.
+            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId) continue
             apiOnlyCount++
             posts.push({
               url: `https://www.instagram.com/p/${sc}/`,
@@ -1766,6 +1786,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           // No grid in DOM — still try the API
           await fetchInstagramMetrics([])
           for (const [sc, cached] of igMetricsCache) {
+            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId) continue
             posts.push({
               url: `https://www.instagram.com/p/${sc}/`,
               caption: cached.caption || null,
@@ -1782,7 +1803,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         }
       }
 
-      console.log(`[Orianna] Syncing ${posts.length} posts (${posts.filter(p => p.thumbnail).length} thumbnails, ${posts.filter(p => p.posted_at).length} dates)`)
+      // Prefer the API-derived count (reliable) over DOM scraping (IG changes markup often).
+      if (platform === 'instagram' && currentProfileFollowerCount != null) {
+        followerCount = currentProfileFollowerCount
+      }
+
+      console.log(`[Orianna] Syncing ${posts.length} posts (${posts.filter(p => p.thumbnail).length} thumbnails, ${posts.filter(p => p.posted_at).length} dates), follower_count=${followerCount}`)
       sendResponse({ platform, handle, follower_count: followerCount, posts })
     })()
     return true

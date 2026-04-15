@@ -13,7 +13,6 @@ import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft
 import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
-import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 interface Props {
@@ -1217,19 +1216,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
-
-          {/* Section 3: AI Assist */}
-          <SectionDivider label="AI Assist" />
-          <AiAssistPanel
-            idea={editForm.idea}
-            context={{
-              hook: editForm.hookIdea,
-              caption: editForm.caption,
-              cta: editForm.cta,
-              scriptSnippet: editForm.scriptSnippet,
-              inspirationUrl: editForm.inspirationUrl,
-            }}
-          />
           <button
             onClick={handleEdit}
             disabled={!editForm.idea.trim() || saving}

@@ -25,8 +25,6 @@ test.describe('Extension APIs — no crash without auth', () => {
     { method: 'POST' as const, path: '/api/extension/ingest', data: {} },
     { method: 'POST' as const, path: '/api/extension/sync-my-videos', data: {} },
     { method: 'POST' as const, path: '/api/extension/sync-tags', data: {} },
-    { method: 'POST' as const, path: '/api/competitors/ideas', data: {} },
-    { method: 'POST' as const, path: '/api/competitors/analyze', data: {} },
   ];
 
   for (const ep of endpoints) {
@@ -68,8 +66,6 @@ test.describe('Extension APIs — CORS preflight', () => {
     '/api/extension/ingest',
     '/api/extension/sync-my-videos',
     '/api/extension/sync-tags',
-    '/api/competitors/ideas',
-    '/api/competitors/analyze',
   ];
 
   for (const endpoint of endpoints) {

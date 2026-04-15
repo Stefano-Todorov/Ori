@@ -1,43 +1,58 @@
-Orianna — AI Content Coach for Short-Form Video Creators
+🎬 Orianna — Your AI Content Coach for Short-Form Video
 
-Save inspiration, research competitors, and generate video ideas while browsing TikTok and Instagram — all connected to your Orianna dashboard.
+Stop scrolling mindlessly. Start scrolling with purpose.
 
-HOW IT WORKS
+Orianna turns your TikTok and Instagram browsing into actual content research. Save the posts that inspire you, study what's working for competitors, and let AI turn it all into your next viral video idea — without leaving the app.
 
-Browse TikTok or Instagram like you normally do. When you find a video worth saving, click the Orianna extension to:
+🔥 HOW IT WORKS
 
-• Save it as inspiration with custom tags
-• See full post stats (views, likes, comments, engagement rate)
-• Generate a video idea adapted to your niche using AI
-• Analyze why a post performed well
-• Track the creator as a competitor
-• Open the original post with one click
+Just browse TikTok or Instagram like you normally do. When you spot a banger, click the Orianna icon to:
 
-FEATURES
+✅ Save it to your inspo library with custom tags
+✅ See full stats — views, likes, comments, engagement rate
+✅ Get a video idea tailored to YOUR niche using AI
+✅ Understand why a post went viral (AI breakdown)
+✅ Track that creator as a competitor
+✅ Open the original post in one click
 
-Save Inspiration
-One click to save any TikTok or Instagram video to your Orianna inspo feed. Add tags to organize by topic, format, or campaign.
+No copy-pasting links. No spreadsheets. No "I'll remember this later" (you won't).
 
-Competitor Research
-Orianna auto-detects when you're browsing a tracked competitor. Visit their profile to sort their posts by views, likes, or comments and find their top performers.
+⚡ FEATURES
 
-AI-Powered Ideas
-Generate video ideas inspired by posts you find. Orianna's AI knows your niche, style, and past content — so ideas are tailored to you, not generic.
+💾 Save Inspiration Instantly
+One click to save any TikTok or Instagram video to your personal inspo feed. Tag by topic, format, or campaign so you actually find it later.
 
-Post Analysis
-Understand why a video went viral. Get an AI breakdown of what made the hook, format, and content work.
+🔍 Competitor Research on Autopilot
+Orianna detects when you're on a tracked competitor's profile. Sort their posts by views, likes, or comments to find their top performers — see exactly what's working for them.
 
-Bulk Import
-On TikTok favorites or Instagram saved posts? Import them all to Orianna in one click.
+🧠 AI-Powered Video Ideas
+Not generic "post more Reels" advice. Orianna knows your niche, your style, and your past content. Every idea is built for YOU — hooks, angles, and all.
 
-Create from Inspo
-Turn any saved video into a concrete content idea with hooks, angles, and CTAs — right from the extension.
+📊 Post Analysis
+Ever wonder why a video blew up? Get an AI breakdown of the hook, format, pacing, and content that made it work. Then steal the framework (ethically 😉).
 
-REQUIREMENTS
+📥 Bulk Import
+On TikTok favorites or Instagram saved posts? Import them all to Orianna in one click. No more losing saved posts in the void.
 
-• Free Orianna account (sign up at ori-nine.vercel.app)
-• Works on tiktok.com and instagram.com
+✨ Create from Inspo
+Turn any saved video into a concrete content idea with hooks, angles, and CTAs — right from the extension. Go from "that's cool" to "I'm filming this tomorrow."
 
-PRIVACY
+🎯 WHO IS THIS FOR?
 
-Orianna does not track your browsing activity. Data is only collected when you actively use the extension. No third-party analytics. Read our full privacy policy at ori-nine.vercel.app/legal/privacy.
+• TikTok and Instagram creators who want to grow faster
+• Content coaches and social media managers
+• Anyone tired of "just post consistently" advice with no actual plan
+
+🔗 GETTING STARTED
+
+1. Install the extension
+2. Create your free account at ori-nine.vercel.app
+3. Start browsing — Orianna works in the background
+
+That's it. Three steps and you're researching like a pro.
+
+🔒 PRIVACY
+
+We don't track your browsing. Data is only collected when YOU actively use the extension. No third-party analytics. No creepy stuff. Read our full privacy policy at ori-nine.vercel.app/legal/privacy.
+
+💬 Questions or feedback? Reach out at ori-nine.vercel.app

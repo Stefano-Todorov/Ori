@@ -877,3 +877,37 @@ export async function unlinkVideoFromIdea(postId: string) {
   revalidatePath('/dashboard/ideas')
   return { error: null }
 }
+
+export async function getOrCreateShareToken() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', token: null }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('share_token')
+    .eq('user_id', user.id)
+    .single()
+
+  if (profile?.share_token) return { error: null, token: profile.share_token as string }
+
+  const token = `shr_${crypto.randomUUID().replace(/-/g, '')}`
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ user_id: user.id, email: user.email ?? '', share_token: token }, { onConflict: 'user_id' })
+  if (error) return { error: error.message, token: null }
+  return { error: null, token }
+}
+
+export async function regenerateShareToken() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', token: null }
+
+  const token = `shr_${crypto.randomUUID().replace(/-/g, '')}`
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ user_id: user.id, email: user.email ?? '', share_token: token }, { onConflict: 'user_id' })
+  if (error) return { error: error.message, token: null }
+  return { error: null, token }
+}

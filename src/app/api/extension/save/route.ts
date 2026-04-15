@@ -1,6 +1,27 @@
 import { NextRequest } from 'next/server'
 import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
+import { createServiceClient } from '@/lib/supabase/service'
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+async function persistThumbnail(userId: string, base64: string | null | undefined): Promise<string | null> {
+  if (!base64) return null
+  try {
+    const buffer = Buffer.from(base64, 'base64')
+    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+    const service = createServiceClient()
+    const { error } = await service.storage
+      .from('thumbnails')
+      .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
+    if (error) {
+      console.error('[extension/save] thumbnail upload error:', error.message)
+      return null
+    }
+    return service.storage.from('thumbnails').getPublicUrl(path).data.publicUrl
+  } catch (err) {
+    console.error('[extension/save] thumbnail crash:', err)
+    return null
+  }
+}
 
 const INSPO_LIMIT = 100
 
@@ -38,8 +59,11 @@ export async function POST(req: NextRequest) {
   const { user, supabase } = auth
 
   const body = await req.json()
-  const { type, platform, url, caption, views, likes, comments, shares, saves, hook_text, hashtags, duration, audio, notes, tags, thumbnail } = body
+  const { type, platform, url, caption, views, likes, comments, shares, saves, hook_text, hashtags, duration, audio, notes, tags, thumbnail, thumbnail_base64 } = body
   const handle = body.handle || body.competitorHandle
+
+  const persistedThumb = await persistThumbnail(user.id, thumbnail_base64)
+  const thumbnailUrl = persistedThumb ?? thumbnail ?? null
 
   // Add competitor only (no post) — from profile page
   if (type === 'add-competitor' && handle) {
@@ -143,7 +167,7 @@ export async function POST(req: NextRequest) {
       competitor_handle: handle || null,
       is_trending: true,
       tags: tags ?? [],
-      thumbnail_url: thumbnail || null,
+      thumbnail_url: thumbnailUrl,
     }
 
     const { error } = await supabase.from('posts').insert(postRow)

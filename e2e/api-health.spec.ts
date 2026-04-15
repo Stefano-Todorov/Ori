@@ -35,10 +35,4 @@ test.describe('API routes do not crash (no 500s)', () => {
     expect(res.status()).toBeLessThan(500);
   });
 
-  test('POST /api/ideas/generate', async ({ request }) => {
-    const res = await request.post('/api/ideas/generate', {
-      data: { type: 'hook' },
-    });
-    expect(res.status()).toBeLessThan(500);
-  });
 });

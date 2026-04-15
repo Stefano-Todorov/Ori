@@ -69,6 +69,7 @@ export const RATE_LIMITS = {
   'extension-ideas':          { maxTokens: 10, refillRate: 10 / 60 },
   'extension-sync-tags':      { maxTokens: 15, refillRate: 15 / 60 },
   'extension-sync-my-videos': { maxTokens: 3,  refillRate: 3 / 60 },
+  'share-mobile':             { maxTokens: 20, refillRate: 20 / 60 },
   // AI routes — burst protection (monthly limits in usage.ts handle the cap)
   'coach':                    { maxTokens: 5,  refillRate: 5 / 60 },
   'script-generate':          { maxTokens: 5,  refillRate: 5 / 60 },
