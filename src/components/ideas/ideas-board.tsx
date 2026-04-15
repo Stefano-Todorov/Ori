@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check } from 'lucide-react'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2 } from 'lucide-react'
 import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
+import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { AiAssistPanel } from '@/components/ideas/ai-assist-panel'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -423,7 +424,29 @@ function IdeaCard({
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduling, setScheduling] = useState(false)
   const [scheduled, setScheduled] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
   const scheduleRef = useRef<HTMLDivElement>(null)
+
+  async function handleDownload() {
+    if (!item.inspiration_url) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const platform = /tiktok\.com/i.test(item.inspiration_url) ? 'tiktok'
+        : /instagram\.com/i.test(item.inspiration_url) ? 'instagram' : ''
+      const blob = await downloadVideo(item.inspiration_url, platform)
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `inspo_${platform || 'clip'}_${Date.now()}.mp4`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed')
+    } finally {
+      setDownloading(false)
+    }
+  }
   const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption
   const parsed = parseSource(item.source)
 
@@ -521,18 +544,28 @@ function IdeaCard({
             <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
           </div>
 
-          {/* View original button */}
+          {/* View original + Download buttons */}
           {item.inspiration_url && (
-            <a
-              href={item.inspiration_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-2 h-8 px-3.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all w-fit"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink size={13} />
-              View original
-            </a>
+            <div className="flex items-center gap-2 mt-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
+              <a
+                href={item.inspiration_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-8 px-3.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+              >
+                <ExternalLink size={13} />
+                View original
+              </a>
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="inline-flex items-center gap-2 h-8 px-3.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-60"
+              >
+                {downloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                {downloading ? 'Downloading...' : 'Download'}
+              </button>
+              {downloadError && <span className="text-[11px] text-red-400">{downloadError}</span>}
+            </div>
           )}
 
           {/* Content sections (collapsible) */}
