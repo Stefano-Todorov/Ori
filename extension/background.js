@@ -156,23 +156,6 @@ async function handleMessage(msg) {
       })
     }
 
-    case 'GET_IDEAS': {
-      const p = msg.postData
-      const thumbB64 = await fetchThumbnailBase64(p.thumbnail)
-      const ideasResult = await apiPost('/api/competitors/ideas', {
-        handle: p.handle,
-        platform: p.platform,
-        caption: p.caption,
-        hookText: p.hook_text ?? null,
-        views: p.views,
-        likes: p.likes,
-        url: p.url,
-        count: msg.count ?? 1,
-        imageBase64: thumbB64,
-      })
-      return { ideas: ideasResult.ideas ?? [] }
-    }
-
     case 'CREATE_IDEAS': {
       const payload = {
         ideas: msg.ideas.map(i => ({
@@ -187,21 +170,13 @@ async function handleMessage(msg) {
       return apiPost('/api/extension/ideas', payload)
     }
 
-    case 'ANALYZE_POST': {
-      const p2 = msg.postData
-      const thumbB64_2 = await fetchThumbnailBase64(p2.thumbnail)
-      const analyzeResult = await apiPost('/api/competitors/analyze', {
-        handle: p2.handle,
-        platform: p2.platform,
-        caption: p2.caption,
-        hookText: p2.hook_text ?? null,
-        views: p2.views,
-        likes: p2.likes,
-        comments: p2.comments,
-        url: p2.url,
-        imageBase64: thumbB64_2,
-      })
-      return { analysis: analyzeResult.analysis ?? '' }
+    case 'DOWNLOAD_VIDEO': {
+      const { videoUrl, handle, platform } = msg
+      if (!videoUrl) throw new Error('No video URL')
+      const safeHandle = (handle || 'video').replace(/[^a-zA-Z0-9_-]/g, '_')
+      const filename = `orianna/${platform || 'video'}-${safeHandle}-${Date.now()}.mp4`
+      await chrome.downloads.download({ url: videoUrl, filename, saveAs: false })
+      return { ok: true }
     }
 
     case 'BULK_IMPORT': {

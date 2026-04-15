@@ -274,34 +274,40 @@ async function handleCompetitorNo() {
   setState({ showCompetitorPrompt: false })
 }
 
-async function handleAnalyze() {
+async function handleDownload() {
   if (!state.postData) return
-  setState({ saving: 'analyze', errors: {}, analysis: null })
+  setState({ saving: 'download', errors: {}, messages: {} })
+
+  let videoUrl = state.postData.videoSrc ?? null
+
+  if (!videoUrl && state.postData.platform === 'instagram') {
+    const shortcodeMatch = (state.postData.url ?? '').match(/\/(reel|p)\/([^/?]+)/)
+    const shortcode = shortcodeMatch?.[2]
+    if (shortcode) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+      if (tab?.id) {
+        try {
+          const res = await chrome.tabs.sendMessage(tab.id, { type: 'GET_IG_VIDEO_URL', shortcode })
+          videoUrl = res?.videoUrl ?? null
+        } catch {}
+      }
+    }
+  }
+
+  if (!videoUrl || videoUrl.startsWith('blob:')) {
+    setState({ saving: null, errors: { download: 'Could not find a downloadable video URL on this page.' } })
+    return
+  }
+
   const result = await chrome.runtime.sendMessage({
-    type: 'ANALYZE_POST', postData: state.postData,
+    type: 'DOWNLOAD_VIDEO',
+    videoUrl,
+    handle: state.postData.handle,
+    platform: state.postData.platform,
   })
   setState({ saving: null })
-  if (result.error) setState({ errors: { analyze: result.error } })
-  else setState({ analysis: result.analysis ?? '' })
-}
-
-async function handleOpenPost() {
-  if (!state.postData?.url) return
-  await chrome.runtime.sendMessage({
-    type: 'OPEN_VIDEO',
-    url: state.postData.url,
-  })
-}
-
-async function handleGetIdeas() {
-  if (!state.postData) return
-  setState({ saving: 'ideas', errors: {}, messages: {} })
-  const result = await chrome.runtime.sendMessage({
-    type: 'GET_IDEAS', postData: state.postData, count: 1,
-  })
-  setState({ saving: null })
-  if (result.error) setState({ errors: { ideas: result.error } })
-  else setState({ view: 'ideas', ideas: result.ideas ?? [] })
+  if (result?.error) setState({ errors: { download: result.error } })
+  else setState({ messages: { download: 'Download started' } })
 }
 
 async function handleCreateInspo() {
@@ -607,8 +613,7 @@ function render() {
         <div class="locked-actions">
           <div class="locked-action">🔒 Save as Inspiration</div>
           <div class="locked-action">🔒 Create from Inspo</div>
-          <div class="locked-action">🔒 Generate Video Idea</div>
-          <div class="locked-action">🔒 Why Did It Do Well?</div>
+          <div class="locked-action">🔒 Download</div>
         </div>
       ` : `
         <div class="no-post">
@@ -1051,28 +1056,14 @@ function render() {
         ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
         ${state.errors.createInspo ? `<div class="error-msg">${escHtml(state.errors.createInspo)}</div>` : ''}
 
-        <button class="btn btn-secondary" id="ideas-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'ideas' ? '<span class="spinner"></span> Generating...' : '🎬 Generate Video Idea'}
+        <button class="btn btn-secondary" id="download-btn" ${state.saving ? 'disabled' : ''}>
+          ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download'}
         </button>
-        ${state.errors.ideas ? `<div class="error-msg">${escHtml(state.errors.ideas)}</div>` : ''}
-
-        <button class="btn btn-outline" id="analyze-btn" ${state.saving ? 'disabled' : ''}>
-          ${state.saving === 'analyze' ? '<span class="spinner"></span> Analyzing...' : '💡 Why Did It Do Well?'}
-        </button>
-        ${state.errors.analyze ? `<div class="error-msg">${escHtml(state.errors.analyze)}</div>` : ''}
+        ${state.messages.download ? `<div class="success-msg">${escHtml(state.messages.download)}</div>` : ''}
+        ${state.errors.download ? `<div class="error-msg">${escHtml(state.errors.download)}</div>` : ''}
 
       </div>
 
-      ${state.analysis ? `
-        <div class="analysis-result">
-          <div class="analysis-title">Why it performed well</div>
-          <div class="analysis-text">${state.analysis.split('\n').map(line => {
-            const l = line.trim()
-            if (!l) return ''
-            return `<div class="analysis-bullet">${escHtml(l).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</div>`
-          }).join('')}</div>
-        </div>
-      ` : ''}
     ` : `
       <div class="no-post">
         Navigate to a TikTok or Instagram video to capture it.
@@ -1085,8 +1076,7 @@ function render() {
   if (hasPost) {
     document.getElementById('inspiration-btn')?.addEventListener('click', () => handleSaveInspiration())
     document.getElementById('tag-dropdown-btn')?.addEventListener('click', () => setState({ showTagDropdown: !state.showTagDropdown }))
-    document.getElementById('ideas-btn')?.addEventListener('click', handleGetIdeas)
-    document.getElementById('analyze-btn')?.addEventListener('click', handleAnalyze)
+    document.getElementById('download-btn')?.addEventListener('click', handleDownload)
     document.getElementById('dup-replace-btn')?.addEventListener('click', () => handleSaveInspiration('replace'))
     document.getElementById('dup-keep-btn')?.addEventListener('click', () => handleSaveInspiration('keep'))
     document.getElementById('add-tag-btn')?.addEventListener('click', addNewTag)
