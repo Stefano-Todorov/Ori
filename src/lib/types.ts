@@ -1,7 +1,7 @@
 export type Platform = 'tiktok' | 'instagram'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type PostStatus = 'draft' | 'used' | 'archived'
-export type ProductionStatus = 'new' | 'recording' | 'editing' | 'posted'
+export type ProductionStatus = 'new' | 'recording' | 'editing' | 'ready' | 'posted'
 
 export interface Profile {
   id: string

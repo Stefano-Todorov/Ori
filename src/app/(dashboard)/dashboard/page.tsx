@@ -38,7 +38,7 @@ export default async function DashboardPage() {
       .from('content_ideas')
       .select('*')
       .eq('user_id', user.id)
-      .in('production_status', ['recording', 'editing', 'posted'])
+      .in('production_status', ['recording', 'editing', 'ready', 'posted'])
       .order('created_at', { ascending: false }),
     supabase
       .from('scheduled_posts')

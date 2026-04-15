@@ -35,6 +35,7 @@ interface Props {
 const STAGES: { status: ProductionStatus; label: string; color: string; bg: string; border: string }[] = [
   { status: 'recording', label: 'Recording', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   { status: 'editing', label: 'Editing', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+  { status: 'ready', label: 'Ready to Post', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
   { status: 'posted', label: 'Posted', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
 ]
 
@@ -47,7 +48,8 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 const STATUS_PILL: Record<ProductionStatus, string> = {
   new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  editing: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
+  editing: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
   posted: 'bg-green-400/15 text-green-400 border-green-400/30',
 }
 
@@ -55,6 +57,7 @@ const STATUS_LABEL: Record<ProductionStatus, string> = {
   new: 'New',
   recording: 'Recording',
   editing: 'Editing',
+  ready: 'Ready to Post',
   posted: 'Posted',
 }
 
@@ -229,7 +232,7 @@ function IdeaCardContent({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
+                  {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
                     <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
                   ))}
                 </SelectContent>
@@ -494,7 +497,7 @@ export function ProductionTracker({ ideas }: Props) {
 
     let targetStatus: ProductionStatus | null = null
 
-    if (['recording', 'editing', 'posted'].includes(over.id as string)) {
+    if (['recording', 'editing', 'ready', 'posted'].includes(over.id as string)) {
       targetStatus = over.id as ProductionStatus
     } else {
       const targetIdea = ideas.find(i => i.id === over.id)
@@ -538,7 +541,7 @@ export function ProductionTracker({ ideas }: Props) {
             onDragEnd={handleDragEnd}
             onDragOver={handleDragOver}
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {grouped.map(stage => (
                 <DroppableColumn
                   key={stage.status}

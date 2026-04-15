@@ -718,7 +718,7 @@ export async function deleteFollowerSnapshot(id: string) {
 
 // ─── Production Status ───────────────────────────────────────────────────────
 
-export async function updateProductionStatus(ideaId: string, status: 'new' | 'recording' | 'editing' | 'posted') {
+export async function updateProductionStatus(ideaId: string, status: 'new' | 'recording' | 'editing' | 'ready' | 'posted') {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
@@ -728,7 +728,7 @@ export async function updateProductionStatus(ideaId: string, status: 'new' | 're
   revalidatePath('/dashboard/schedule')
 }
 
-export async function bulkUpdateProductionStatus(ids: string[], status: 'new' | 'recording' | 'editing' | 'posted') {
+export async function bulkUpdateProductionStatus(ids: string[], status: 'new' | 'recording' | 'editing' | 'ready' | 'posted') {
   if (!ids.length) return
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

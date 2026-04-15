@@ -25,7 +25,8 @@ type IdeaStatus = ProductionStatus
 const STATUS_PILL: Record<IdeaStatus, string> = {
   new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  editing: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
+  editing: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
   posted: 'bg-green-400/15 text-green-400 border-green-400/30',
 }
 
@@ -33,6 +34,7 @@ const STATUS_LABEL: Record<IdeaStatus, string> = {
   new: 'New',
   recording: 'Recording',
   editing: 'Editing',
+  ready: 'Ready to Post',
   posted: 'Posted',
 }
 
@@ -379,7 +381,7 @@ function BulkMoveDropdown({ disabled, onSelect }: { disabled: boolean; onSelect:
       </button>
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 bg-[#16161e] border border-white/10 rounded-lg shadow-xl py-1 min-w-[120px]">
-          {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
+          {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
             <button
               key={s}
               onClick={() => { onSelect(s); setOpen(false) }}
@@ -574,7 +576,7 @@ function IdeaCard({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(['new', 'recording', 'editing', 'posted'] as const).map((s) => (
+                {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
                   <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
                 ))}
               </SelectContent>
@@ -659,7 +661,7 @@ const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
 
 type SortBy = 'date' | 'status' | 'source'
 
-const STATUS_ORDER: Record<IdeaStatus, number> = { new: 0, recording: 1, editing: 2, posted: 3 }
+const STATUS_ORDER: Record<IdeaStatus, number> = { new: 0, recording: 1, editing: 2, ready: 3, posted: 4 }
 
 // ─── Collapsible status group ──────────────────────────────────────────────
 
@@ -1092,7 +1094,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
           </div>
         ) : groupByStatus ? (
           <div className="space-y-4">
-            {(['new', 'recording', 'editing', 'posted'] as const).map((s) => {
+            {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => {
               const statusIdeas = filtered.filter((i) => i.production_status === s)
               return (
                 <StatusGroup key={s} status={s} ideas={statusIdeas}>

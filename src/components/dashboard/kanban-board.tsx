@@ -13,6 +13,7 @@ interface Props {
 const COLUMNS: { status: ProductionStatus; label: string; color: string; border: string }[] = [
   { status: 'recording', label: 'Recording', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', border: 'border-t-amber-500' },
   { status: 'editing', label: 'Editing', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', border: 'border-t-blue-500' },
+  { status: 'ready', label: 'Ready to Post', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', border: 'border-t-purple-500' },
   { status: 'posted', label: 'Posted', color: 'bg-green-500/10 text-green-600 dark:text-green-400', border: 'border-t-green-500' },
 ]
 
@@ -84,7 +85,7 @@ export function KanbanBoard({ ideas }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {COLUMNS.map(col => {
           const colIdeas = ideas.filter(i => i.production_status === col.status)
           const visible = maxItems > 0 ? colIdeas.slice(0, maxItems) : colIdeas

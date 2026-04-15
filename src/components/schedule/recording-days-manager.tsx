@@ -24,6 +24,7 @@ const STATUS_COLORS: Record<ProductionStatus, string> = {
   new: 'bg-gray-500/10 text-gray-500',
   recording: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
   editing: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  ready: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
   posted: 'bg-green-500/10 text-green-600 dark:text-green-400',
 }
 
