@@ -133,11 +133,15 @@ function IdeaCardContent({
   const hasContent = idea.hook_idea || idea.script_snippet || idea.cta || idea.caption
 
   return (
-    <div className={`rounded-xl border transition-all duration-200 ${
-      isOverlay
-        ? 'shadow-xl shadow-black/30 ring-2 ring-purple-500/50 border-purple-500/30 bg-card dark:bg-[#1a1a2e]'
-        : 'border-border/50 dark:border-white/[0.06] bg-muted/20 dark:bg-[#1a1a2e] hover:border-border dark:hover:border-white/[0.12]'
-    }`} style={{ padding: '12px 14px' }}>
+    <div
+      className={`rounded-xl border transition-all duration-200 ${
+        isOverlay
+          ? 'shadow-xl shadow-black/30 ring-2 ring-purple-500/50 border-purple-500/30 bg-card dark:bg-[#1a1a2e]'
+          : 'border-border/50 dark:border-white/[0.06] bg-muted/20 dark:bg-[#1a1a2e] hover:border-border dark:hover:border-white/[0.12]'
+      } ${onEdit ? 'cursor-pointer' : ''}`}
+      style={{ padding: '12px 14px' }}
+      onClick={() => onEdit?.(idea)}
+    >
       {/* Header: drag handle + title + actions */}
       <div className="flex items-start gap-2">
         {/* Drag handle */}
@@ -145,6 +149,7 @@ function IdeaCardContent({
           {...(dragAttributes ?? {})}
           {...(dragListeners ?? {})}
           className="mt-1 p-0.5 text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0 touch-none"
+          onClick={(e) => e.stopPropagation()}
         >
           <GripVertical size={14} />
         </button>
@@ -224,6 +229,7 @@ function IdeaCardContent({
           <div className="flex items-center gap-1">
             {/* Status dropdown */}
             {onStatusChange && (
+              <div onClick={(e) => e.stopPropagation()}>
               <Select
                 value={idea.production_status}
                 onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
@@ -237,12 +243,13 @@ function IdeaCardContent({
                   ))}
                 </SelectContent>
               </Select>
+              </div>
             )}
 
             {/* Edit button */}
             {onEdit && (
               <button
-                onClick={() => onEdit(idea)}
+                onClick={(e) => { e.stopPropagation(); onEdit(idea) }}
                 className="p-1 text-muted-foreground hover:text-purple-500 transition-colors opacity-0 group-hover:opacity-100 rounded-md hover:bg-muted/50 dark:hover:bg-white/[0.05]"
                 title="Edit"
               >
