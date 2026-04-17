@@ -534,7 +534,7 @@ export function ProductionTracker({ ideas }: Props) {
         )}
       </div>
 
-      <EditIdeaDialog idea={editingIdea} onClose={() => setEditingIdea(null)} />
+      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} />
     </>
   )
 }
