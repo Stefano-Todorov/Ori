@@ -433,8 +433,8 @@ function IdeaCard({
           <IdeaCheckbox checked={selected} onChange={onToggleSelect} />
         </div>
 
-        {/* Purple accent bar */}
-        <div className="w-[3px] self-stretch rounded-full bg-gradient-to-b from-purple-600 to-purple-400 shrink-0" />
+        {/* Status accent bar */}
+        <div className={`w-[3px] self-stretch rounded-full shrink-0 ${STATUS_BAR_COLOR[item.production_status]}`} />
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
