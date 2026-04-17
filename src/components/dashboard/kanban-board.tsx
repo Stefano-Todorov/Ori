@@ -5,7 +5,7 @@ import { updateProductionStatus, updateIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
-import { GripVertical, ChevronDown } from 'lucide-react'
+import { GripVertical, ChevronDown, ExternalLink } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -36,6 +36,7 @@ function EditIdeaDialog({
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState({
     idea: idea?.idea ?? '',
+    inspiration_url: idea?.inspiration_url ?? '',
     hook_idea: idea?.hook_idea ?? '',
     script_snippet: idea?.script_snippet ?? '',
     cta: idea?.cta ?? '',
@@ -48,6 +49,7 @@ function EditIdeaDialog({
     startTransition(async () => {
       await updateIdea(idea!.id, {
         idea: form.idea,
+        inspiration_url: form.inspiration_url || null,
         hook_idea: form.hook_idea || null,
         script_snippet: form.script_snippet || null,
         cta: form.cta || null,
@@ -75,6 +77,30 @@ function EditIdeaDialog({
               className={`${inputClass} min-h-[80px]`}
             />
           </div>
+          {(idea.inspiration_url || form.inspiration_url) && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-muted-foreground">Inspiration URL</label>
+                {(form.inspiration_url || idea.inspiration_url) && (
+                  <a
+                    href={form.inspiration_url || idea.inspiration_url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    <ExternalLink size={11} />
+                    View original
+                  </a>
+                )}
+              </div>
+              <Input
+                value={form.inspiration_url}
+                onChange={e => setForm(f => ({ ...f, inspiration_url: e.target.value }))}
+                className={inputClass}
+                placeholder="https://..."
+              />
+            </div>
+          )}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Hook</label>
             <Input

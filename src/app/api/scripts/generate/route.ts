@@ -4,7 +4,6 @@ import { anthropic, MODEL } from '@/lib/claude'
 import { loadKnowledge, loadPlatformKnowledge } from '@/lib/knowledge'
 import { checkUsage, incrementUsage } from '@/lib/usage'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
-import { evalScript, buildScriptText } from '@/lib/eval'
 import { z } from 'zod'
 
 const RequestSchema = z.object({
