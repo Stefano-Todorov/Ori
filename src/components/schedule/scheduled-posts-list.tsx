@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import { deleteScheduledPost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { Trash2 } from 'lucide-react'
 import type { ScheduledPost } from '@/lib/types'
 
@@ -29,7 +30,7 @@ export function ScheduledPostsList({ posts }: Props) {
   function handleDelete(id: string) {
     startTransition(async () => {
       await deleteScheduledPost(id)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 

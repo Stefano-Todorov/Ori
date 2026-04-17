@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Upload, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 
 const HOW_TO: Record<string, { title: string; steps: string[] }> = {
   tiktok: {
@@ -60,7 +61,7 @@ export function ImportCsvButton() {
       setError(data.error ?? 'Import failed')
     } else {
       setResult(data)
-      router.refresh()
+      refreshKeepScroll(router)
     }
     setLoading(false)
   }

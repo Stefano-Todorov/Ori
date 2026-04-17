@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { updateProductionStatus, updateIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import { GripVertical, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -52,7 +53,7 @@ function EditIdeaDialog({
         cta: form.cta || null,
         caption: form.caption || null,
       })
-      router.refresh()
+      refreshKeepScroll(router)
       onClose()
     })
   }
@@ -167,14 +168,14 @@ export function KanbanBoard({ ideas }: Props) {
 
     startTransition(async () => {
       await updateProductionStatus(ideaId, newStatus)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
   function handleStatusChange(ideaId: string, newStatus: ProductionStatus) {
     startTransition(async () => {
       await updateProductionStatus(ideaId, newStatus)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 

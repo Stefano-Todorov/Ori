@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { updateProductionStatus, updateIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { Pencil, GripVertical, ExternalLink } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -344,7 +345,7 @@ function EditIdeaDialog({
         cta: form.cta || null,
         caption: form.caption || null,
       })
-      router.refresh()
+      refreshKeepScroll(router)
       onClose()
     })
   }
@@ -447,7 +448,7 @@ export function ProductionTracker({ ideas }: Props) {
   function handleStatusChange(ideaId: string, status: ProductionStatus) {
     startTransition(async () => {
       await updateProductionStatus(ideaId, status)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
@@ -482,7 +483,7 @@ export function ProductionTracker({ ideas }: Props) {
 
     startTransition(async () => {
       await updateProductionStatus(ideaId, targetStatus!)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 

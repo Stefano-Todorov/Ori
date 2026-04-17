@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { addFollowerSnapshot, deleteFollowerSnapshot } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { ChevronDown, Trash2 } from 'lucide-react'
 import type { Platform, FollowerSnapshot } from '@/lib/types'
 
@@ -46,7 +47,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
         return
       }
       setCount('')
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
@@ -150,7 +151,7 @@ export function AddFollowersForm({ activePlatforms, snapshots = [] }: Props) {
                         onClick={() => {
                           startTransition(async () => {
                             await deleteFollowerSnapshot(s.id)
-                            router.refresh()
+                            refreshKeepScroll(router)
                           })
                         }}
                         className="text-muted-foreground hover:text-destructive transition-colors p-0.5"

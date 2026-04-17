@@ -8,6 +8,7 @@ import {
   X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
   Download,
 } from 'lucide-react'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { AddPostButton } from '@/components/competitors/add-post-button'
 import { deleteCompetitor, deletePost, updateCompetitorNotes, updateCompetitorUrl, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor, addIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
@@ -206,7 +207,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
     setDeleting(true)
     setDeleteConfirmOpen(false)
     await deleteCompetitor(primaryComp.id, deletePosts)
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   async function handleLink(sourceId: string) {
@@ -214,12 +215,12 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
     await linkCompetitors(sourceId, primaryComp.id)
     setLinkMenuOpen(false)
     setLinking(false)
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   async function handleUnlink(compId: string) {
     await unlinkCompetitor(compId)
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   async function handleConnectUrl(compId: string) {
@@ -227,7 +228,7 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
     await updateCompetitorUrl(compId, connectUrl.trim())
     setConnectingId(null)
     setConnectUrl('')
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   return (
@@ -712,7 +713,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
   async function handleDeletePost() {
     setDeleting(true)
     await deletePost(post.id)
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   const displayTitle = post.title || postTitle(post)

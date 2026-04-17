@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
 import { addCompetitor } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 
 export function AddCompetitorButton() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export function AddCompetitorButton() {
     setPlatform('')
     setProfileUrl('')
     setNotes('')
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   return (

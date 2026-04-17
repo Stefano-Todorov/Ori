@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { useTheme } from 'next-themes'
 import type { Profile, Platform } from '@/lib/types'
 import { updateProfile, updateSocialHandles } from '@/app/actions'
@@ -95,7 +96,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
     setSaved(true)
     setLoading(false)
     setTimeout(() => setSaved(false), 2000)
-    router.refresh()
+    refreshKeepScroll(router)
   }
 
   const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"

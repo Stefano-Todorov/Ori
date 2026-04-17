@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { DatePicker } from '@/components/ui/date-picker'
 import { addRecordingDay, deleteRecordingDay, addIdeaToRecordingDay, removeIdeaFromRecordingDay, updateProductionStatus } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { Plus, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
@@ -44,35 +45,35 @@ export function RecordingDaysManager({ recordingDays, availableIdeas }: Props) {
       await addRecordingDay(newDate, newNotes.trim() || undefined)
       setNewDate('')
       setNewNotes('')
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
   function handleDeleteDay(id: string) {
     startTransition(async () => {
       await deleteRecordingDay(id)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
   function handleAddIdea(dayId: string, ideaId: string) {
     startTransition(async () => {
       await addIdeaToRecordingDay(dayId, ideaId)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
   function handleRemoveIdea(dayId: string, ideaId: string) {
     startTransition(async () => {
       await removeIdeaFromRecordingDay(dayId, ideaId)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
   function handleStatusChange(ideaId: string, status: ProductionStatus) {
     startTransition(async () => {
       await updateProductionStatus(ideaId, status)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 

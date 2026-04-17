@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Plus, Loader2, Check, Tag, ChevronDown } from 'lucide-react'
 import { addCompetitorPost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import type { Platform } from '@/lib/types'
 import { TagPill } from '@/components/ui/tag-editor'
 
@@ -69,7 +70,7 @@ export function AddPostButton({ handle, platform, allTags = [] }: Props) {
         setFetching(false)
         setTimeout(() => {
           handleClose()
-          router.refresh()
+          refreshKeepScroll(router)
         }, 800)
       })
     } catch {

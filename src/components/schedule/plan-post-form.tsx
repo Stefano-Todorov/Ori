@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect } from 'react'
 import { DatePicker } from '@/components/ui/date-picker'
 import { schedulePost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
+import { refreshKeepScroll } from '@/lib/router-utils'
 import { CalendarPlus, ChevronDown, Search } from 'lucide-react'
 import type { ContentIdea, Platform } from '@/lib/types'
 
@@ -77,7 +78,7 @@ export function PlanPostForm({ ideas }: Props) {
       setIdeaId('')
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-      router.refresh()
+      refreshKeepScroll(router)
     })
   }
 
