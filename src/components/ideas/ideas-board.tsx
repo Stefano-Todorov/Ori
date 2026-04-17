@@ -213,15 +213,6 @@ function IdeaCheckbox({ checked, onChange }: { checked: boolean; onChange: () =>
 
 // ─── Content section ────────────────────────────────────────────────────────
 
-function Section({ label, text }: { label: string; text: string }) {
-  return (
-    <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-      <p className="text-xs font-bold uppercase tracking-wider text-[#71717a] mb-1">{label}</p>
-      <p className="text-sm whitespace-pre-wrap text-[#e4e4e7]">{text}</p>
-    </div>
-  )
-}
-
 // ─── Mini Calendar ──────────────────────────────────────────────────────────
 
 function MiniCalendar({ value, onChange }: { value: string; onChange: (d: string) => void }) {
@@ -361,7 +352,6 @@ function IdeaCard({
   onTagsChange: (tags: string[]) => void
 }) {
   const [deleting, setDeleting] = useState(false)
-  const [expanded, setExpanded] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [scheduleDate, setScheduleDate] = useState('')
   const [scheduling, setScheduling] = useState(false)
@@ -389,7 +379,6 @@ function IdeaCard({
       setDownloading(false)
     }
   }
-  const hasContent = item.hook_idea || item.script_snippet || item.cta || item.caption
   const parsed = parseSource(item.source)
 
   useEffect(() => {
@@ -442,14 +431,7 @@ function IdeaCard({
         {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
-            {hasContent && (
-              <span className={`shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-md transition-all duration-200 ${expanded ? 'bg-purple-500/20 text-purple-400' : 'bg-white/[0.06] text-[#71717a] hover:text-white'}`}>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${expanded ? 'rotate-180' : 'rotate-0'}`} />
-              </span>
-            )}
-          </div>
+          <h3 className="font-bold text-[15px] text-white leading-snug">{item.idea}</h3>
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
@@ -502,39 +484,21 @@ function IdeaCard({
             </div>
           )}
 
-          {/* Content sections (collapsible) */}
-          {hasContent && expanded && (
-            <div className="space-y-2 mt-3">
-              {item.hook_idea && <Section label="Hook" text={item.hook_idea} />}
-              {item.script_snippet && <Section label="Body / Script" text={item.script_snippet} />}
-              {item.cta && <Section label="CTA" text={item.cta} />}
-              {item.caption && <Section label="Caption" text={item.caption} />}
-            </div>
-          )}
-
-          {!hasContent && !item.inspiration_url && (
-            <p className="text-xs text-[#52525b] mt-2">
-              No details yet — click edit to fill in hook, body, CTA and more.
-            </p>
-          )}
         </div>
 
         {/* Right side: thumbnail + actions */}
         <div className="flex items-start gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
           {item.thumbnail_url && (
             <a href={item.inspiration_url ?? '#'} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-              <div className="w-16 h-20 rounded-lg border border-white/[0.08] bg-[#252535] overflow-hidden flex items-center justify-center shrink-0">
-                <img
-                  src={item.thumbnail_url}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const el = e.target as HTMLImageElement
-                    el.style.display = 'none'
-                    el.parentElement!.innerHTML = '<span class="text-2xl opacity-30">🎬</span>'
-                  }}
-                />
-              </div>
+              <img
+                src={item.thumbnail_url}
+                alt=""
+                className="w-16 h-20 rounded-lg border border-white/[0.08] object-cover shrink-0"
+                onError={(e) => {
+                  const el = e.target as HTMLImageElement
+                  el.parentElement!.style.display = 'none'
+                }}
+              />
             </a>
           )}
           <div className="flex items-center gap-2">
