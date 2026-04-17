@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2 } from 'lucide-react'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal } from 'lucide-react'
 import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
@@ -25,9 +25,17 @@ type IdeaStatus = ProductionStatus
 const STATUS_PILL: Record<IdeaStatus, string> = {
   new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  editing: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  editing: 'bg-cyan-400/15 text-cyan-400 border-cyan-400/30',
   ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
   posted: 'bg-green-400/15 text-green-400 border-green-400/30',
+}
+
+const STATUS_BAR_COLOR: Record<IdeaStatus, string> = {
+  new: 'bg-blue-500',
+  recording: 'bg-amber-500',
+  editing: 'bg-cyan-500',
+  ready: 'bg-purple-500',
+  posted: 'bg-green-500',
 }
 
 const STATUS_LABEL: Record<IdeaStatus, string> = {
@@ -660,14 +668,76 @@ function StatusGroup({
 
 // ─── Main board ───────────────────────────────────────────────────────────────
 
+// ─── localStorage-backed filter state ────────────────────────────────────────
+
+const STORAGE_KEY = 'orianna-ideas-filters'
+
+interface SavedFilters {
+  filter: ProductionStatus | 'all'
+  sourceFilter: SourceFilter
+  tagFilter: string
+  sortBy: SortBy
+  groupByStatus: boolean
+}
+
+const DEFAULT_FILTERS: SavedFilters = {
+  filter: 'all',
+  sourceFilter: 'all',
+  tagFilter: 'all',
+  sortBy: 'date',
+  groupByStatus: false,
+}
+
+function loadFilters(): SavedFilters {
+  if (typeof window === 'undefined') return DEFAULT_FILTERS
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return DEFAULT_FILTERS
+    return { ...DEFAULT_FILTERS, ...JSON.parse(raw) }
+  } catch { return DEFAULT_FILTERS }
+}
+
+function saveFilters(filters: SavedFilters) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)) } catch {}
+}
+
 export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
+  const [hydrated, setHydrated] = useState(false)
   const [filter, setFilter] = useState<ProductionStatus | 'all'>('all')
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
   const [tagFilter, setTagFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('date')
   const [groupByStatus, setGroupByStatus] = useState(false)
+
+  // Hydrate from localStorage on mount
+  useEffect(() => {
+    const saved = loadFilters()
+    setFilter(saved.filter)
+    setSourceFilter(saved.sourceFilter)
+    setTagFilter(saved.tagFilter)
+    setSortBy(saved.sortBy)
+    setGroupByStatus(saved.groupByStatus)
+    setHydrated(true)
+  }, [])
+
+  // Persist to localStorage on change (skip first render before hydration)
+  useEffect(() => {
+    if (!hydrated) return
+    saveFilters({ filter, sourceFilter, tagFilter, sortBy, groupByStatus })
+  }, [hydrated, filter, sourceFilter, tagFilter, sortBy, groupByStatus])
+
+  const hasActiveFilters = filter !== 'all' || sourceFilter !== 'all' || tagFilter !== 'all' || sortBy !== 'date' || groupByStatus || searchQuery.trim() !== ''
+
+  function resetFilters() {
+    setFilter('all')
+    setSourceFilter('all')
+    setTagFilter('all')
+    setSortBy('date')
+    setGroupByStatus(false)
+    setSearchQuery('')
+  }
 
   // Derive live allTags from current ideas state
   const allTags = [...new Set([...initialAllTags, ...ideas.flatMap(i => i.tags ?? [])])].sort()
@@ -870,7 +940,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-white">Ideas</h2>
           <span className="text-xs text-[#52525b] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-0.5 font-medium">
-            {ideas.length} idea{ideas.length !== 1 ? 's' : ''}
+            {hasActiveFilters ? `${filtered.length} of ${ideas.length}` : ideas.length} idea{(hasActiveFilters ? filtered.length : ideas.length) !== 1 ? 's' : ''}
           </span>
         </div>
         <button
@@ -882,10 +952,11 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         </button>
       </div>
 
-      {/* ─── Search + sort + filters ─────────────────────────────── */}
-      <div className="space-y-3 mb-4">
+      {/* ─── Toolbar ─────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#12121a] p-3 mb-4 space-y-2.5">
+        {/* Row 1: Search + Sort + Group + Reset */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525b]" />
             <input
               type="text"
@@ -894,6 +965,11 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-8 pl-8 pr-3 text-xs rounded-lg bg-[#1a1a2e] border border-white/[0.08] text-white placeholder:text-[#3f3f46] focus:border-purple-500 focus:outline-none transition-colors"
             />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#52525b] hover:text-white transition-colors">
+                <X size={12} />
+              </button>
+            )}
           </div>
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
             <SelectTrigger className="h-8 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
@@ -916,14 +992,25 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
           >
             Group
           </button>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="h-8 px-3 text-xs rounded-lg border border-white/[0.08] bg-[#1a1a2e] text-[#71717a] hover:text-white hover:border-white/[0.15] transition-all flex items-center gap-1.5"
+            >
+              <RotateCcw size={12} />
+              Reset
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Row 2: Status pills + Source + Tags (all inline) */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           {(['all', 'new', 'recording', 'editing', 'posted'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilter(s)}
-              className={`h-7 px-3 text-xs font-medium rounded-lg border transition-all ${
+              className={`h-7 px-2.5 text-xs font-medium rounded-lg border transition-all ${
                 filter === s
                   ? 'bg-purple-500/15 border-purple-500/30 text-purple-400'
                   : 'bg-transparent border-white/[0.06] text-[#71717a] hover:text-white hover:border-white/[0.15]'
@@ -937,11 +1024,9 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
               )}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
+          <span className="w-px h-5 bg-white/[0.08] mx-1" />
           <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SourceFilter)}>
-            <SelectTrigger className="h-7 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
+            <SelectTrigger className="h-7 w-auto text-xs gap-1.5 bg-transparent border-white/[0.06] hover:border-white/[0.15]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -952,11 +1037,12 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
               ))}
             </SelectContent>
           </Select>
+          <span className="w-px h-5 bg-white/[0.08] mx-1" />
           <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} />
         </div>
 
-        {/* Select all + bulk actions bar */}
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Row 3: Select all + bulk actions (only when needed) */}
+        <div className="flex items-center gap-3 flex-wrap pt-0.5 border-t border-white/[0.04]">
           <label className="flex items-center gap-2 text-xs text-[#71717a] cursor-pointer select-none">
             <IdeaCheckbox checked={allFilteredSelected} onChange={selectAll} />
             {allFilteredSelected ? 'Deselect all' : 'Select all'}
