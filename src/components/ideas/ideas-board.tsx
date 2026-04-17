@@ -494,9 +494,13 @@ function IdeaCard({
                 src={item.thumbnail_url}
                 alt=""
                 className="w-16 h-20 rounded-lg border border-white/[0.08] object-cover shrink-0"
+                referrerPolicy="no-referrer"
                 onError={(e) => {
-                  const el = e.target as HTMLImageElement
-                  el.parentElement!.style.display = 'none'
+                  (e.target as HTMLImageElement).closest('a')!.style.display = 'none'
+                }}
+                onLoad={(e) => {
+                  const img = e.target as HTMLImageElement
+                  if (img.naturalWidth === 0) img.closest('a')!.style.display = 'none'
                 }}
               />
             </a>
