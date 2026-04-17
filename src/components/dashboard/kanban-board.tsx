@@ -30,6 +30,7 @@ export function KanbanBoard({ ideas }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [maxItems, setMaxItems] = useState<number>(5)
+  const [expandedCols, setExpandedCols] = useState<Set<ProductionStatus>>(new Set())
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   function handleDragStart(e: React.DragEvent, ideaId: string) {
@@ -72,7 +73,7 @@ export function KanbanBoard({ ideas }: Props) {
           {LIMITS.map(l => (
             <button
               key={l}
-              onClick={() => setMaxItems(l)}
+              onClick={() => { setMaxItems(l); setExpandedCols(new Set()) }}
               className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
                 maxItems === l
                   ? 'bg-purple-600 text-white'
@@ -88,8 +89,9 @@ export function KanbanBoard({ ideas }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {COLUMNS.map(col => {
           const colIdeas = ideas.filter(i => i.production_status === col.status)
-          const visible = maxItems > 0 ? colIdeas.slice(0, maxItems) : colIdeas
-          const hidden = maxItems > 0 ? colIdeas.length - maxItems : 0
+          const isExpanded = expandedCols.has(col.status)
+          const visible = (maxItems > 0 && !isExpanded) ? colIdeas.slice(0, maxItems) : colIdeas
+          const hidden = (maxItems > 0 && !isExpanded) ? Math.max(0, colIdeas.length - maxItems) : 0
 
           return (
             <div
@@ -154,7 +156,16 @@ export function KanbanBoard({ ideas }: Props) {
                   <p className="text-[11px] text-muted-foreground text-center py-4">No ideas</p>
                 )}
                 {hidden > 0 && (
-                  <p className="text-[10px] text-muted-foreground text-center">+{hidden} more</p>
+                  <button
+                    onClick={() => setExpandedCols(prev => {
+                      const next = new Set(prev)
+                      next.add(col.status)
+                      return next
+                    })}
+                    className="text-[10px] text-muted-foreground hover:text-purple-400 text-center w-full transition-colors cursor-pointer"
+                  >
+                    +{hidden} more
+                  </button>
                 )}
               </div>
             </div>
