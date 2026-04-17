@@ -79,17 +79,6 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
       {/* ─── Title row ─── */}
       <div className="flex items-center gap-3 flex-wrap">
         <h3 className="font-bold text-lg flex-1 truncate text-foreground leading-tight">{script.topic}</h3>
-        {script.eval_score != null && (
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-            script.eval_score >= 8
-              ? 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400'
-              : script.eval_score >= 5
-              ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400'
-              : 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-          }`} title={script.eval_tags?.length ? `Strengths: ${script.eval_tags.join(', ')}` : undefined}>
-            {script.eval_score}/10
-          </span>
-        )}
         {script.estimated_duration && (
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center gap-1">
             &#128336; {script.estimated_duration}
@@ -187,24 +176,6 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
         </div>
       )}
 
-      {/* ─── Eval Tags ─── */}
-      {script.eval_tags && script.eval_tags.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.08em]">
-            Strengths
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {script.eval_tags.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

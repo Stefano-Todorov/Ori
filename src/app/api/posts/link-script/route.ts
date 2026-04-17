@@ -18,23 +18,21 @@ export async function POST(request: NextRequest) {
 
   const { postId, scriptId } = parsed.data
 
-  // Get the script's eval data to copy to the post
+  // Get the script to copy text to the post
   const { data: script } = await supabase
     .from('scripts')
-    .select('eval_score, eval_tags, hook, body, cta')
+    .select('hook, body, cta')
     .eq('id', scriptId)
     .eq('user_id', user.id)
     .single()
 
   if (!script) return NextResponse.json({ error: 'Script not found' }, { status: 404 })
 
-  // Link the post to the script and copy eval data
+  // Link the post to the script
   const { error } = await supabase
     .from('posts')
     .update({
       linked_script_id: scriptId,
-      eval_score: script.eval_score,
-      eval_tags: script.eval_tags,
       script_text: `HOOK: ${script.hook}\n\nBODY:\n${script.body}${script.cta ? `\n\nCTA: ${script.cta}` : ''}`,
     })
     .eq('id', postId)

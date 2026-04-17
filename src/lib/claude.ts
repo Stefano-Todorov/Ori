@@ -29,7 +29,6 @@ export interface CoachContext {
   scripts?: { topic: string; status: string; hook: string }[]
   ideas?: { idea: string; status: string }[]
   inspirationPosts?: { caption: string | null; views: number; likes: number; shares: number; saves: number; platform: string; competitor_handle: string | null }[]
-  performanceSummary?: string | null
 }
 
 export function buildSystemPrompt(ctx: CoachContext): string {
@@ -117,14 +116,6 @@ ${ctx.inspirationPosts.slice(0, 20).map(p => `- [${p.platform}]${p.competitor_ha
 Use these to understand what content the user finds inspiring and wants to learn from. Reference them when relevant, but never confuse them with the user's own posts.`
   }
 
-  let performanceSection = ''
-  if (ctx.performanceSummary) {
-    performanceSection = `
-
-${ctx.performanceSummary}
-USE THESE PATTERNS: When generating scripts, hooks, or ideas, lean into the winning patterns above. Steer away from weak patterns. Reference specific pattern names when explaining your recommendations.`
-  }
-
   return `You are Orianna, an elite AI content coach and social media strategist. You specialize in short-form video content for TikTok and Instagram Reels. You have deep expertise in hook psychology, script frameworks, platform algorithms, and engagement mechanics.
 
 USER PROFILE:
@@ -132,7 +123,7 @@ USER PROFILE:
 - Goals: ${ctx.goals}
 - Active platforms: ${ctx.platforms.join(', ')}
 - Posting target: ${ctx.postingTarget} posts per week
-${analyticsSection}${performanceSection}${competitorSection}${inspirationSection}${pipelineSection}
+${analyticsSection}${competitorSection}${inspirationSection}${pipelineSection}
 
 YOUR EXPERTISE:
 ${hookSummary}

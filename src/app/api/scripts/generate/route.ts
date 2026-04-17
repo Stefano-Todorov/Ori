@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('niche, sub_niche, goals, performance_summary')
+    .select('niche, sub_niche, goals')
     .eq('user_id', user.id)
     .single()
 
@@ -77,17 +77,13 @@ export async function POST(request: NextRequest) {
   const platformKnowledge = loadPlatformKnowledge(platform)
   const ctaPsychology = loadKnowledge('cta-psychology')
 
-  const performanceBlock = profile?.performance_summary
-    ? `\nCREATOR PERFORMANCE DATA — use this to write scripts that match their proven winning style:\n${profile.performance_summary}\n`
-    : ''
-
   const prompt = `You are an elite short-form video scriptwriter with deep expertise in viral content mechanics, hook psychology, and platform algorithms. Create a complete, ready-to-film script that is engineered to maximize watch time and engagement.
 
 Creator profile:
 - Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
 - Platform: ${platform}
 - Goals: ${profile?.goals ?? 'grow audience'}
-${performanceBlock}
+
 
 Video request:
 ${randomTopic
@@ -164,22 +160,6 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
     ? (scriptData.generated_topic as string | undefined) ?? 'Random script'
     : topic
 
-  // Eval score the generated script (non-blocking — don't fail generation if eval fails)
-  let evalScore: number | null = null
-  let evalTags: string[] = []
-  try {
-    const scriptText = buildScriptText(
-      scriptData.hook as string,
-      scriptData.body as string,
-      scriptData.cta as string | undefined,
-    )
-    const evalResult = await evalScript(scriptText)
-    evalScore = evalResult.score
-    evalTags = evalResult.tags
-  } catch {
-    // Eval is best-effort — don't block script generation
-  }
-
   const { data: script, error } = await supabase
     .from('scripts')
     .insert({
@@ -192,8 +172,6 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
       hashtags: scriptData.hashtags as string[],
       estimated_duration: scriptData.estimated_duration as string,
       variants: scriptData.variants ?? [],
-      eval_score: evalScore,
-      eval_tags: evalTags,
     })
     .select()
     .single()

@@ -7,14 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, Loader2, Zap, VideoIcon } from 'lucide-react'
+import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, VideoIcon } from 'lucide-react'
 import { linkVideoToIdea, unlinkVideoFromIdea } from '@/app/actions'
 import type { Post, ContentIdea, Script } from '@/lib/types'
 
 interface Props {
   posts: Post[]
   ideas: Pick<ContentIdea, 'id' | 'idea' | 'hook_idea' | 'status' | 'linked_post_id'>[]
-  scripts: Pick<Script, 'id' | 'topic' | 'hook' | 'body' | 'cta' | 'eval_score' | 'eval_tags' | 'created_at'>[]
+  scripts: Pick<Script, 'id' | 'topic' | 'hook' | 'body' | 'cta' | 'created_at'>[]
   lastSyncedAt: Record<string, string>
 }
 
@@ -67,10 +67,6 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const [search, setSearch] = useState('')
   const [linking, setLinking] = useState<string | null>(null)
-  const [scriptInput, setScriptInput] = useState<string | null>(null) // postId being edited
-  const [scriptText, setScriptText] = useState('')
-  const [scoring, setScoring] = useState<string | null>(null)
-  const [evalResults, setEvalResults] = useState<Record<string, { score: number; tags: string[] }>>({})
   const [brokenThumbs, setBrokenThumbs] = useState<Set<string>>(new Set())
 
   const handleThumbError = useCallback((postId: string) => {
@@ -129,25 +125,6 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
     setLinking(postId)
     await unlinkVideoFromIdea(postId)
     setLinking(null)
-  }
-
-  async function handleScoreScript(postId: string) {
-    if (!scriptText.trim()) return
-    setScoring(postId)
-    try {
-      const res = await fetch('/api/posts/eval', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, scriptText }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setEvalResults(prev => ({ ...prev, [postId]: { score: data.eval.score, tags: data.eval.tags } }))
-        setScriptInput(null)
-        setScriptText('')
-      }
-    } catch { /* silently fail */ }
-    setScoring(null)
   }
 
   async function handleLinkScript(postId: string, scriptId: string) {
@@ -284,26 +261,10 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
               )}
 
               <CardContent className="p-3 space-y-2">
-                {/* Caption + Eval Score */}
-                <div className="flex items-start gap-2">
-                  <p className="text-sm line-clamp-2 min-h-[2.5rem] flex-1">
-                    {post.caption || <span className="text-muted-foreground italic">No caption</span>}
-                  </p>
-                  {(post.eval_score != null || evalResults[post.id]) && (() => {
-                    const score = evalResults[post.id]?.score ?? post.eval_score!
-                    return (
-                      <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full border ${
-                        score >= 8
-                          ? 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400'
-                          : score >= 5
-                          ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400'
-                          : 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-                      }`} title={`Eval score: ${score}/10`}>
-                        {score}/10
-                      </span>
-                    )
-                  })()}
-                </div>
+                {/* Caption */}
+                <p className="text-sm line-clamp-2 min-h-[2.5rem]">
+                  {post.caption || <span className="text-muted-foreground italic">No caption</span>}
+                </p>
 
                 {/* Date */}
                 {(post.posted_at || post.created_at) && (
@@ -323,20 +284,6 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                     <span className="flex items-center gap-1"><TrendingUp className="h-3 w-3" />{post.engagement_rate}%</span>
                   )}
                 </div>
-
-                {/* Eval Tags */}
-                {(() => {
-                  const tags = evalResults[post.id]?.tags ?? post.eval_tags
-                  return tags && tags.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {tags.map((tag) => (
-                        <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null
-                })()}
 
                 {/* Linked idea */}
                 {linkedIdea && (
@@ -360,47 +307,9 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                     <div className="flex items-center gap-1.5 text-xs bg-blue-500/10 rounded-md px-2 py-1.5">
                       <FileText className="h-3 w-3 text-blue-400 shrink-0" />
                       <span className="truncate text-blue-400">{linkedScript.topic}</span>
-                      {linkedScript.eval_score != null && (
-                        <span className="shrink-0 text-[10px] font-bold text-blue-400">{linkedScript.eval_score}/10</span>
-                      )}
                     </div>
                   ) : null
                 })()}
-
-                {/* Script input for manual script entry */}
-                {scriptInput === post.id ? (
-                  <div className="space-y-2 pt-1">
-                    <textarea
-                      value={scriptText}
-                      onChange={(e) => setScriptText(e.target.value)}
-                      placeholder="Paste your script here... The more detail, the better your insights."
-                      className="w-full text-xs bg-muted dark:bg-white/[0.04] border border-border rounded-lg p-2 resize-none min-h-[80px] text-foreground placeholder:text-muted-foreground"
-                      rows={4}
-                    />
-                    <div className="flex gap-1.5">
-                      <Button
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => handleScoreScript(post.id)}
-                        disabled={scoring === post.id || !scriptText.trim()}
-                      >
-                        {scoring === post.id ? (
-                          <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Scoring...</>
-                        ) : (
-                          <><Zap className="h-3 w-3 mr-1" />Score it</>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => { setScriptInput(null); setScriptText('') }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : null}
 
                 {/* Actions */}
                 <div className="flex items-center gap-1.5 pt-1 flex-wrap">
@@ -414,19 +323,6 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                       <ExternalLink className="h-3 w-3" />
                       Open
                     </a>
-                  )}
-
-                  {/* Add script button (only if no script text and no linked script) */}
-                  {!post.script_text && !post.linked_script_id && scriptInput !== post.id && !evalResults[post.id] && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-xs"
-                      onClick={() => { setScriptInput(post.id); setScriptText('') }}
-                    >
-                      <FileText className="h-3 w-3 mr-1" />
-                      Add Script
-                    </Button>
                   )}
 
                   {/* Link to script */}
@@ -451,9 +347,6 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
                             className="text-xs"
                           >
                             <span className="truncate flex-1">{script.topic}</span>
-                            {script.eval_score != null && (
-                              <span className="shrink-0 ml-2 text-muted-foreground">{script.eval_score}/10</span>
-                            )}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

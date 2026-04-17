@@ -88,7 +88,6 @@ export async function POST(request: NextRequest) {
     competitors: competitors ?? undefined,
     scripts: scripts ?? undefined,
     ideas: ideas ?? undefined,
-    performanceSummary: profile?.performance_summary ?? undefined,
   })
 
   // Save user message

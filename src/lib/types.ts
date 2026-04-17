@@ -51,8 +51,6 @@ export interface Post {
   linked_idea_id: string | null
   linked_script_id: string | null
   script_text: string | null
-  eval_score: number | null
-  eval_tags: string[]
   imported_at: string
   created_at: string
 }
@@ -69,8 +67,6 @@ export interface Script {
   estimated_duration: string | null
   status: PostStatus
   variants: ScriptVariant[]
-  eval_score: number | null
-  eval_tags: string[]
   created_at: string
 }
 

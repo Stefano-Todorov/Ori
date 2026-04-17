@@ -23,7 +23,7 @@ export default async function MyVideosPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('scripts')
-      .select('id, topic, hook, body, cta, eval_score, eval_tags, created_at')
+      .select('id, topic, hook, body, cta, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50),
