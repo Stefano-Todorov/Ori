@@ -14,7 +14,7 @@ const features = [
     icon: '✍️',
     title: 'Script Generator',
     description: 'Go from idea to ready-to-film script in seconds. Hooks, body, CTAs, hashtags — with multiple variants so you can pick your favorite.',
-    details: ['Multiple hook & CTA styles', 'Difficulty levels (easy → advanced)', 'Save as idea or film directly'],
+    details: ['Multiple hook & CTA styles', 'Save as idea or film directly'],
   },
   {
     icon: '💡',

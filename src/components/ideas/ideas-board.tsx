@@ -38,14 +38,6 @@ const STATUS_LABEL: Record<IdeaStatus, string> = {
   posted: 'Posted',
 }
 
-const DIFFICULTY_COLORS = {
-  easy: 'bg-green-400/15 text-green-400 border-green-400/30',
-  medium: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  hard: 'bg-red-400/15 text-red-400 border-red-400/30',
-}
-
-const VIDEO_TYPES = ['Talking head', 'B-roll', 'Vlog', 'Reaction', 'Trend', 'Educational']
-
 // ─── Shared form state ────────────────────────────────────────────────────────
 
 interface IdeaFormState {
@@ -56,15 +48,13 @@ interface IdeaFormState {
   scriptSnippet: string
   cta: string
   caption: string
-  difficulty: 'easy' | 'medium' | 'hard' | ''
-  videoType: string
   tags: string[]
 }
 
 function emptyForm(): IdeaFormState {
   return {
     idea: '', source: '', inspirationUrl: '', hookIdea: '',
-    scriptSnippet: '', cta: '', caption: '', difficulty: '', videoType: '', tags: [],
+    scriptSnippet: '', cta: '', caption: '', tags: [],
   }
 }
 
@@ -77,19 +67,11 @@ function formFromIdea(item: ContentIdea): IdeaFormState {
     scriptSnippet: item.script_snippet ?? '',
     cta: item.cta ?? '',
     caption: item.caption ?? '',
-    difficulty: item.difficulty ?? '',
-    videoType: item.video_type ?? '',
     tags: item.tags ?? [],
   }
 }
 
 // ─── Shared form fields ───────────────────────────────────────────────────────
-
-const DIFFICULTY_PILL: Record<string, string> = {
-  easy: 'bg-green-600 border-green-500 text-white',
-  medium: 'bg-amber-600 border-amber-500 text-white',
-  hard: 'bg-red-600 border-red-500 text-white',
-}
 
 const fieldInputClass = 'bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
 
@@ -190,45 +172,6 @@ function IdeaFormFields({ form, setForm, allTags }: { form: IdeaFormState; setFo
         <div className="flex items-center gap-2 flex-wrap">
           <TagPills tags={form.tags} />
           <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-        </div>
-      </div>
-
-      {/* Section 2: Settings */}
-      <SectionDivider label="Settings" />
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <FormLabel>Difficulty</FormLabel>
-          <div className="flex gap-1.5">
-            {(['easy', 'medium', 'hard'] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => set('difficulty', form.difficulty === d ? '' : d)}
-                className={`flex-1 py-2 text-xs rounded-full border font-semibold capitalize transition-all duration-200 ${
-                  form.difficulty === d
-                    ? DIFFICULTY_PILL[d]
-                    : 'bg-muted border-border text-muted-foreground hover:border-purple-300'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <FormLabel>Video type</FormLabel>
-          <Select value={form.videoType} onValueChange={(v) => set('videoType', v)}>
-            <SelectTrigger className={`${fieldInputClass} h-9`}>
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent>
-              {VIDEO_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -485,7 +428,7 @@ function IdeaCard({
           : 'border-white/[0.06] bg-[#1a1a2e] hover:border-white/[0.12] hover:bg-[#1e1e34]'
       }`}
       style={{ padding: '16px 18px' }}
-      onClick={() => hasContent && setExpanded(!expanded)}
+      onClick={() => onEdit()}
     >
       {/* Header row */}
       <div className="flex items-start gap-3">
@@ -510,16 +453,6 @@ function IdeaCard({
 
           {/* Metadata row */}
           <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
-            {item.difficulty && (
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium ${DIFFICULTY_COLORS[item.difficulty]}`}>
-                {item.difficulty}
-              </span>
-            )}
-            {item.video_type && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-medium bg-white/[0.05] text-[#a1a1aa] border-white/[0.1]">
-                {item.video_type}
-              </span>
-            )}
             {parsed ? (
               <>
                 <span className="text-[#71717a]">via {parsed.prefix}:</span>
@@ -540,7 +473,9 @@ function IdeaCard({
           {/* Tags row */}
           <div className="flex items-center gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>
             <TagPills tags={item.tags ?? []} />
-            <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
+            <span onClick={(e) => e.stopPropagation()}>
+              <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
+            </span>
           </div>
 
           {/* View original + Download buttons */}
@@ -682,15 +617,6 @@ const SOURCE_LABEL: Record<SourceFilter, string> = {
   ai: 'Created by AI',
 }
 
-type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
-
-const DIFFICULTY_LABEL: Record<DifficultyFilter, string> = {
-  all: 'All Difficulties',
-  easy: 'Easy',
-  medium: 'Medium',
-  hard: 'Hard',
-}
-
 type SortBy = 'date' | 'status' | 'source'
 
 const STATUS_ORDER: Record<IdeaStatus, number> = { new: 0, recording: 1, editing: 2, ready: 3, posted: 4 }
@@ -770,7 +696,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   const [ideas, setIdeas] = useState(initialIdeas)
   const [filter, setFilter] = useState<ProductionStatus | 'all'>('all')
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
-  const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>('all')
   const [tagFilter, setTagFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('date')
@@ -803,8 +728,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       script_snippet: addForm.scriptSnippet.trim() || undefined,
       cta: addForm.cta.trim() || undefined,
       caption: addForm.caption.trim() || undefined,
-      difficulty: addForm.difficulty || undefined,
-      video_type: addForm.videoType || undefined,
       tags: addForm.tags.length > 0 ? addForm.tags : undefined,
     })
     setIdeas((prev) => [{
@@ -819,8 +742,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       script_snippet: addForm.scriptSnippet.trim() || null,
       cta: addForm.cta.trim() || null,
       caption: addForm.caption.trim() || null,
-      difficulty: (addForm.difficulty || null) as ContentIdea['difficulty'],
-      video_type: addForm.videoType || null,
       tags: addForm.tags,
       status: 'new',
       production_status: 'new',
@@ -849,8 +770,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       script_snippet: editForm.scriptSnippet.trim() || null,
       cta: editForm.cta.trim() || null,
       caption: editForm.caption.trim() || null,
-      difficulty: (editForm.difficulty || null) as ContentIdea['difficulty'],
-      video_type: editForm.videoType || null,
       tags: editForm.tags,
     }
     await updateIdea(editingId, fields)
@@ -925,8 +844,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       script_snippet: item.script_snippet,
       cta: item.cta,
       caption: item.caption,
-      difficulty: item.difficulty,
-      video_type: item.video_type,
       status: item.status,
     })
     if (restored) {
@@ -948,7 +865,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   const filtered = ideas
     .filter((i) => filter === 'all' || i.production_status === filter)
     .filter((i) => sourceFilter === 'all' || getSourceType(i) === sourceFilter)
-    .filter((i) => difficultyFilter === 'all' || i.difficulty === difficultyFilter)
     .filter((i) => tagFilter === 'all' || (i.tags ?? []).includes(tagFilter))
     .filter((i) => !q || i.idea.toLowerCase().includes(q) || (i.source ?? '').toLowerCase().includes(q) || (i.hook_idea ?? '').toLowerCase().includes(q))
     .sort((a, b) => {
@@ -1064,18 +980,6 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
               {(['all', 'mine', 'saved', 'ai'] as const).map((s) => (
                 <SelectItem key={s} value={s}>
                   {SOURCE_LABEL[s]}{s !== 'all' ? ` (${ideas.filter((i) => getSourceType(i) === s).length})` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={difficultyFilter} onValueChange={(v) => setDifficultyFilter(v as DifficultyFilter)}>
-            <SelectTrigger className="h-7 w-auto text-xs gap-1.5 bg-[#1a1a2e] border-white/[0.08]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
-                <SelectItem key={d} value={d}>
-                  {DIFFICULTY_LABEL[d]}{d !== 'all' ? ` (${ideas.filter((i) => i.difficulty === d).length})` : ''}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -16,11 +16,6 @@ const PLATFORMS: { key: Platform; label: string }[] = [
   { key: 'instagram', label: 'Instagram' },
 ]
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  hard: 'bg-red-500/10 text-red-600 dark:text-red-400',
-}
 
 export function PlanPostForm({ ideas }: Props) {
   const router = useRouter()
@@ -54,7 +49,6 @@ export function PlanPostForm({ ideas }: Props) {
   const filteredIdeas = search
     ? ideas.filter(i =>
         i.idea.toLowerCase().includes(search.toLowerCase()) ||
-        i.video_type?.toLowerCase().includes(search.toLowerCase()) ||
         i.tags?.some(t => t.toLowerCase().includes(search.toLowerCase()))
       )
     : ideas
@@ -154,16 +148,6 @@ export function PlanPostForm({ ideas }: Props) {
                     >
                       <p className="text-xs font-medium text-foreground leading-snug line-clamp-2">{idea.idea}</p>
                       <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        {idea.difficulty && (
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${DIFFICULTY_COLORS[idea.difficulty] ?? 'bg-muted text-muted-foreground'}`}>
-                            {idea.difficulty}
-                          </span>
-                        )}
-                        {idea.video_type && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                            {idea.video_type}
-                          </span>
-                        )}
                         {idea.tags?.slice(0, 2).map(tag => (
                           <span key={tag} className="text-[10px] text-muted-foreground bg-muted/50 dark:bg-white/[0.04] px-1.5 py-0.5 rounded-full">
                             {tag}

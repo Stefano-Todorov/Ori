@@ -26,8 +26,8 @@ export interface CoachContext {
   postingTarget: number
   posts?: PostSummary[]
   competitors?: { handle: string; platform: string; avg_views: number | null }[]
-  scripts?: { topic: string; status: string; hook: string; difficulty: string | null }[]
-  ideas?: { idea: string; status: string; difficulty: string | null }[]
+  scripts?: { topic: string; status: string; hook: string }[]
+  ideas?: { idea: string; status: string }[]
   inspirationPosts?: { caption: string | null; views: number; likes: number; shares: number; saves: number; platform: string; competitor_handle: string | null }[]
   performanceSummary?: string | null
 }

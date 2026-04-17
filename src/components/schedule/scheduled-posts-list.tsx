@@ -4,20 +4,12 @@ import { useTransition } from 'react'
 import { deleteScheduledPost } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
-import type { ScheduledPost, Difficulty } from '@/lib/types'
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  hard: 'bg-red-500/10 text-red-600 dark:text-red-400',
-}
+import type { ScheduledPost } from '@/lib/types'
 
 interface PostWithIdea extends ScheduledPost {
   content_idea?: {
     id: string
     idea: string
-    difficulty?: Difficulty | null
-    video_type?: string | null
     tags?: string[]
     hook_idea?: string | null
     cta?: string | null
@@ -77,16 +69,6 @@ export function ScheduledPostsList({ posts }: Props) {
 
                   {/* Tags row */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {idea?.difficulty && (
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${DIFFICULTY_COLORS[idea.difficulty] ?? 'bg-muted text-muted-foreground'}`}>
-                        {idea.difficulty}
-                      </span>
-                    )}
-                    {idea?.video_type && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                        {idea.video_type}
-                      </span>
-                    )}
                     {idea?.tags?.slice(0, 3).map(tag => (
                       <span key={tag} className="text-[10px] text-muted-foreground bg-muted/50 dark:bg-white/[0.04] px-1.5 py-0.5 rounded-full">
                         {tag}

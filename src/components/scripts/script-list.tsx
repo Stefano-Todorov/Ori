@@ -90,17 +90,6 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
             {script.eval_score}/10
           </span>
         )}
-        {script.difficulty && (
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-            script.difficulty === 'easy'
-              ? 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400'
-              : script.difficulty === 'medium'
-              ? 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400'
-              : 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-          }`}>
-            {script.difficulty}
-          </span>
-        )}
         {script.estimated_duration && (
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center gap-1">
             &#128336; {script.estimated_duration}
@@ -222,41 +211,20 @@ function ScriptCard({ script, onDelete }: { script: Script; onDelete: (id: strin
 
 export function ScriptList({ scripts: initialScripts }: Props) {
   const [scripts, setScripts] = useState(initialScripts)
-  const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
-
   async function handleDelete(id: string) {
     await deleteScript(id)
     setScripts((prev) => prev.filter((s) => s.id !== id))
   }
 
-  const filtered = filter === 'all' ? scripts : scripts.filter((s) => s.difficulty === filter)
-
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-lg font-bold text-foreground">Saved scripts ({scripts.length})</h2>
-        <div className="flex gap-2">
-          {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
-            <button
-              key={d}
-              onClick={() => setFilter(d)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-150 ${
-                filter === d
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
-              }`}
-            >
-              {d.charAt(0).toUpperCase() + d.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h2 className="text-lg font-bold text-foreground">Saved scripts ({scripts.length})</h2>
 
-      {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">No scripts yet for this difficulty.</p>
+      {scripts.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">No scripts yet.</p>
       ) : (
         <div className="space-y-5">
-          {filtered.map((script) => (
+          {scripts.map((script) => (
             <ScriptCard key={script.id} script={script} onDelete={handleDelete} />
           ))}
         </div>

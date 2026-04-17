@@ -9,7 +9,6 @@ import { z } from 'zod'
 
 const RequestSchema = z.object({
   topic: z.string(),
-  difficulty: z.enum(['easy', 'medium', 'hard']),
   platform: z.string(),
   angle: z.string().optional(),
   hookAngles: z.array(z.string()).optional(),
@@ -42,7 +41,7 @@ export async function POST(request: NextRequest) {
   const parsed = RequestSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
 
-  const { topic, difficulty, platform, angle, hookAngles, ctaAngles, generateVariants, randomTopic } = parsed.data
+  const { topic, platform, angle, hookAngles, ctaAngles, generateVariants, randomTopic } = parsed.data
   const primaryHook = hookAngles?.[0]
   const primaryCta = ctaAngles?.[0]
   const extraHookStyles = hookAngles?.slice(1) ?? []
@@ -52,12 +51,6 @@ export async function POST(request: NextRequest) {
     .select('niche, sub_niche, goals, performance_summary')
     .eq('user_id', user.id)
     .single()
-
-  const difficultyGuides = {
-    easy: 'talking head, no edits needed, just speak to camera, 30-60 seconds',
-    medium: 'some B-roll or text overlays, basic editing, 45-90 seconds',
-    hard: 'complex editing, transitions, multiple clips, possibly motion graphics, 60-180 seconds',
-  }
 
   const hookAngleGuides: Record<string, string> = {
     Negative: 'Start with what NOT to do, a mistake, or a warning. Creates instant curiosity.',
@@ -101,7 +94,6 @@ Video request:
 ${randomTopic
   ? `- Topic: SURPRISE ME — choose a compelling, viral-worthy video topic that would perform well for this creator's niche and platform. Pick something specific, timely, or counterintuitive that audiences love to share.`
   : `- Topic: ${topic}`}
-- Difficulty: ${difficulty} (${difficultyGuides[difficulty]})
 ${angle ? `- Content angle: ${angle}` : ''}
 ${primaryHook ? `- Primary hook style: ${primaryHook} — ${hookAngleGuides[primaryHook] ?? ''}` : ''}
 ${extraHookStyles.length > 0 ? `- Also generate variant hooks for these styles: ${extraHookStyles.join(', ')}` : ''}
@@ -139,7 +131,7 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
   "hashtags": ["relevant", "hashtags", "for", "${platform}"],
   "estimated_duration": "e.g. 45-60 seconds",
   "hook_explanation": "Why this hook works for this topic",
-  "filming_tips": "Specific tips for recording this at ${difficulty} difficulty"${generateVariants ? `,
+  "filming_tips": "Specific tips for recording this video"${generateVariants ? `,
   "variants": [${extraHookStyles.length > 0
     ? extraHookStyles.map((s) => `\n    { "hook": "Hook written in ${s} style", "angle": "${s} — explain why this style works for this topic" }`).join(',')
     : `
@@ -199,7 +191,6 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
       body: scriptData.body as string,
       cta: scriptData.cta as string,
       hashtags: scriptData.hashtags as string[],
-      difficulty,
       estimated_duration: scriptData.estimated_duration as string,
       variants: scriptData.variants ?? [],
       eval_score: evalScore,

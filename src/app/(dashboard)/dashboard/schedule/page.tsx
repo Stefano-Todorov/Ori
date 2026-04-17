@@ -16,7 +16,7 @@ export default async function SchedulePage() {
   ] = await Promise.all([
     supabase
       .from('scheduled_posts')
-      .select('*, content_idea:content_ideas(id, idea, difficulty, video_type, tags, hook_idea, cta)')
+      .select('*, content_idea:content_ideas(id, idea, tags, hook_idea, cta)')
       .eq('user_id', user.id)
       .order('scheduled_date', { ascending: true }),
     supabase

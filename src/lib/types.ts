@@ -1,5 +1,5 @@
 export type Platform = 'tiktok' | 'instagram'
-export type Difficulty = 'easy' | 'medium' | 'hard'
+
 export type PostStatus = 'draft' | 'used' | 'archived'
 export type ProductionStatus = 'new' | 'recording' | 'editing' | 'ready' | 'posted'
 
@@ -40,7 +40,6 @@ export interface Post {
   transcript: string | null
   hook_text: string | null
   hook_score: number | null
-  difficulty: Difficulty | null
   edit_style: string | null
   thumbnail_description: string | null
   thumbnail_url: string | null
@@ -67,7 +66,6 @@ export interface Script {
   body: string
   cta: string | null
   hashtags: string[]
-  difficulty: Difficulty | null
   estimated_duration: string | null
   status: PostStatus
   variants: ScriptVariant[]
@@ -116,8 +114,6 @@ export interface ContentIdea {
   script_snippet: string | null
   cta: string | null
   caption: string | null
-  difficulty: Difficulty | null
-  video_type: string | null
   tags: string[]
   status: 'new' | 'in_progress' | 'done' | 'archived'
   production_status: ProductionStatus

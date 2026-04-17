@@ -58,13 +58,6 @@ function postTitle(post: Post): string {
 
 // ─── Types ────────────────────────────────────────────
 
-const VIDEO_TYPES = ['Talking head', 'B-roll', 'Vlog', 'Reaction', 'Trend', 'Educational']
-const DIFFICULTY_PILL: Record<string, string> = {
-  easy: 'bg-green-600 border-green-500 text-white',
-  medium: 'bg-amber-600 border-amber-500 text-white',
-  hard: 'bg-red-600 border-red-500 text-white',
-}
-
 interface IdeaForm {
   id: string
   idea: string
@@ -73,8 +66,6 @@ interface IdeaForm {
   scriptSnippet: string
   cta: string
   caption: string
-  difficulty: 'easy' | 'medium' | 'hard' | ''
-  videoType: string
   tags: string[]
   saving: boolean
   saved: boolean
@@ -85,7 +76,7 @@ function emptyIdeaForm(url: string, tags: string[] = []): IdeaForm {
     id: crypto.randomUUID(),
     idea: '', inspirationUrl: url, hookIdea: '',
     scriptSnippet: '', cta: '', caption: '',
-    difficulty: '', videoType: '', tags: [...tags], saving: false, saved: false,
+    tags: [...tags], saving: false, saved: false,
   }
 }
 
@@ -128,8 +119,6 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
       script_snippet: form.scriptSnippet.trim() || undefined,
       cta: form.cta.trim() || undefined,
       caption: form.caption.trim() || undefined,
-      difficulty: form.difficulty || undefined,
-      video_type: form.videoType || undefined,
       tags: form.tags.length > 0 ? form.tags : undefined,
     })
     updateForm(form.id, { saving: false, saved: true })
@@ -395,46 +384,6 @@ function IdeaFormInline({ form, allTags, urlLocked, onChange, onSave }: {
           rows={2}
           className={`w-full text-sm px-3 py-2 ${fieldInputClass}`}
         />
-      </div>
-
-      {/* Settings row */}
-      <div className="border-t border-border pt-3 mt-1">
-        <p className="text-[9px] uppercase tracking-[0.08em] text-[#555570] font-semibold mb-2">Settings</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Difficulty</label>
-            <div className="flex gap-1">
-              {(['easy', 'medium', 'hard'] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => onChange({ difficulty: form.difficulty === d ? '' : d })}
-                  className={`flex-1 py-1.5 text-[10px] rounded-full border font-semibold capitalize transition-all duration-200 ${
-                    form.difficulty === d
-                      ? DIFFICULTY_PILL[d]
-                      : 'bg-muted border-border text-muted-foreground hover:border-purple-300'
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Video type</label>
-            <select
-              value={form.videoType}
-              onChange={(e) => onChange({ videoType: e.target.value })}
-              className={`w-full text-xs px-2 py-1.5 h-8 ${fieldInputClass}`}
-            >
-              <option value="">Select...</option>
-              {VIDEO_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
 
       <button

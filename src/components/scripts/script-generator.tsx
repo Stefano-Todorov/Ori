@@ -13,7 +13,6 @@ interface GeneratedScript {
   body: string
   cta: string
   hashtags: string[]
-  difficulty: string
   estimated_duration: string
   status: 'draft' | 'used' | 'archived'
   variants: { hook: string; angle: string }[]
@@ -30,23 +29,7 @@ interface Props {
   defaultPlatform: string
 }
 
-const DIFFICULTY_PILL_STYLES: Record<string, string> = {
-  easy: 'bg-green-500/15 border-green-500/30 text-green-600 dark:text-green-400',
-  medium: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-600 dark:text-yellow-400',
-  hard: 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400',
-}
 
-const DIFFICULTY_DESCRIPTIONS = {
-  easy: 'Talk to camera, no editing',
-  medium: 'Some cuts + text overlays',
-  hard: 'Complex editing + B-roll',
-}
-
-const DIFFICULTY_SUBTITLE_COLORS = {
-  easy: 'text-green-600 dark:text-green-400',
-  medium: 'text-amber-600 dark:text-amber-400',
-  hard: 'text-red-600 dark:text-red-400',
-}
 
 const STATUS_NEXT: Record<string, 'draft' | 'used' | 'archived'> = {
   draft: 'used',
@@ -213,11 +196,6 @@ function ScriptResultCard({
       {/* ─── Title row ─── */}
       <div className="flex items-center gap-3 flex-wrap">
         <h3 className="font-bold text-lg flex-1 truncate text-foreground leading-tight">{result.script.topic}</h3>
-        {result.script.difficulty && (
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${DIFFICULTY_PILL_STYLES[result.script.difficulty] ?? ''}`}>
-            {result.script.difficulty}
-          </span>
-        )}
         {result.script.estimated_duration && (
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400 flex items-center gap-1">
             &#128336; {result.script.estimated_duration}
@@ -416,7 +394,6 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
   const [hookAngles, setHookAngles] = useState<string[]>([])
   const [ctaAngles, setCtaAngles] = useState<string[]>([])
   const platform = defaultPlatform
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
   const [scriptCount, setScriptCount] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -470,7 +447,6 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: random ? '' : topic,
-            difficulty,
             platform,
             angle: angle || undefined,
             hookAngles: hookAngles.length > 0 ? hookAngles : undefined,
@@ -532,7 +508,6 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
       hook_idea: result.script.hook,
       script_snippet: result.script.body,
       cta: result.script.cta,
-      difficulty: result.script.difficulty as 'easy' | 'medium' | 'hard' | undefined,
     })
     setIdeaSavedMap((prev) => ({ ...prev, [result.script.id]: true }))
   }
@@ -587,35 +562,6 @@ export function ScriptGenerator({ defaultPlatform }: Props) {
             selected={ctaAngles}
             onChange={setCtaAngles}
           />
-
-          {/* Difficulty */}
-          <div className="space-y-2.5">
-            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Difficulty</label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {(['easy', 'medium', 'hard'] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDifficulty(d)}
-                  className={`relative py-3 px-3 rounded-xl text-left transition-all duration-200 ${
-                    difficulty === d
-                      ? 'bg-purple-500/10 dark:bg-purple-500/15 border-2 border-purple-500 shadow-md shadow-purple-500/10'
-                      : 'bg-muted/50 dark:bg-[#1a1a2e] border border-border dark:border-white/6 hover:border-purple-500/40 hover:bg-muted dark:hover:bg-[#1e1e2e]'
-                  }`}
-                >
-                  {difficulty === d && (
-                    <span className="absolute top-2 right-2 text-purple-500 text-xs font-bold">&#10003;</span>
-                  )}
-                  <div className={`text-sm font-bold capitalize ${difficulty === d ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    {d}
-                  </div>
-                  <div className={`text-[11px] mt-0.5 hidden sm:block ${difficulty === d ? DIFFICULTY_SUBTITLE_COLORS[d] : 'text-muted-foreground/60'}`}>
-                    {DIFFICULTY_DESCRIPTIONS[d]}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Number of scripts */}
           <div className="space-y-2.5">

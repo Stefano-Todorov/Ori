@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from 'react'
 import { updateProductionStatus, updateIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
-import type { ContentIdea, ProductionStatus, Difficulty } from '@/lib/types'
+import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import { GripVertical, ChevronDown } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -19,12 +19,6 @@ const COLUMNS: { status: ProductionStatus; label: string; color: string; border:
   { status: 'ready', label: 'Ready to Post', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', border: 'border-t-purple-500' },
   { status: 'posted', label: 'Posted', color: 'bg-green-500/10 text-green-600 dark:text-green-400', border: 'border-t-green-500' },
 ]
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  hard: 'bg-red-500/10 text-red-600 dark:text-red-400',
-}
 
 const LIMITS = [5, 10, 20, 0] as const
 const LIMIT_LABELS: Record<number, string> = { 5: '5', 10: '10', 20: '20', 0: 'All' }
@@ -45,8 +39,6 @@ function EditIdeaDialog({
     script_snippet: idea?.script_snippet ?? '',
     cta: idea?.cta ?? '',
     caption: idea?.caption ?? '',
-    difficulty: idea?.difficulty ?? '',
-    video_type: idea?.video_type ?? '',
   })
 
   if (!idea) return null
@@ -59,8 +51,6 @@ function EditIdeaDialog({
         script_snippet: form.script_snippet || null,
         cta: form.cta || null,
         caption: form.caption || null,
-        difficulty: (form.difficulty || null) as Difficulty | null,
-        video_type: form.video_type || null,
       })
       router.refresh()
       onClose()
@@ -120,31 +110,6 @@ function EditIdeaDialog({
               placeholder="Caption..."
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Difficulty</label>
-              <select
-                value={form.difficulty}
-                onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
-                className={`w-full h-9 px-3 text-sm ${inputClass}`}
-              >
-                <option value="">None</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Video Type</label>
-              <Input
-                value={form.video_type}
-                onChange={e => setForm(f => ({ ...f, video_type: e.target.value }))}
-                className={inputClass}
-                placeholder="e.g. Talking head"
-              />
-            </div>
-          </div>
-
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={onClose}
@@ -283,16 +248,6 @@ export function KanbanBoard({ ideas }: Props) {
                         <GripVertical size={14} className="mt-0.5 text-muted-foreground/40 shrink-0 hidden md:block cursor-grab" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{idea.idea}</p>
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            {idea.difficulty && (
-                              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${DIFFICULTY_COLORS[idea.difficulty]}`}>
-                                {idea.difficulty}
-                              </span>
-                            )}
-                            {idea.video_type && (
-                              <span className="text-[10px] text-muted-foreground">{idea.video_type}</span>
-                            )}
-                          </div>
                         </div>
                         {/* Mobile: dropdown to change status */}
                         <div className="md:hidden relative" onClick={e => e.stopPropagation()}>

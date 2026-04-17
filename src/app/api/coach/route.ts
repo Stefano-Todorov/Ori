@@ -65,13 +65,13 @@ export async function POST(request: NextRequest) {
       .limit(10),
     supabase
       .from('scripts')
-      .select('topic, status, hook, difficulty')
+      .select('topic, status, hook')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(10),
     supabase
       .from('content_ideas')
-      .select('idea, status, difficulty')
+      .select('idea, status')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20),

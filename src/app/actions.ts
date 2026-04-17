@@ -71,8 +71,6 @@ export async function addIdea(
     script_snippet?: string
     cta?: string
     caption?: string
-    difficulty?: 'easy' | 'medium' | 'hard'
-    video_type?: string
     thumbnail_url?: string
     tags?: string[]
   }
@@ -90,8 +88,6 @@ export async function addIdea(
     script_snippet: extra?.script_snippet || null,
     cta: extra?.cta || null,
     caption: extra?.caption || null,
-    difficulty: extra?.difficulty || null,
-    video_type: extra?.video_type || null,
     tags: extra?.tags || [],
   })
   revalidatePath('/dashboard/ideas')
@@ -287,8 +283,6 @@ export async function restoreIdea(idea: {
   script_snippet?: string | null
   cta?: string | null
   caption?: string | null
-  difficulty?: 'easy' | 'medium' | 'hard' | null
-  video_type?: string | null
   status?: 'new' | 'in_progress' | 'done' | 'archived'
 }) {
   const supabase = await createClient()
@@ -312,8 +306,6 @@ export async function updateIdea(
     script_snippet?: string | null
     cta?: string | null
     caption?: string | null
-    difficulty?: 'easy' | 'medium' | 'hard' | null
-    video_type?: string | null
     tags?: string[]
   }
 ) {

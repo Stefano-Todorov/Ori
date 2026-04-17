@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import type { ContentIdea, ProductionStatus, Difficulty } from '@/lib/types'
+import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import {
   DndContext,
   DragOverlay,
@@ -38,12 +38,6 @@ const STAGES: { status: ProductionStatus; label: string; color: string; bg: stri
   { status: 'ready', label: 'Ready to Post', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
   { status: 'posted', label: 'Posted', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
 ]
-
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'bg-green-400/15 text-green-600 dark:text-green-400 border-green-400/30',
-  medium: 'bg-amber-400/15 text-amber-600 dark:text-amber-400 border-amber-400/30',
-  hard: 'bg-red-400/15 text-red-600 dark:text-red-400 border-red-400/30',
-}
 
 const STATUS_PILL: Record<ProductionStatus, string> = {
   new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
@@ -164,16 +158,6 @@ function IdeaCardContent({
 
           {/* Metadata row */}
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap text-xs">
-            {idea.difficulty && (
-              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full border text-[10px] font-medium ${DIFFICULTY_COLORS[idea.difficulty] ?? ''}`}>
-                {idea.difficulty}
-              </span>
-            )}
-            {idea.video_type && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full border text-[10px] font-medium bg-muted/30 dark:bg-white/[0.05] text-muted-foreground border-border/30 dark:border-white/[0.1]">
-                {idea.video_type}
-              </span>
-            )}
             {parsed ? (
               <>
                 <span className="text-muted-foreground">via {parsed.prefix}:</span>
@@ -340,8 +324,6 @@ function EditIdeaDialog({
     script_snippet: idea?.script_snippet ?? '',
     cta: idea?.cta ?? '',
     caption: idea?.caption ?? '',
-    difficulty: idea?.difficulty ?? '',
-    video_type: idea?.video_type ?? '',
   })
 
   if (!idea) return null
@@ -354,8 +336,6 @@ function EditIdeaDialog({
         script_snippet: form.script_snippet || null,
         cta: form.cta || null,
         caption: form.caption || null,
-        difficulty: (form.difficulty || null) as Difficulty | null,
-        video_type: form.video_type || null,
       })
       router.refresh()
       onClose()
@@ -415,31 +395,6 @@ function EditIdeaDialog({
               placeholder="Caption..."
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Difficulty</label>
-              <select
-                value={form.difficulty}
-                onChange={e => setForm(f => ({ ...f, difficulty: e.target.value }))}
-                className={`w-full h-9 px-3 text-sm ${inputClass}`}
-              >
-                <option value="">None</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Video Type</label>
-              <Input
-                value={form.video_type}
-                onChange={e => setForm(f => ({ ...f, video_type: e.target.value }))}
-                className={inputClass}
-                placeholder="e.g. Talking head"
-              />
-            </div>
-          </div>
-
           <div className="flex justify-end gap-2 pt-2">
             <button
               onClick={onClose}
