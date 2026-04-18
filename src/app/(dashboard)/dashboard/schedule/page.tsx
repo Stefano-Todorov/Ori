@@ -13,6 +13,7 @@ export default async function SchedulePage() {
   const [
     { data: scheduledPosts },
     { data: allIdeas },
+    { data: profileData },
   ] = await Promise.all([
     supabase
       .from('scheduled_posts')
@@ -24,8 +25,14 @@ export default async function SchedulePage() {
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('posting_target, batch_size')
+      .eq('user_id', user.id)
+      .single(),
   ])
 
+  const batchSize = profileData?.batch_size ?? profileData?.posting_target ?? 3
   const ideas = allIdeas ?? []
   const availableIdeas = ideas.filter(i => i.status === 'new' || i.status === 'in_progress')
   const pipelineIdeas = ideas.filter(i => i.production_status !== 'new' || i.status !== 'new')
@@ -49,7 +56,7 @@ export default async function SchedulePage() {
       <ScheduledPostsList posts={scheduledPosts ?? []} />
 
       {/* Production pipeline */}
-      <ProductionTracker ideas={pipelineIdeas} />
+      <ProductionTracker ideas={pipelineIdeas} batchSize={batchSize} />
     </div>
   )
 }

@@ -31,6 +31,7 @@ import { useDroppable } from '@dnd-kit/core'
 
 interface Props {
   ideas: ContentIdea[]
+  batchSize: number
 }
 
 const STAGES: { status: ProductionStatus; label: string; color: string; bg: string; border: string }[] = [
@@ -276,22 +277,40 @@ function IdeaCardContent({
 function DroppableColumn({
   stage,
   ideas,
+  batchSize,
+  isExpanded,
+  onToggleExpand,
   onEdit,
   onStatusChange,
 }: {
   stage: typeof STAGES[number]
   ideas: ContentIdea[]
+  batchSize: number
+  isExpanded: boolean
+  onToggleExpand: () => void
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.status })
+  const isWipColumn = stage.status === 'recording' || stage.status === 'editing'
+  const overLimit = ideas.length > batchSize
+  const visibleIdeas = isExpanded || !overLimit ? ideas : ideas.slice(0, batchSize)
+  const hiddenCount = ideas.length - batchSize
 
   return (
     <div className="space-y-2">
       {/* Column header */}
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${stage.bg}`}>
         <span className={`text-xs font-semibold ${stage.color}`}>{stage.label}</span>
-        <span className="text-[10px] font-medium text-muted-foreground ml-auto">{ideas.length}</span>
+        <span className="text-[10px] font-medium text-muted-foreground ml-auto">
+          {isWipColumn ? (
+            <span className={overLimit ? 'text-amber-500 font-bold' : ''}>
+              {ideas.length} / {batchSize}
+            </span>
+          ) : (
+            ideas.length
+          )}
+        </span>
       </div>
 
       {/* Column drop zone */}
@@ -302,7 +321,7 @@ function DroppableColumn({
         }`}
       >
         <SortableContext items={ideas.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          {ideas.map(idea => (
+          {visibleIdeas.map(idea => (
             <SortableIdeaCard
               key={idea.id}
               idea={idea}
@@ -311,6 +330,21 @@ function DroppableColumn({
             />
           ))}
         </SortableContext>
+
+        {/* Expand / collapse toggle */}
+        {overLimit && (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className={`w-full py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+              isExpanded
+                ? 'text-muted-foreground hover:text-foreground'
+                : `${stage.color} ${stage.bg} hover:opacity-80`
+            }`}
+          >
+            {isExpanded ? 'Show less' : `+${hiddenCount} hidden`}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -451,11 +485,12 @@ function EditIdeaDialog({
 }
 
 /* ─── Main Component ─── */
-export function ProductionTracker({ ideas }: Props) {
+export function ProductionTracker({ ideas, batchSize }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
+  const [expandedColumns, setExpandedColumns] = useState<Set<ProductionStatus>>(new Set())
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -543,6 +578,14 @@ export function ProductionTracker({ ideas }: Props) {
                   key={stage.status}
                   stage={stage}
                   ideas={stage.items}
+                  batchSize={batchSize}
+                  isExpanded={expandedColumns.has(stage.status)}
+                  onToggleExpand={() => setExpandedColumns(prev => {
+                    const next = new Set(prev)
+                    if (next.has(stage.status)) next.delete(stage.status)
+                    else next.add(stage.status)
+                    return next
+                  })}
                   onEdit={setEditingIdea}
                   onStatusChange={handleStatusChange}
                 />

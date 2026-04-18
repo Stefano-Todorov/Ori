@@ -12,6 +12,7 @@ export interface Profile {
   goals: string | null
   platforms: Platform[]
   posting_target: number
+  batch_size: number | null
   telegram_chat_id: string | null
   onboarding_completed: boolean
   auto_sync_own_profile: boolean

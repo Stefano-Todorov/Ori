@@ -41,6 +41,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
   const [goals, setGoals] = useState(profile?.goals ?? '')
   const [platforms, setPlatforms] = useState<string[]>(profile?.platforms ?? [])
   const [postingTarget, setPostingTarget] = useState(profile?.posting_target ?? 3)
+  const [batchSize, setBatchSize] = useState(profile?.batch_size ?? profile?.posting_target ?? 3)
   const [handles, setHandles] = useState<Record<string, string>>({
     tiktok: socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '',
     instagram: socialAccounts.find(a => a.platform === 'instagram')?.username ?? '',
@@ -74,6 +75,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
       goals: goals || null,
       platforms,
       posting_target: postingTarget,
+      batch_size: batchSize,
       auto_sync_own_profile: autoSync,
     })
     if (profileResult?.error) {
@@ -237,6 +239,28 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
                 }`}
               >
                 {t}x
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Comfortable batch size */}
+        <div className="space-y-2.5 pt-1">
+          <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Comfortable batch size</label>
+          <p className="text-xs text-muted-foreground -mt-1">Max videos to focus on in Recording or Editing at once</p>
+          <div className="flex gap-2">
+            {[1, 2, 3, 5, 7].map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setBatchSize(t)}
+                className={`w-12 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${
+                  batchSize === t
+                    ? 'bg-purple-600 text-white border border-transparent'
+                    : 'border border-border text-muted-foreground hover:border-purple-500/40 hover:text-foreground'
+                }`}
+              >
+                {t}
               </button>
             ))}
           </div>
