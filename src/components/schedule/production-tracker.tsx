@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useTransition, useEffect, useCallback } from 'react'
-import { updateProductionStatus, updateIdea, reorderIdeas } from '@/app/actions'
+import { updateProductionStatus, updateIdea, reorderIdeas, addIdea } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
-import { Pencil, GripVertical, ExternalLink } from 'lucide-react'
+import { Pencil, GripVertical, ExternalLink, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -375,10 +375,12 @@ function EditIdeaDialog({
   idea,
   onClose,
   onStatusChange,
+  onAddAnother,
 }: {
   idea: ContentIdea | null
   onClose: () => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
+  onAddAnother?: (inspirationUrl: string, source: string) => void
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -501,20 +503,31 @@ function EditIdeaDialog({
               placeholder="Caption..."
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isPending || !form.idea.trim()}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
-            >
-              {isPending ? 'Saving...' : 'Save'}
-            </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isPending || !form.idea.trim()}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
+              >
+                {isPending ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+            {(form.inspiration_url || idea?.inspiration_url) && onAddAnother && (
+              <button
+                onClick={() => onAddAnother(form.inspiration_url || idea!.inspiration_url!, idea!.source ?? '')}
+                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+              >
+                <Plus size={14} />
+                Add another idea from this video
+              </button>
+            )}
           </div>
         </div>
       </DialogContent>
@@ -545,6 +558,13 @@ export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
   const [expandedColumns, setExpandedColumns] = useState<Set<ProductionStatus>>(new Set())
+
+  // Add-another dialog state
+  const [addOpen, setAddOpen] = useState(false)
+  const [addUrl, setAddUrl] = useState('')
+  const [addSource, setAddSource] = useState('')
+  const [addIdeaText, setAddIdeaText] = useState('')
+  const [addSaving, setAddSaving] = useState(false)
 
   // Local state for real-time drag reordering
   const [localIdeas, setLocalIdeas] = useState(propIdeas)
@@ -688,7 +708,97 @@ export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
         )}
       </div>
 
-      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} onStatusChange={handleStatusChange} />
+      <EditIdeaDialog
+        key={editingIdea?.id}
+        idea={editingIdea}
+        onClose={() => setEditingIdea(null)}
+        onStatusChange={handleStatusChange}
+        onAddAnother={(url, source) => {
+          setEditingIdea(null)
+          setAddUrl(url)
+          setAddSource(source)
+          setAddIdeaText('')
+          setAddOpen(true)
+        }}
+      />
+
+      {/* Add another idea from this video dialog */}
+      <Dialog open={addOpen} onOpenChange={(v) => { if (!v) setAddOpen(false) }}>
+        <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Add another idea from this video</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {addUrl && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Inspiration</label>
+                <a
+                  href={addUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+                >
+                  <ExternalLink size={11} />
+                  View original
+                </a>
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Video idea</label>
+              <Textarea
+                value={addIdeaText}
+                onChange={e => setAddIdeaText(e.target.value)}
+                className="bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all min-h-[80px]"
+                placeholder="What's the video about?"
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-2 pt-2">
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setAddOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!addIdeaText.trim()) return
+                    setAddSaving(true)
+                    await addIdea(addIdeaText.trim(), addSource || undefined, {
+                      inspiration_url: addUrl || undefined,
+                    })
+                    setAddSaving(false)
+                    setAddIdeaText('')
+                    refreshKeepScroll(router)
+                  }}
+                  disabled={!addIdeaText.trim() || addSaving}
+                  className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
+                >
+                  {addSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!addIdeaText.trim()) return
+                  setAddSaving(true)
+                  await addIdea(addIdeaText.trim(), addSource || undefined, {
+                    inspiration_url: addUrl || undefined,
+                  })
+                  setAddSaving(false)
+                  setAddIdeaText('')
+                  refreshKeepScroll(router)
+                }}
+                disabled={!addIdeaText.trim() || addSaving}
+                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
+              >
+                <Plus size={14} />
+                Save & add another from this video
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

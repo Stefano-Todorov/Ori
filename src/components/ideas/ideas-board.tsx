@@ -1172,27 +1172,34 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
 
       {/* Add dialog */}
       <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-background border-border rounded-2xl p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
+        <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground">New idea</DialogTitle>
-            <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
+            <DialogTitle className="text-foreground">New idea</DialogTitle>
           </DialogHeader>
           <IdeaFormFields form={addForm} setForm={setAddForm} allTags={allTags} />
-          <div className={`mt-3 ${addForm.inspirationUrl.trim() ? 'flex gap-2' : ''}`}>
-            <button
-              onClick={() => handleAdd(false)}
-              disabled={!addForm.idea.trim() || adding}
-              className={`${addForm.inspirationUrl.trim() ? 'flex-1' : 'w-full'} h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {adding ? 'Saving...' : 'Save idea'}
-            </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setAddOpen(false); setAddForm(emptyForm()) }}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAdd(false)}
+                disabled={!addForm.idea.trim() || adding}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
+              >
+                {adding ? 'Saving...' : 'Save'}
+              </button>
+            </div>
             {addForm.inspirationUrl.trim() && (
               <button
                 onClick={() => handleAdd(true)}
                 disabled={!addForm.idea.trim() || adding}
-                className="flex-1 h-12 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-500/25 hover:border-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Save & add another from this video
               </button>
             )}
@@ -1202,10 +1209,9 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
 
       {/* Edit dialog */}
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="!w-[95vw] sm:!w-[70vw] !max-w-[95vw] sm:!max-w-[70vw] max-h-[85vh] overflow-y-auto bg-background border-border rounded-2xl p-4 sm:p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
+        <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
-            <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
+            <DialogTitle className="text-foreground">Edit idea</DialogTitle>
           </DialogHeader>
           {editingId && (() => {
             const editingItem = ideas.find(i => i.id === editingId)
@@ -1234,13 +1240,40 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             )
           })()}
           <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
-          <button
-            onClick={handleEdit}
-            disabled={!editForm.idea.trim() || saving}
-            className="w-full mt-3 h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving...' : 'Save changes'}
-          </button>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setEditOpen(false); setEditingId(null) }}
+                className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEdit}
+                disabled={!editForm.idea.trim() || saving}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+            {editForm.inspirationUrl.trim() && (
+              <button
+                onClick={() => {
+                  const url = editForm.inspirationUrl.trim()
+                  const source = editForm.source.trim()
+                  const tags = editForm.tags
+                  setEditOpen(false)
+                  setEditingId(null)
+                  setAddForm({ ...emptyForm(), inspirationUrl: url, source, tags })
+                  setAddOpen(true)
+                }}
+                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+              >
+                <Plus size={14} />
+                Add another idea from this video
+              </button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
