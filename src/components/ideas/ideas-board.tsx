@@ -1170,8 +1170,35 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
         <DialogContent className="!w-[95vw] sm:!w-[70vw] !max-w-[95vw] sm:!max-w-[70vw] max-h-[85vh] overflow-y-auto bg-background border-border rounded-2xl p-4 sm:p-6 shadow-[0_0_40px_rgba(124,58,237,0.1)]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
-            <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-bold text-foreground">Edit idea</DialogTitle>
+                <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
+              </div>
+              {editingId && (() => {
+                const editingItem = ideas.find(i => i.id === editingId)
+                if (!editingItem) return null
+                return (
+                  <Select
+                    value={editingItem.production_status}
+                    onValueChange={(v) => {
+                      const newStatus = v as IdeaStatus
+                      handleStatusChange(editingId, newStatus)
+                      setIdeas(prev => prev.map(i => i.id === editingId ? { ...i, production_status: newStatus } : i))
+                    }}
+                  >
+                    <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[editingItem.production_status]}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                        <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )
+              })()}
+            </div>
           </DialogHeader>
           <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
           <button
