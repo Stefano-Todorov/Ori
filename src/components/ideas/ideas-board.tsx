@@ -123,12 +123,25 @@ function IdeaFormFields({ form, setForm, allTags }: { form: IdeaFormState; setFo
 
       <div className="space-y-2">
         <FormLabel>Inspiration URL</FormLabel>
-        <Input
-          placeholder="https://..."
-          value={form.inspirationUrl}
-          onChange={(e) => set('inspirationUrl', e.target.value)}
-          className={fieldInputClass}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="https://..."
+            value={form.inspirationUrl}
+            onChange={(e) => set('inspirationUrl', e.target.value)}
+            className={`${fieldInputClass} flex-1`}
+          />
+          {form.inspirationUrl && (
+            <a
+              href={form.inspirationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] font-semibold text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all shrink-0"
+            >
+              <ExternalLink size={12} />
+              View
+            </a>
+          )}
+        </div>
       </div>
 
       <div className="space-y-2">
