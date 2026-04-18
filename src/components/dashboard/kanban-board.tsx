@@ -283,13 +283,19 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${col.color}`}>
                     {col.label}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">
+                  <span>
                     {isWipColumn ? (
-                      <span className={overLimit ? 'text-amber-500 font-bold' : ''}>
-                        {colIdeas.length} / {batchSize}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums border ${
+                        overLimit
+                          ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse'
+                          : `${col.color} border-current/20`
+                      }`}>
+                        {colIdeas.length}/{batchSize}
                       </span>
                     ) : (
-                      colIdeas.length
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums ${col.color}`}>
+                        {colIdeas.length}
+                      </span>
                     )}
                   </span>
                 </div>

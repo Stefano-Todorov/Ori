@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import { updateProductionStatus, updateIdea, reorderIdeas } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
@@ -13,13 +13,14 @@ import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
   PointerSensor,
   useSensor,
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -146,7 +147,6 @@ function IdeaCardContent({
   dragListeners?: any
   isOverlay?: boolean
 }) {
-  const [thumbHidden, setThumbHidden] = useState(false)
   const parsed = parseSource(idea.source)
   const hasContent = idea.hook_idea || idea.script_snippet || idea.cta || idea.caption
 
@@ -271,27 +271,6 @@ function IdeaCardContent({
             )}
           </div>
 
-          {/* Thumbnail */}
-          {idea.thumbnail_url && !thumbHidden && (
-            <a
-              href={idea.inspiration_url ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={idea.thumbnail_url}
-                alt=""
-                className="w-10 h-10 rounded-lg object-cover border border-border/30 dark:border-white/[0.08]"
-                referrerPolicy="no-referrer"
-                onError={() => setThumbHidden(true)}
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement
-                  if (img.naturalWidth === 0) setThumbHidden(true)
-                }}
-              />
-            </a>
-          )}
         </div>
       </div>
     </div>
@@ -327,13 +306,19 @@ function DroppableColumn({
       {/* Column header */}
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${stage.bg}`}>
         <span className={`text-xs font-semibold ${stage.color}`}>{stage.label}</span>
-        <span className="text-[10px] font-medium text-muted-foreground ml-auto">
+        <span className="ml-auto">
           {isWipColumn ? (
-            <span className={overLimit ? 'text-amber-500 font-bold' : ''}>
-              {ideas.length} / {batchSize}
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums border ${
+              overLimit
+                ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse'
+                : `${stage.bg} ${stage.color} border-current/20`
+            }`}>
+              {ideas.length}/{batchSize}
             </span>
           ) : (
-            ideas.length
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums ${stage.bg} ${stage.color}`}>
+              {ideas.length}
+            </span>
           )}
         </span>
       </div>
@@ -528,29 +513,50 @@ function EditIdeaDialog({
   )
 }
 
+/* ─── Custom collision detection: prefer sortable items over column droppables ─── */
+const COLUMN_IDS = new Set(['recording', 'editing', 'ready', 'posted'])
+
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First try pointer-within for precise card targeting
+  const pointerCollisions = pointerWithin(args)
+  const cardCollisions = pointerCollisions.filter(c => !COLUMN_IDS.has(c.id as string))
+  if (cardCollisions.length > 0) return cardCollisions
+
+  // Fall back to rect intersection for column-level drops
+  const rectCollisions = rectIntersection(args)
+  if (rectCollisions.length > 0) return rectCollisions
+
+  return pointerCollisions
+}
+
 /* ─── Main Component ─── */
-export function ProductionTracker({ ideas, batchSize }: Props) {
+export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
   const [expandedColumns, setExpandedColumns] = useState<Set<ProductionStatus>>(new Set())
 
+  // Local state for real-time drag reordering
+  const [localIdeas, setLocalIdeas] = useState(propIdeas)
+  useEffect(() => { setLocalIdeas(propIdeas) }, [propIdeas])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   )
 
+  const getDisplayStatus = useCallback((idea: ContentIdea) => {
+    return idea.production_status === 'new' ? 'recording' : idea.production_status
+  }, [])
+
   const grouped = STAGES.map(stage => ({
     ...stage,
-    items: ideas
-      .filter(idea => {
-        const displayStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
-        return displayStatus === stage.status
-      })
+    items: localIdeas
+      .filter(idea => getDisplayStatus(idea) === stage.status)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
   }))
 
-  const activeIdea = activeId ? ideas.find(i => i.id === activeId) ?? null : null
+  const activeIdea = activeId ? localIdeas.find(i => i.id === activeId) ?? null : null
 
   function handleStatusChange(ideaId: string, status: ProductionStatus) {
     startTransition(async () => {
@@ -564,52 +570,63 @@ export function ProductionTracker({ ideas, batchSize }: Props) {
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    setActiveId(null)
     const { active, over } = event
-    if (!over) return
+    setActiveId(null)
+    if (!over || active.id === over.id) return
 
     const ideaId = active.id as string
-    const idea = ideas.find(i => i.id === ideaId)
+    const idea = localIdeas.find(i => i.id === ideaId)
     if (!idea) return
 
     let targetStatus: ProductionStatus | null = null
 
-    if (['recording', 'editing', 'ready', 'posted'].includes(over.id as string)) {
+    if (COLUMN_IDS.has(over.id as string)) {
       targetStatus = over.id as ProductionStatus
     } else {
-      const targetIdea = ideas.find(i => i.id === over.id)
+      const targetIdea = localIdeas.find(i => i.id === over.id)
       if (targetIdea) {
-        targetStatus = targetIdea.production_status === 'new' ? 'recording' : targetIdea.production_status
+        targetStatus = getDisplayStatus(targetIdea)
       }
     }
 
     if (!targetStatus) return
 
-    const currentStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
+    const currentStatus = getDisplayStatus(idea)
 
     if (currentStatus === targetStatus) {
       // Same column — reorder
-      const column = grouped.find(g => g.status === currentStatus)
-      if (!column) return
-      const oldIndex = column.items.findIndex(i => i.id === active.id)
-      const newIndex = column.items.findIndex(i => i.id === over.id)
+      const columnItems = localIdeas
+        .filter(i => getDisplayStatus(i) === currentStatus)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      const oldIndex = columnItems.findIndex(i => i.id === active.id)
+      const newIndex = columnItems.findIndex(i => i.id === over.id)
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
-      const reordered = arrayMove(column.items, oldIndex, newIndex)
+
+      // Update local state immediately for visual feedback
+      const reordered = arrayMove(columnItems, oldIndex, newIndex)
+      setLocalIdeas(prev => {
+        const otherIdeas = prev.filter(i => getDisplayStatus(i) !== currentStatus)
+        const updated = reordered.map((item, i) => ({ ...item, sort_order: i }))
+        return [...otherIdeas, ...updated]
+      })
+
+      // Persist to server
       startTransition(async () => {
         await reorderIdeas(reordered.map(i => i.id))
         refreshKeepScroll(router)
       })
     } else {
       // Cross-column — change status
+      // Update local state immediately
+      setLocalIdeas(prev => prev.map(i =>
+        i.id === ideaId ? { ...i, production_status: targetStatus! } : i
+      ))
+
       startTransition(async () => {
         await updateProductionStatus(ideaId, targetStatus!)
         refreshKeepScroll(router)
       })
     }
-  }
-
-  function handleDragOver(_event: DragOverEvent) {
-    // Visual feedback handled by useDroppable isOver
   }
 
   return (
@@ -620,17 +637,16 @@ export function ProductionTracker({ ideas, batchSize }: Props) {
           <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
         </div>
 
-        {ideas.length === 0 ? (
+        {localIdeas.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             No ideas in the pipeline yet. Create ideas and update their production status to track progress.
           </p>
         ) : (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {grouped.map(stage => (
