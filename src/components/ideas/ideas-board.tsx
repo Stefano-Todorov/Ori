@@ -770,39 +770,47 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
   const [editForm, setEditForm] = useState<IdeaFormState>(emptyForm())
   const [saving, setSaving] = useState(false)
 
-  async function handleAdd() {
+  async function handleAdd(keepOpen = false) {
     if (!addForm.idea.trim()) return
     setAdding(true)
-    await addIdea(addForm.idea.trim(), addForm.source.trim() || undefined, {
-      inspiration_url: addForm.inspirationUrl.trim() || undefined,
+    const savedUrl = addForm.inspirationUrl.trim()
+    const savedSource = addForm.source.trim()
+    const savedTags = addForm.tags
+    await addIdea(addForm.idea.trim(), savedSource || undefined, {
+      inspiration_url: savedUrl || undefined,
       hook_idea: addForm.hookIdea.trim() || undefined,
       script_snippet: addForm.scriptSnippet.trim() || undefined,
       cta: addForm.cta.trim() || undefined,
       caption: addForm.caption.trim() || undefined,
-      tags: addForm.tags.length > 0 ? addForm.tags : undefined,
+      tags: savedTags.length > 0 ? savedTags : undefined,
     })
     setIdeas((prev) => [{
       id: crypto.randomUUID(),
       user_id: '',
       idea: addForm.idea.trim(),
-      source: addForm.source.trim() || null,
+      source: savedSource || null,
       niche: null,
-      inspiration_url: addForm.inspirationUrl.trim() || null,
+      inspiration_url: savedUrl || null,
       thumbnail_url: null,
       hook_idea: addForm.hookIdea.trim() || null,
       script_snippet: addForm.scriptSnippet.trim() || null,
       cta: addForm.cta.trim() || null,
       caption: addForm.caption.trim() || null,
-      tags: addForm.tags,
+      tags: savedTags,
       status: 'new',
       production_status: 'new',
       sort_order: 0,
       linked_post_id: null,
       created_at: new Date().toISOString(),
     }, ...prev])
-    setAddForm(emptyForm())
     setAdding(false)
-    setAddOpen(false)
+    if (keepOpen && savedUrl) {
+      // Keep dialog open with inspiration URL + tags pre-filled, clear everything else
+      setAddForm({ ...emptyForm(), inspirationUrl: savedUrl, source: savedSource, tags: savedTags })
+    } else {
+      setAddForm(emptyForm())
+      setAddOpen(false)
+    }
   }
 
   function openEdit(item: ContentIdea) {
@@ -1170,13 +1178,25 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <div className="h-0.5 w-16 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </DialogHeader>
           <IdeaFormFields form={addForm} setForm={setAddForm} allTags={allTags} />
-          <button
-            onClick={handleAdd}
-            disabled={!addForm.idea.trim() || adding}
-            className="w-full mt-3 h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {adding ? 'Saving...' : 'Save idea'}
-          </button>
+          <div className={`mt-3 ${addForm.inspirationUrl.trim() ? 'flex gap-2' : ''}`}>
+            <button
+              onClick={() => handleAdd(false)}
+              disabled={!addForm.idea.trim() || adding}
+              className={`${addForm.inspirationUrl.trim() ? 'flex-1' : 'w-full'} h-12 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {adding ? 'Saving...' : 'Save idea'}
+            </button>
+            {addForm.inspirationUrl.trim() && (
+              <button
+                onClick={() => handleAdd(true)}
+                disabled={!addForm.idea.trim() || adding}
+                className="flex-1 h-12 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-500/25 hover:border-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus size={16} />
+                Save & add another from this video
+              </button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
