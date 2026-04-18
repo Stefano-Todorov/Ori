@@ -24,6 +24,7 @@ export default async function SchedulePage() {
       .from('content_ideas')
       .select('*')
       .eq('user_id', user.id)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase
       .from('profiles')

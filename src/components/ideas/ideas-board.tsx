@@ -783,6 +783,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       tags: addForm.tags,
       status: 'new',
       production_status: 'new',
+      sort_order: 0,
       linked_post_id: null,
       created_at: new Date().toISOString(),
     }, ...prev])

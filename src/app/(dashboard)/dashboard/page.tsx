@@ -38,6 +38,7 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user.id)
       .in('production_status', ['recording', 'editing', 'ready', 'posted'])
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase
       .from('scheduled_posts')

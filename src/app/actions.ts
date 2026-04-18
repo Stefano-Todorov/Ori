@@ -721,6 +721,19 @@ export async function updateProductionStatus(ideaId: string, status: 'new' | 're
   revalidatePath('/dashboard/schedule')
 }
 
+export async function reorderIdeas(orderedIds: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from('content_ideas').update({ sort_order: i }).eq('id', id).eq('user_id', user.id)
+    )
+  )
+  revalidatePath('/dashboard')
+  revalidatePath('/dashboard/schedule')
+}
+
 export async function bulkUpdateProductionStatus(ids: string[], status: 'new' | 'recording' | 'editing' | 'ready' | 'posted') {
   if (!ids.length) return
   const supabase = await createClient()

@@ -114,6 +114,7 @@ export interface ContentIdea {
   tags: string[]
   status: 'new' | 'in_progress' | 'done' | 'archived'
   production_status: ProductionStatus
+  sort_order: number
   linked_post_id: string | null
   created_at: string
 }

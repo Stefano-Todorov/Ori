@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { updateProductionStatus, updateIdea } from '@/app/actions'
+import { updateProductionStatus, updateIdea, reorderIdeas } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import { Pencil, GripVertical, ExternalLink } from 'lucide-react'
@@ -25,6 +25,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
@@ -541,10 +542,12 @@ export function ProductionTracker({ ideas, batchSize }: Props) {
 
   const grouped = STAGES.map(stage => ({
     ...stage,
-    items: ideas.filter(idea => {
-      const displayStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
-      return displayStatus === stage.status
-    }),
+    items: ideas
+      .filter(idea => {
+        const displayStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
+        return displayStatus === stage.status
+      })
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
   }))
 
   const activeIdea = activeId ? ideas.find(i => i.id === activeId) ?? null : null
@@ -583,12 +586,26 @@ export function ProductionTracker({ ideas, batchSize }: Props) {
     if (!targetStatus) return
 
     const currentStatus = idea.production_status === 'new' ? 'recording' : idea.production_status
-    if (currentStatus === targetStatus) return
 
-    startTransition(async () => {
-      await updateProductionStatus(ideaId, targetStatus!)
-      refreshKeepScroll(router)
-    })
+    if (currentStatus === targetStatus) {
+      // Same column — reorder
+      const column = grouped.find(g => g.status === currentStatus)
+      if (!column) return
+      const oldIndex = column.items.findIndex(i => i.id === active.id)
+      const newIndex = column.items.findIndex(i => i.id === over.id)
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
+      const reordered = arrayMove(column.items, oldIndex, newIndex)
+      startTransition(async () => {
+        await reorderIdeas(reordered.map(i => i.id))
+        refreshKeepScroll(router)
+      })
+    } else {
+      // Cross-column — change status
+      startTransition(async () => {
+        await updateProductionStatus(ideaId, targetStatus!)
+        refreshKeepScroll(router)
+      })
+    }
   }
 
   function handleDragOver(_event: DragOverEvent) {
