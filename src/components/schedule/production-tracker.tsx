@@ -41,6 +41,22 @@ const STAGES: { status: ProductionStatus; label: string; color: string; bg: stri
   { status: 'posted', label: 'Posted', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20' },
 ]
 
+const STATUS_BAR_COLOR: Record<ProductionStatus, string> = {
+  new: 'bg-amber-500',
+  recording: 'bg-amber-500',
+  editing: 'bg-blue-500',
+  ready: 'bg-purple-500',
+  posted: 'bg-green-500',
+}
+
+const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
+  new: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  recording: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  editing: 'text-blue-600 dark:text-blue-400 bg-blue-500/15 border-blue-500/30',
+  ready: 'text-purple-600 dark:text-purple-400 bg-purple-500/15 border-purple-500/30',
+  posted: 'text-green-600 dark:text-green-400 bg-green-500/15 border-green-500/30',
+}
+
 const STATUS_PILL: Record<ProductionStatus, string> = {
   new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
@@ -146,9 +162,9 @@ function IdeaCardContent({
       {/* Header: drag handle + title + actions */}
       <div className="flex items-start gap-2">
         {/* Rank + Drag handle */}
-        <div className="flex flex-col items-center gap-0.5 shrink-0 mt-0.5">
+        <div className="flex flex-col items-center gap-1 shrink-0 mt-0.5">
           {rank != null && (
-            <span className="text-[11px] font-bold text-muted-foreground tabular-nums leading-none">{rank}</span>
+            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${STATUS_RANK_STYLE[idea.production_status]}`}>{rank}</span>
           )}
           <button
             {...(dragAttributes ?? {})}
@@ -160,8 +176,8 @@ function IdeaCardContent({
           </button>
         </div>
 
-        {/* Purple accent bar */}
-        <div className="w-[3px] self-stretch rounded-full bg-gradient-to-b from-purple-600 to-purple-400 shrink-0" />
+        {/* Status accent bar */}
+        <div className={`w-[3px] self-stretch rounded-full shrink-0 ${STATUS_BAR_COLOR[idea.production_status]}`} />
 
         {/* Main content */}
         <div className="flex-1 min-w-0">

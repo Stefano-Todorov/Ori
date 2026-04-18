@@ -15,6 +15,14 @@ interface Props {
   batchSize: number
 }
 
+const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
+  new: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  recording: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  editing: 'text-blue-600 dark:text-blue-400 bg-blue-500/15 border-blue-500/30',
+  ready: 'text-purple-600 dark:text-purple-400 bg-purple-500/15 border-purple-500/30',
+  posted: 'text-green-600 dark:text-green-400 bg-green-500/15 border-green-500/30',
+}
+
 const COLUMNS: { status: ProductionStatus; label: string; color: string; border: string }[] = [
   { status: 'recording', label: 'Recording', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', border: 'border-t-amber-500' },
   { status: 'editing', label: 'Editing', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', border: 'border-t-blue-500' },
@@ -265,8 +273,8 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <div className="flex flex-col items-center gap-0.5 shrink-0 mt-0.5 hidden md:flex">
-                          <span className="text-[11px] font-bold text-muted-foreground tabular-nums leading-none">{i + 1}</span>
+                        <div className="flex flex-col items-center gap-1 shrink-0 mt-0.5 hidden md:flex">
+                          <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${STATUS_RANK_STYLE[idea.production_status]}`}>{i + 1}</span>
                           <GripVertical size={14} className="text-muted-foreground/40 cursor-grab" />
                         </div>
                         <div className="flex-1 min-w-0">
