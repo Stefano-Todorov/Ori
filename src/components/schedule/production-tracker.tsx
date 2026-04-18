@@ -74,8 +74,9 @@ function ContentSection({ label, text }: { label: string; text: string }) {
 }
 
 /* ─── Sortable Idea Card ─── */
-function SortableIdeaCard({ idea, onEdit, onStatusChange }: {
+function SortableIdeaCard({ idea, rank, onEdit, onStatusChange }: {
   idea: ContentIdea
+  rank: number
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
@@ -98,6 +99,7 @@ function SortableIdeaCard({ idea, onEdit, onStatusChange }: {
     <div ref={setNodeRef} style={style} className="group">
       <IdeaCardContent
         idea={idea}
+        rank={rank}
         onEdit={onEdit}
         onStatusChange={onStatusChange}
         dragAttributes={attributes}
@@ -110,6 +112,7 @@ function SortableIdeaCard({ idea, onEdit, onStatusChange }: {
 /* ─── Idea Card Content (shared between sortable and overlay) ─── */
 function IdeaCardContent({
   idea,
+  rank,
   onEdit,
   onStatusChange,
   dragAttributes,
@@ -117,6 +120,7 @@ function IdeaCardContent({
   isOverlay,
 }: {
   idea: ContentIdea
+  rank?: number
   onEdit?: (idea: ContentIdea) => void
   onStatusChange?: (ideaId: string, status: ProductionStatus) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,6 +129,7 @@ function IdeaCardContent({
   dragListeners?: any
   isOverlay?: boolean
 }) {
+  const [thumbHidden, setThumbHidden] = useState(false)
   const parsed = parseSource(idea.source)
   const hasContent = idea.hook_idea || idea.script_snippet || idea.cta || idea.caption
 
@@ -140,15 +145,20 @@ function IdeaCardContent({
     >
       {/* Header: drag handle + title + actions */}
       <div className="flex items-start gap-2">
-        {/* Drag handle */}
-        <button
-          {...(dragAttributes ?? {})}
-          {...(dragListeners ?? {})}
-          className="mt-1 p-0.5 text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing shrink-0 touch-none"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical size={14} />
-        </button>
+        {/* Rank + Drag handle */}
+        <div className="flex flex-col items-center gap-0.5 shrink-0 mt-0.5">
+          {rank != null && (
+            <span className="text-[10px] font-bold text-muted-foreground/50 tabular-nums leading-none">{rank}</span>
+          )}
+          <button
+            {...(dragAttributes ?? {})}
+            {...(dragListeners ?? {})}
+            className="p-0.5 text-muted-foreground/30 hover:text-muted-foreground cursor-grab active:cursor-grabbing touch-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={14} />
+          </button>
+        </div>
 
         {/* Purple accent bar */}
         <div className="w-[3px] self-stretch rounded-full bg-gradient-to-b from-purple-600 to-purple-400 shrink-0" />
@@ -245,7 +255,7 @@ function IdeaCardContent({
           </div>
 
           {/* Thumbnail */}
-          {idea.thumbnail_url && (
+          {idea.thumbnail_url && !thumbHidden && (
             <a
               href={idea.inspiration_url ?? '#'}
               target="_blank"
@@ -257,12 +267,10 @@ function IdeaCardContent({
                 alt=""
                 className="w-10 h-10 rounded-lg object-cover border border-border/30 dark:border-white/[0.08]"
                 referrerPolicy="no-referrer"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).closest('a')!.style.display = 'none'
-                }}
+                onError={() => setThumbHidden(true)}
                 onLoad={(e) => {
                   const img = e.target as HTMLImageElement
-                  if (img.naturalWidth === 0) img.closest('a')!.style.display = 'none'
+                  if (img.naturalWidth === 0) setThumbHidden(true)
                 }}
               />
             </a>
@@ -320,11 +328,12 @@ function DroppableColumn({
           isOver ? `${stage.bg} ${stage.border} border-2 border-dashed` : 'border-2 border-transparent'
         }`}
       >
-        <SortableContext items={ideas.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          {visibleIdeas.map(idea => (
+        <SortableContext items={visibleIdeas.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          {visibleIdeas.map((idea, i) => (
             <SortableIdeaCard
               key={idea.id}
               idea={idea}
+              rank={i + 1}
               onEdit={onEdit}
               onStatusChange={onStatusChange}
             />
