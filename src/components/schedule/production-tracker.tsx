@@ -379,9 +379,11 @@ function DroppableColumn({
 function EditIdeaDialog({
   idea,
   onClose,
+  onStatusChange,
 }: {
   idea: ContentIdea | null
   onClose: () => void
+  onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -419,6 +421,22 @@ function EditIdeaDialog({
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
         </DialogHeader>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs font-medium text-muted-foreground">Status:</span>
+          <Select
+            value={idea.production_status}
+            onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
+          >
+            <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[idea.production_status]}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-3 mt-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Idea</label>
@@ -628,7 +646,7 @@ export function ProductionTracker({ ideas, batchSize }: Props) {
         )}
       </div>
 
-      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} />
+      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} onStatusChange={handleStatusChange} />
     </>
   )
 }

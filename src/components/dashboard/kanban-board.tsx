@@ -7,6 +7,7 @@ import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import { GripVertical, ChevronDown, ExternalLink } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -30,13 +31,31 @@ const COLUMNS: { status: ProductionStatus; label: string; color: string; border:
   { status: 'posted', label: 'Posted', color: 'bg-green-500/10 text-green-600 dark:text-green-400', border: 'border-t-green-500' },
 ]
 
+const STATUS_PILL: Record<ProductionStatus, string> = {
+  new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+  editing: 'bg-cyan-400/15 text-cyan-400 border-cyan-400/30',
+  ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
+  posted: 'bg-green-400/15 text-green-400 border-green-400/30',
+}
+
+const STATUS_LABEL: Record<ProductionStatus, string> = {
+  new: 'New',
+  recording: 'Recording',
+  editing: 'Editing',
+  ready: 'Ready to Post',
+  posted: 'Posted',
+}
+
 /* ─── Edit Dialog ─── */
 function EditIdeaDialog({
   idea,
   onClose,
+  onStatusChange,
 }: {
   idea: ContentIdea | null
   onClose: () => void
+  onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -74,6 +93,22 @@ function EditIdeaDialog({
         <DialogHeader>
           <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
         </DialogHeader>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-xs font-medium text-muted-foreground">Status:</span>
+          <Select
+            value={idea.production_status}
+            onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
+          >
+            <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[idea.production_status]}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-3 mt-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Idea</label>
@@ -324,7 +359,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
         </div>
       </div>
 
-      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} />
+      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} onStatusChange={handleStatusChange} />
     </>
   )
 }
