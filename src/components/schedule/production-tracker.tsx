@@ -92,9 +92,10 @@ function ContentSection({ label, text }: { label: string; text: string }) {
 }
 
 /* ─── Sortable Idea Card ─── */
-function SortableIdeaCard({ idea, rank, onEdit, onStatusChange }: {
+function SortableIdeaCard({ idea, rank, rankOverLimit, onEdit, onStatusChange }: {
   idea: ContentIdea
   rank: number
+  rankOverLimit?: boolean
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
@@ -118,6 +119,7 @@ function SortableIdeaCard({ idea, rank, onEdit, onStatusChange }: {
       <IdeaCardContent
         idea={idea}
         rank={rank}
+        rankOverLimit={rankOverLimit}
         onEdit={onEdit}
         onStatusChange={onStatusChange}
         dragAttributes={attributes}
@@ -131,6 +133,7 @@ function SortableIdeaCard({ idea, rank, onEdit, onStatusChange }: {
 function IdeaCardContent({
   idea,
   rank,
+  rankOverLimit,
   onEdit,
   onStatusChange,
   dragAttributes,
@@ -139,6 +142,7 @@ function IdeaCardContent({
 }: {
   idea: ContentIdea
   rank?: number
+  rankOverLimit?: boolean
   onEdit?: (idea: ContentIdea) => void
   onStatusChange?: (ideaId: string, status: ProductionStatus) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -165,7 +169,11 @@ function IdeaCardContent({
         {/* Rank + Drag handle */}
         <div className="flex flex-col items-center gap-1 shrink-0 mt-0.5">
           {rank != null && (
-            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${STATUS_RANK_STYLE[idea.production_status]}`}>{rank}</span>
+            <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${
+              rankOverLimit
+                ? 'text-red-500 bg-red-500/15 border-red-500/30'
+                : STATUS_RANK_STYLE[idea.production_status]
+            }`}>{rank}</span>
           )}
           <button
             {...(dragAttributes ?? {})}
@@ -336,6 +344,7 @@ function DroppableColumn({
               key={idea.id}
               idea={idea}
               rank={i + 1}
+              rankOverLimit={i + 1 > batchSize}
               onEdit={onEdit}
               onStatusChange={onStatusChange}
             />
@@ -434,26 +443,26 @@ function EditIdeaDialog({
           </div>
           {(idea.inspiration_url || form.inspiration_url) && (
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-medium text-muted-foreground">Inspiration URL</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Inspiration URL</label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={form.inspiration_url}
+                  onChange={e => setForm(f => ({ ...f, inspiration_url: e.target.value }))}
+                  className={`${inputClass} flex-1`}
+                  placeholder="https://..."
+                />
                 {(form.inspiration_url || idea.inspiration_url) && (
                   <a
                     href={form.inspiration_url || idea.inspiration_url!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400 hover:text-purple-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] font-semibold text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all shrink-0"
                   >
-                    <ExternalLink size={11} />
-                    View original
+                    <ExternalLink size={12} />
+                    View
                   </a>
                 )}
               </div>
-              <Input
-                value={form.inspiration_url}
-                onChange={e => setForm(f => ({ ...f, inspiration_url: e.target.value }))}
-                className={inputClass}
-                placeholder="https://..."
-              />
             </div>
           )}
           <div>
