@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 interface Props {
   ideas: ContentIdea[]
+  batchSize: number
 }
 
 const COLUMNS: { status: ProductionStatus; label: string; color: string; border: string }[] = [
@@ -20,9 +21,6 @@ const COLUMNS: { status: ProductionStatus; label: string; color: string; border:
   { status: 'ready', label: 'Ready to Post', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', border: 'border-t-purple-500' },
   { status: 'posted', label: 'Posted', color: 'bg-green-500/10 text-green-600 dark:text-green-400', border: 'border-t-green-500' },
 ]
-
-const LIMITS = [5, 10, 20, 0] as const
-const LIMIT_LABELS: Record<number, string> = { 5: '5', 10: '10', 20: '20', 0: 'All' }
 
 /* ─── Edit Dialog ─── */
 function EditIdeaDialog({
@@ -159,10 +157,9 @@ function EditIdeaDialog({
 }
 
 /* ─── Main Component ─── */
-export function KanbanBoard({ ideas }: Props) {
+export function KanbanBoard({ ideas, batchSize }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [maxItems, setMaxItems] = useState<number>(5)
   const [expandedCols, setExpandedCols] = useState<Set<ProductionStatus>>(new Set())
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
@@ -218,29 +215,17 @@ export function KanbanBoard({ ideas }: Props) {
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-bold text-foreground">Production Board</p>
-          <div className="flex gap-1">
-            {LIMITS.map(l => (
-              <button
-                key={l}
-                onClick={() => { setMaxItems(l); setExpandedCols(new Set()) }}
-                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all ${
-                  maxItems === l
-                    ? 'bg-purple-600 text-white'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {LIMIT_LABELS[l]}
-              </button>
-            ))}
-          </div>
+          <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {COLUMNS.map(col => {
             const colIdeas = ideas.filter(i => i.production_status === col.status)
             const isExpanded = expandedCols.has(col.status)
-            const visible = (maxItems > 0 && !isExpanded) ? colIdeas.slice(0, maxItems) : colIdeas
-            const hidden = (maxItems > 0 && !isExpanded) ? Math.max(0, colIdeas.length - maxItems) : 0
+            const isWipColumn = col.status === 'recording' || col.status === 'editing'
+            const overLimit = colIdeas.length > batchSize
+            const visible = (overLimit && !isExpanded) ? colIdeas.slice(0, batchSize) : colIdeas
+            const hiddenCount = colIdeas.length - batchSize
 
             return (
               <div
@@ -255,11 +240,19 @@ export function KanbanBoard({ ideas }: Props) {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${col.color}`}>
                     {col.label}
                   </span>
-                  <span className="text-[11px] text-muted-foreground">{colIdeas.length}</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {isWipColumn ? (
+                      <span className={overLimit ? 'text-amber-500 font-bold' : ''}>
+                        {colIdeas.length} / {batchSize}
+                      </span>
+                    ) : (
+                      colIdeas.length
+                    )}
+                  </span>
                 </div>
 
                 <div className="space-y-2">
-                  {visible.map(idea => (
+                  {visible.map((idea, i) => (
                     <div
                       key={idea.id}
                       draggable
@@ -272,7 +265,10 @@ export function KanbanBoard({ ideas }: Props) {
                       }`}
                     >
                       <div className="flex items-start gap-2">
-                        <GripVertical size={14} className="mt-0.5 text-muted-foreground/40 shrink-0 hidden md:block cursor-grab" />
+                        <div className="flex flex-col items-center gap-0.5 shrink-0 mt-0.5 hidden md:flex">
+                          <span className="text-[11px] font-bold text-muted-foreground tabular-nums leading-none">{i + 1}</span>
+                          <GripVertical size={14} className="text-muted-foreground/40 cursor-grab" />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{idea.idea}</p>
                         </div>
@@ -296,16 +292,21 @@ export function KanbanBoard({ ideas }: Props) {
                   {visible.length === 0 && (
                     <p className="text-[11px] text-muted-foreground text-center py-4">No ideas</p>
                   )}
-                  {hidden > 0 && (
+                  {overLimit && (
                     <button
                       onClick={() => setExpandedCols(prev => {
                         const next = new Set(prev)
-                        next.add(col.status)
+                        if (next.has(col.status)) next.delete(col.status)
+                        else next.add(col.status)
                         return next
                       })}
-                      className="text-[10px] text-muted-foreground hover:text-purple-400 text-center w-full transition-colors cursor-pointer"
+                      className={`text-[10px] text-center w-full transition-colors cursor-pointer ${
+                        isExpanded
+                          ? 'text-muted-foreground hover:text-foreground'
+                          : 'text-muted-foreground hover:text-purple-400'
+                      }`}
                     >
-                      +{hidden} more
+                      {isExpanded ? 'Show less' : `+${hiddenCount} hidden`}
                     </button>
                   )}
                 </div>

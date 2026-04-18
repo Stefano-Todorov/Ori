@@ -148,7 +148,7 @@ function IdeaCardContent({
         {/* Rank + Drag handle */}
         <div className="flex flex-col items-center gap-0.5 shrink-0 mt-0.5">
           {rank != null && (
-            <span className="text-[10px] font-bold text-muted-foreground/50 tabular-nums leading-none">{rank}</span>
+            <span className="text-[11px] font-bold text-muted-foreground tabular-nums leading-none">{rank}</span>
           )}
           <button
             {...(dragAttributes ?? {})}

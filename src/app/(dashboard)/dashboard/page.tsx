@@ -83,7 +83,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ─── Kanban Board ─── */}
-      <KanbanBoard ideas={productionIdeas ?? []} />
+      <KanbanBoard ideas={productionIdeas ?? []} batchSize={profile?.batch_size ?? profile?.posting_target ?? 3} />
 
       {/* ─── Calendar ─── */}
       <ScheduleCalendar
