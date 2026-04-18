@@ -313,15 +313,13 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
                         draggingId === idea.id ? 'opacity-40' : ''
                       }`}
                     >
-                      <div className="flex items-start gap-2">
-                        <div className="flex flex-col items-center gap-1 shrink-0 mt-0.5 hidden md:flex">
-                          <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${
-                            i + 1 > batchSize
-                              ? 'text-red-500 bg-red-500/15 border-red-500/30'
-                              : STATUS_RANK_STYLE[idea.production_status]
-                          }`}>{i + 1}</span>
-                          <GripVertical size={14} className="text-muted-foreground/40 cursor-grab" />
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <GripVertical size={14} className="text-muted-foreground/40 cursor-grab shrink-0 hidden md:block" />
+                        <span className={`shrink-0 hidden md:inline-flex w-5 h-5 items-center justify-center rounded-full text-[10px] font-bold tabular-nums leading-none border ${
+                          i + 1 > batchSize
+                            ? 'text-red-500 bg-red-500/15 border-red-500/30'
+                            : STATUS_RANK_STYLE[idea.production_status]
+                        }`}>{i + 1}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground line-clamp-2">{idea.idea}</p>
                         </div>
