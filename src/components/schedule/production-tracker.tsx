@@ -414,7 +414,7 @@ function EditIdeaDialog({
 
   return (
     <Dialog open={!!idea} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10 max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
