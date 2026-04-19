@@ -1,18 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal } from 'lucide-react'
-import { addIdea, deleteIdea, updateProductionStatus, updateIdea, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
+import { deleteIdea, updateProductionStatus, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
+import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 interface Props {
@@ -46,159 +40,7 @@ const STATUS_LABEL: Record<IdeaStatus, string> = {
   posted: 'Posted',
 }
 
-// ─── Shared form state ────────────────────────────────────────────────────────
 
-interface IdeaFormState {
-  idea: string
-  source: string
-  inspirationUrl: string
-  hookIdea: string
-  scriptSnippet: string
-  cta: string
-  caption: string
-  tags: string[]
-}
-
-function emptyForm(): IdeaFormState {
-  return {
-    idea: '', source: '', inspirationUrl: '', hookIdea: '',
-    scriptSnippet: '', cta: '', caption: '', tags: [],
-  }
-}
-
-function formFromIdea(item: ContentIdea): IdeaFormState {
-  return {
-    idea: item.idea,
-    source: item.source ?? '',
-    inspirationUrl: item.inspiration_url ?? '',
-    hookIdea: item.hook_idea ?? '',
-    scriptSnippet: item.script_snippet ?? '',
-    cta: item.cta ?? '',
-    caption: item.caption ?? '',
-    tags: item.tags ?? [],
-  }
-}
-
-// ─── Shared form fields ───────────────────────────────────────────────────────
-
-const fieldInputClass = 'bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
-
-function FormLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
-  return (
-    <Label className="text-xs uppercase tracking-[0.05em] text-[#a0a0b8]">
-      {children}{required && <span className="text-purple-400 ml-0.5">*</span>}
-    </Label>
-  )
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="border-t border-border pt-4 mt-2">
-      <p className="text-[10px] uppercase tracking-[0.08em] text-[#555570] font-semibold mb-3">{label}</p>
-    </div>
-  )
-}
-
-function IdeaFormFields({ form, setForm, allTags }: { form: IdeaFormState; setForm: (f: IdeaFormState) => void; allTags: string[] }) {
-  function set<K extends keyof IdeaFormState>(key: K, val: IdeaFormState[K]) {
-    setForm({ ...form, [key]: val })
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Section 1: Content */}
-      <SectionDivider label="Content" />
-
-      <div className="space-y-2">
-        <FormLabel required>Video idea</FormLabel>
-        <Textarea
-          placeholder="What's the video about? Topic, angle..."
-          value={form.idea}
-          onChange={(e) => set('idea', e.target.value)}
-          rows={2}
-          autoFocus
-          className={fieldInputClass}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <FormLabel>Inspiration URL</FormLabel>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="https://..."
-            value={form.inspirationUrl}
-            onChange={(e) => set('inspirationUrl', e.target.value)}
-            className={`${fieldInputClass} flex-1`}
-          />
-          {form.inspirationUrl && (
-            <a
-              href={form.inspirationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] font-semibold text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all shrink-0"
-            >
-              <ExternalLink size={12} />
-              View
-            </a>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <FormLabel>Hook</FormLabel>
-        <Textarea
-          placeholder="Opening line — what makes someone stop scrolling?"
-          value={form.hookIdea}
-          onChange={(e) => set('hookIdea', e.target.value)}
-          rows={2}
-          className={fieldInputClass}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <FormLabel>Body / Script</FormLabel>
-        <Textarea
-          placeholder="The main content, points, or full script..."
-          value={form.scriptSnippet}
-          onChange={(e) => set('scriptSnippet', e.target.value)}
-          rows={5}
-          className={fieldInputClass}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <FormLabel>CTA</FormLabel>
-        <Input
-          placeholder="e.g. Follow for more, Comment below..."
-          value={form.cta}
-          onChange={(e) => set('cta', e.target.value)}
-          className={fieldInputClass}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <FormLabel>Caption</FormLabel>
-        <Textarea
-          placeholder="Post caption with hashtags..."
-          value={form.caption}
-          onChange={(e) => set('caption', e.target.value)}
-          rows={3}
-          className={fieldInputClass}
-        />
-      </div>
-
-      {/* Tags */}
-      <div className="space-y-2">
-        <FormLabel>Tags</FormLabel>
-        <div className="flex items-center gap-2 flex-wrap">
-          <TagPills tags={form.tags} />
-          <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-        </div>
-      </div>
-
-    </div>
-  )
-}
 
 // ─── Source parsing ──────────────────────────────────────────────────────────
 
@@ -761,82 +603,13 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false)
-  const [addForm, setAddForm] = useState<IdeaFormState>(emptyForm())
-  const [adding, setAdding] = useState(false)
+  const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; tags?: string[]; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string }>({})
 
   // Edit dialog
-  const [editOpen, setEditOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<IdeaFormState>(emptyForm())
-  const [saving, setSaving] = useState(false)
-
-  async function handleAdd(keepOpen = false) {
-    if (!addForm.idea.trim()) return
-    setAdding(true)
-    const savedUrl = addForm.inspirationUrl.trim()
-    const savedSource = addForm.source.trim()
-    const savedTags = addForm.tags
-    await addIdea(addForm.idea.trim(), savedSource || undefined, {
-      inspiration_url: savedUrl || undefined,
-      hook_idea: addForm.hookIdea.trim() || undefined,
-      script_snippet: addForm.scriptSnippet.trim() || undefined,
-      cta: addForm.cta.trim() || undefined,
-      caption: addForm.caption.trim() || undefined,
-      tags: savedTags.length > 0 ? savedTags : undefined,
-    })
-    setIdeas((prev) => [{
-      id: crypto.randomUUID(),
-      user_id: '',
-      idea: addForm.idea.trim(),
-      source: savedSource || null,
-      niche: null,
-      inspiration_url: savedUrl || null,
-      thumbnail_url: null,
-      hook_idea: addForm.hookIdea.trim() || null,
-      script_snippet: addForm.scriptSnippet.trim() || null,
-      cta: addForm.cta.trim() || null,
-      caption: addForm.caption.trim() || null,
-      tags: savedTags,
-      status: 'new',
-      production_status: 'new',
-      sort_order: 0,
-      linked_post_id: null,
-      created_at: new Date().toISOString(),
-    }, ...prev])
-    setAdding(false)
-    if (keepOpen) {
-      // Keep dialog open with inspiration URL + tags pre-filled, clear everything else
-      setAddForm({ ...emptyForm(), inspirationUrl: savedUrl, source: savedSource, tags: savedTags })
-    } else {
-      setAddForm(emptyForm())
-      setAddOpen(false)
-    }
-  }
+  const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
 
   function openEdit(item: ContentIdea) {
-    setEditingId(item.id)
-    setEditForm(formFromIdea(item))
-    setEditOpen(true)
-  }
-
-  async function handleEdit() {
-    if (!editingId || !editForm.idea.trim()) return
-    setSaving(true)
-    const fields = {
-      idea: editForm.idea.trim(),
-      source: editForm.source.trim() || null,
-      inspiration_url: editForm.inspirationUrl.trim() || null,
-      hook_idea: editForm.hookIdea.trim() || null,
-      script_snippet: editForm.scriptSnippet.trim() || null,
-      cta: editForm.cta.trim() || null,
-      caption: editForm.caption.trim() || null,
-      tags: editForm.tags,
-    }
-    await updateIdea(editingId, fields)
-    setIdeas((prev) => prev.map((i) => i.id === editingId ? { ...i, ...fields } : i))
-    setSaving(false)
-    setEditOpen(false)
-    setEditingId(null)
+    setEditingIdea(item)
   }
 
   async function handleDelete(id: string) {
@@ -966,7 +739,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
           </span>
         </div>
         <button
-          onClick={() => setAddOpen(true)}
+          onClick={() => { setAddPrefill({}); setAddOpen(true) }}
           className="h-9 px-4 rounded-lg bg-purple-600 text-white text-sm font-bold flex items-center gap-1.5 transition-all duration-200 hover:bg-purple-700"
         >
           <Plus size={16} />
@@ -1170,107 +943,40 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         </div>
       )}
 
-      {/* Add dialog */}
-      <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) setAddForm(emptyForm()) }}>
-        <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">New idea</DialogTitle>
-          </DialogHeader>
-          <IdeaFormFields form={addForm} setForm={setAddForm} allTags={allTags} />
-          <div className="flex flex-col gap-2 pt-2">
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => { setAddOpen(false); setAddForm(emptyForm()) }}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleAdd(false)}
-                disabled={!addForm.idea.trim() || adding}
-                className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
-              >
-                {adding ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-            <button
-              onClick={() => handleAdd(true)}
-              disabled={!addForm.idea.trim() || adding}
-              className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
-            >
-              <Plus size={14} />
-              Save & add another
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Add dialog (shared) */}
+      <AddIdeaDialog
+        open={addOpen}
+        prefill={addPrefill}
+        allTags={allTags}
+        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
+        onSaved={() => {
+          // Optimistic: page will revalidate from server action
+          // For instant feedback, we could add optimistic update here
+        }}
+      />
 
-      {/* Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
-        <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <DialogTitle className="text-foreground">Edit idea</DialogTitle>
-              {editingId && (() => {
-                const editingItem = ideas.find(i => i.id === editingId)
-                if (!editingItem) return null
-                return (
-                  <Select
-                    value={editingItem.production_status}
-                    onValueChange={(v) => {
-                      const newStatus = v as IdeaStatus
-                      handleStatusChange(editingId, newStatus)
-                      setIdeas(prev => prev.map(i => i.id === editingId ? { ...i, production_status: newStatus } : i))
-                    }}
-                  >
-                    <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-lg px-2.5 gap-1 border ${STATUS_PILL[editingItem.production_status]}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
-                        <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )
-              })()}
-            </div>
-          </DialogHeader>
-          <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
-          <div className="flex flex-col gap-2 pt-2">
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => { setEditOpen(false); setEditingId(null) }}
-                className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEdit}
-                disabled={!editForm.idea.trim() || saving}
-                className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
-              >
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                const url = editForm.inspirationUrl.trim()
-                const source = editForm.source.trim()
-                const tags = editForm.tags
-                setEditOpen(false)
-                setEditingId(null)
-                setAddForm({ ...emptyForm(), inspirationUrl: url, source, tags })
-                setAddOpen(true)
-              }}
-              className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
-            >
-              <Plus size={14} />
-              Add another idea
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Edit dialog (shared) */}
+      <EditIdeaDialog
+        key={editingIdea?.id}
+        idea={editingIdea}
+        allTags={allTags}
+        onClose={() => setEditingIdea(null)}
+        onStatusChange={(id, status) => {
+          handleStatusChange(id, status)
+          setEditingIdea(prev => prev && prev.id === id ? { ...prev, production_status: status } : prev)
+        }}
+        onSaved={(id, fields) => {
+          setIdeas(prev => prev.map(i => i.id === id ? { ...i, ...fields } : i))
+        }}
+        onAddAnother={(url, source, tags) => {
+          setAddPrefill({ inspirationUrl: url, source, tags })
+          setAddOpen(true)
+        }}
+        onDuplicate={(form) => {
+          setAddPrefill(form)
+          setAddOpen(true)
+        }}
+      />
     </>
   )
 }

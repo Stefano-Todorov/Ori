@@ -1,15 +1,12 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { updateProductionStatus, updateIdea } from '@/app/actions'
+import { updateProductionStatus } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
-import { GripVertical, ChevronDown, ExternalLink } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { GripVertical, ChevronDown } from 'lucide-react'
+import { EditIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 
 interface Props {
   ideas: ContentIdea[]
@@ -30,174 +27,6 @@ const COLUMNS: { status: ProductionStatus; label: string; color: string; border:
   { status: 'ready', label: 'Ready to Post', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', border: 'border-t-purple-500' },
   { status: 'posted', label: 'Posted', color: 'bg-green-500/10 text-green-600 dark:text-green-400', border: 'border-t-green-500' },
 ]
-
-const STATUS_PILL: Record<ProductionStatus, string> = {
-  new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
-  recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  editing: 'bg-cyan-400/15 text-cyan-400 border-cyan-400/30',
-  ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
-  posted: 'bg-green-400/15 text-green-400 border-green-400/30',
-}
-
-const STATUS_LABEL: Record<ProductionStatus, string> = {
-  new: 'New',
-  recording: 'Recording',
-  editing: 'Editing',
-  ready: 'Ready to Post',
-  posted: 'Posted',
-}
-
-/* ─── Edit Dialog ─── */
-function EditIdeaDialog({
-  idea,
-  onClose,
-  onStatusChange,
-}: {
-  idea: ContentIdea | null
-  onClose: () => void
-  onStatusChange: (ideaId: string, status: ProductionStatus) => void
-}) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [form, setForm] = useState({
-    idea: idea?.idea ?? '',
-    inspiration_url: idea?.inspiration_url ?? '',
-    hook_idea: idea?.hook_idea ?? '',
-    script_snippet: idea?.script_snippet ?? '',
-    cta: idea?.cta ?? '',
-    caption: idea?.caption ?? '',
-  })
-
-  if (!idea) return null
-
-  function handleSave() {
-    startTransition(async () => {
-      await updateIdea(idea!.id, {
-        idea: form.idea,
-        inspiration_url: form.inspiration_url || null,
-        hook_idea: form.hook_idea || null,
-        script_snippet: form.script_snippet || null,
-        cta: form.cta || null,
-        caption: form.caption || null,
-      })
-      refreshKeepScroll(router)
-      onClose()
-    })
-  }
-
-  const inputClass = "bg-muted dark:bg-[#1e1e2e] border-border rounded-lg focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
-
-  return (
-    <Dialog open={!!idea} onOpenChange={open => { if (!open) onClose() }}>
-      <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10 max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
-        </DialogHeader>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-medium text-muted-foreground">Status:</span>
-          <Select
-            value={idea.production_status}
-            onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
-          >
-            <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[idea.production_status]}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-3 mt-2">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Idea</label>
-            <Textarea
-              value={form.idea}
-              onChange={e => setForm(f => ({ ...f, idea: e.target.value }))}
-              className={`${inputClass} min-h-[80px]`}
-            />
-          </div>
-          {(idea.inspiration_url || form.inspiration_url) && (
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Inspiration URL</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={form.inspiration_url}
-                  onChange={e => setForm(f => ({ ...f, inspiration_url: e.target.value }))}
-                  className={`${inputClass} flex-1`}
-                  placeholder="https://..."
-                />
-                {(form.inspiration_url || idea.inspiration_url) && (
-                  <a
-                    href={form.inspiration_url || idea.inspiration_url!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] font-semibold text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all shrink-0"
-                  >
-                    <ExternalLink size={12} />
-                    View
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Hook</label>
-            <Input
-              value={form.hook_idea}
-              onChange={e => setForm(f => ({ ...f, hook_idea: e.target.value }))}
-              className={inputClass}
-              placeholder="Hook idea..."
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Body / Script</label>
-            <Textarea
-              value={form.script_snippet}
-              onChange={e => setForm(f => ({ ...f, script_snippet: e.target.value }))}
-              className={`${inputClass} min-h-[60px]`}
-              placeholder="Script snippet or body..."
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">CTA</label>
-            <Input
-              value={form.cta}
-              onChange={e => setForm(f => ({ ...f, cta: e.target.value }))}
-              className={inputClass}
-              placeholder="Call to action..."
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Caption</label>
-            <Textarea
-              value={form.caption}
-              onChange={e => setForm(f => ({ ...f, caption: e.target.value }))}
-              className={`${inputClass} min-h-[60px]`}
-              placeholder="Caption..."
-            />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isPending || !form.idea.trim()}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all"
-            >
-              {isPending ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 /* ─── Main Component ─── */
 export function KanbanBoard({ ideas, batchSize }: Props) {
@@ -367,7 +196,13 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
         </div>
       </div>
 
-      <EditIdeaDialog key={editingIdea?.id} idea={editingIdea} onClose={() => setEditingIdea(null)} onStatusChange={handleStatusChange} />
+      <EditIdeaDialog
+        key={editingIdea?.id}
+        idea={editingIdea}
+        onClose={() => setEditingIdea(null)}
+        onStatusChange={handleStatusChange}
+        onSaved={() => refreshKeepScroll(router)}
+      />
     </>
   )
 }
