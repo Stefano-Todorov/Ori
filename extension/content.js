@@ -66,6 +66,24 @@ function parseTtStats(stats) {
   }
 }
 
+// Extract thumbnail/cover URL from a TikTok item struct
+function parseTtCover(item) {
+  if (!item) return null
+  // video.cover is the standard thumbnail field
+  const video = item.video
+  if (video) {
+    const cover = video.cover || video.originCover || video.dynamicCover || video.reflowCover
+    if (cover) return cover
+  }
+  // Some structures use imagePost.images[0] for photo posts
+  const images = item.imagePost?.images
+  if (images && images.length > 0) {
+    const img = images[0]
+    return img.imageURL?.urlList?.[0] || null
+  }
+  return null
+}
+
 // Recursively find a TikTok item by video ID in a JSON object
 function findTtItemById(obj, videoId, depth) {
   if (!obj || typeof obj !== 'object' || depth > 8) return null
@@ -97,7 +115,8 @@ function extractTikTokStatsFromJson() {
         // Try statsV2 first (newer), then stats (older)
         const result = parseTtStats(item?.statsV2) ?? parseTtStats(item?.stats)
         if (result) {
-          console.log('[Orianna] TikTok SIGI_STATE stats:', item.statsV2 ?? item.stats)
+          result.cover = parseTtCover(item)
+          console.log('[Orianna] TikTok SIGI_STATE stats:', item.statsV2 ?? item.stats, 'cover:', result.cover)
           return result
         }
       }
@@ -118,7 +137,8 @@ function extractTikTokStatsFromJson() {
         if (!itemStruct) continue
         const result = parseTtStats(itemStruct?.statsV2) ?? parseTtStats(itemStruct?.stats)
         if (result) {
-          console.log('[Orianna] TikTok UNIVERSAL stats:', itemStruct.statsV2 ?? itemStruct.stats)
+          result.cover = parseTtCover(itemStruct)
+          console.log('[Orianna] TikTok UNIVERSAL stats:', itemStruct.statsV2 ?? itemStruct.stats, 'cover:', result.cover)
           return result
         }
       }
@@ -130,7 +150,8 @@ function extractTikTokStatsFromJson() {
         if (found) {
           const result = parseTtStats(found.statsV2) ?? parseTtStats(found.stats)
           if (result) {
-            console.log('[Orianna] TikTok UNIVERSAL deep-scan matched video ID', vid)
+            result.cover = parseTtCover(found)
+            console.log('[Orianna] TikTok UNIVERSAL deep-scan matched video ID', vid, 'cover:', result.cover)
             return result
           }
         }
@@ -152,7 +173,8 @@ function extractTikTokStatsFromJson() {
         if (found) {
           const result = parseTtStats(found.statsV2) ?? parseTtStats(found.stats)
           if (result) {
-            console.log('[Orianna] TikTok JSON fallback: matched video ID', currentVideoId)
+            result.cover = parseTtCover(found)
+            console.log('[Orianna] TikTok JSON fallback: matched video ID', currentVideoId, 'cover:', result.cover)
             return result
           }
         }
@@ -232,7 +254,10 @@ function extractTikTok() {
   const shares = jsonStats?.shares ?? parseNumber(sharesRaw)
   const saves = jsonStats?.saves ?? parseNumber(savesRaw)
 
-  console.log('[Orianna] TikTok final stats:', { views, likes, comments, shares, saves, jsonStats: !!jsonStats })
+  // Prefer JSON cover (most reliable for TikTok), fall back to DOM-based getThumbnail()
+  const thumbnail = jsonStats?.cover || getThumbnail()
+
+  console.log('[Orianna] TikTok final stats:', { views, likes, comments, shares, saves, jsonStats: !!jsonStats, thumbnail: !!thumbnail })
 
   return {
     pageType: 'video',
@@ -249,7 +274,7 @@ function extractTikTok() {
     audio,
     duration,
     videoSrc,
-    thumbnail: getThumbnail(),
+    thumbnail,
   }
 }
 
