@@ -416,24 +416,23 @@ function EditIdeaDialog({
     <Dialog open={!!idea} onOpenChange={open => { if (!open) onClose() }}>
       <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
+          <div className="flex items-center gap-3">
+            <DialogTitle className="text-foreground">Edit Idea</DialogTitle>
+            <Select
+              value={idea.production_status}
+              onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
+            >
+              <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-lg px-2.5 gap-1 border ${STATUS_PILL[idea.production_status]}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </DialogHeader>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs font-medium text-muted-foreground">Status:</span>
-          <Select
-            value={idea.production_status}
-            onValueChange={(v) => onStatusChange(idea.id, v as ProductionStatus)}
-          >
-            <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[idea.production_status]}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
-                <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="space-y-3 mt-2">
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Idea</label>
@@ -519,13 +518,13 @@ function EditIdeaDialog({
                 {isPending ? 'Saving...' : 'Save'}
               </button>
             </div>
-            {(form.inspiration_url || idea?.inspiration_url) && onAddAnother && (
+            {onAddAnother && (
               <button
-                onClick={() => onAddAnother(form.inspiration_url || idea!.inspiration_url!, idea!.source ?? '')}
+                onClick={() => onAddAnother(form.inspiration_url || idea?.inspiration_url || '', idea?.source ?? '')}
                 className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
               >
                 <Plus size={14} />
-                Add another idea from this video
+                Add another idea
               </button>
             )}
           </div>
@@ -726,7 +725,7 @@ export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
       <Dialog open={addOpen} onOpenChange={(v) => { if (!v) setAddOpen(false) }}>
         <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Add another idea from this video</DialogTitle>
+            <DialogTitle className="text-foreground">Add another idea</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {addUrl && (

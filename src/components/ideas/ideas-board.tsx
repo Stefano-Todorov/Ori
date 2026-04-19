@@ -804,7 +804,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       created_at: new Date().toISOString(),
     }, ...prev])
     setAdding(false)
-    if (keepOpen && savedUrl) {
+    if (keepOpen) {
       // Keep dialog open with inspiration URL + tags pre-filled, clear everything else
       setAddForm({ ...emptyForm(), inspirationUrl: savedUrl, source: savedSource, tags: savedTags })
     } else {
@@ -1193,16 +1193,14 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                 {adding ? 'Saving...' : 'Save'}
               </button>
             </div>
-            {addForm.inspirationUrl.trim() && (
-              <button
-                onClick={() => handleAdd(true)}
-                disabled={!addForm.idea.trim() || adding}
-                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
-              >
-                <Plus size={14} />
-                Save & add another from this video
-              </button>
-            )}
+            <button
+              onClick={() => handleAdd(true)}
+              disabled={!addForm.idea.trim() || adding}
+              className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all disabled:opacity-50"
+            >
+              <Plus size={14} />
+              Save & add another
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1211,34 +1209,33 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditingId(null) }}>
         <DialogContent className="sm:max-w-[520px] bg-card border-border dark:border-white/10">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Edit idea</DialogTitle>
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-foreground">Edit idea</DialogTitle>
+              {editingId && (() => {
+                const editingItem = ideas.find(i => i.id === editingId)
+                if (!editingItem) return null
+                return (
+                  <Select
+                    value={editingItem.production_status}
+                    onValueChange={(v) => {
+                      const newStatus = v as IdeaStatus
+                      handleStatusChange(editingId, newStatus)
+                      setIdeas(prev => prev.map(i => i.id === editingId ? { ...i, production_status: newStatus } : i))
+                    }}
+                  >
+                    <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-lg px-2.5 gap-1 border ${STATUS_PILL[editingItem.production_status]}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                        <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )
+              })()}
+            </div>
           </DialogHeader>
-          {editingId && (() => {
-            const editingItem = ideas.find(i => i.id === editingId)
-            if (!editingItem) return null
-            return (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs font-medium text-muted-foreground">Status:</span>
-                <Select
-                  value={editingItem.production_status}
-                  onValueChange={(v) => {
-                    const newStatus = v as IdeaStatus
-                    handleStatusChange(editingId, newStatus)
-                    setIdeas(prev => prev.map(i => i.id === editingId ? { ...i, production_status: newStatus } : i))
-                  }}
-                >
-                  <SelectTrigger className={`h-8 w-auto text-[11px] font-semibold rounded-lg px-3 gap-1.5 border ${STATUS_PILL[editingItem.production_status]}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
-                      <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )
-          })()}
           <IdeaFormFields form={editForm} setForm={setEditForm} allTags={allTags} />
           <div className="flex flex-col gap-2 pt-2">
             <div className="flex justify-end gap-2">
@@ -1256,23 +1253,21 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
                 {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
-            {editForm.inspirationUrl.trim() && (
-              <button
-                onClick={() => {
-                  const url = editForm.inspirationUrl.trim()
-                  const source = editForm.source.trim()
-                  const tags = editForm.tags
-                  setEditOpen(false)
-                  setEditingId(null)
-                  setAddForm({ ...emptyForm(), inspirationUrl: url, source, tags })
-                  setAddOpen(true)
-                }}
-                className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
-              >
-                <Plus size={14} />
-                Add another idea from this video
-              </button>
-            )}
+            <button
+              onClick={() => {
+                const url = editForm.inspirationUrl.trim()
+                const source = editForm.source.trim()
+                const tags = editForm.tags
+                setEditOpen(false)
+                setEditingId(null)
+                setAddForm({ ...emptyForm(), inspirationUrl: url, source, tags })
+                setAddOpen(true)
+              }}
+              className="w-full py-2.5 rounded-lg bg-purple-500/10 border border-purple-500/25 text-purple-600 dark:text-purple-400 text-xs font-semibold flex items-center justify-center gap-2 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+            >
+              <Plus size={14} />
+              Add another idea
+            </button>
           </div>
         </DialogContent>
       </Dialog>
