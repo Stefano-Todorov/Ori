@@ -377,6 +377,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
 
       <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} onDelete={handleDeleteTag} />
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
       {sorted.map((post) => (
         <InspoCard
           key={post.id}
@@ -392,6 +393,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
           onToggleSelect={() => toggleSelect(post.id)}
         />
       ))}
+      </div>
 
       {/* Bulk action bar */}
       {selectMode && (
