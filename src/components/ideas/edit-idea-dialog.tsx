@@ -340,7 +340,7 @@ export function EditIdeaDialog({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-[10px] text-muted-foreground/60 hidden sm:inline">
-                  {navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to save
+                  {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to save
                 </span>
               </div>
               <div className="flex items-center gap-2">

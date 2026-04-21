@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import { GripVertical, ChevronDown } from 'lucide-react'
-import { EditIdeaDialog } from '@/components/ideas/edit-idea-dialog'
+import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 
 interface Props {
   ideas: ContentIdea[]
@@ -35,6 +35,8 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   const [expandedCols, setExpandedCols] = useState<Set<ProductionStatus>>(new Set())
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string; tags?: string[] }>({})
   const didDrag = useRef(false)
 
   function handleDragStart(e: React.DragEvent, ideaId: string) {
@@ -201,6 +203,23 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
         idea={editingIdea}
         onClose={() => setEditingIdea(null)}
         onStatusChange={handleStatusChange}
+        onSaved={() => refreshKeepScroll(router)}
+        onAddAnother={(url, source) => {
+          setEditingIdea(null)
+          setAddPrefill({ inspirationUrl: url, source })
+          setAddOpen(true)
+        }}
+        onDuplicate={(form) => {
+          setEditingIdea(null)
+          setAddPrefill(form)
+          setAddOpen(true)
+        }}
+      />
+
+      <AddIdeaDialog
+        open={addOpen}
+        prefill={addPrefill}
+        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
         onSaved={() => refreshKeepScroll(router)}
       />
     </>
