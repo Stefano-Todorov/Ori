@@ -147,7 +147,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+      <div className="space-y-4">
         {groups.map((group) => (
           <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} />
         ))}
