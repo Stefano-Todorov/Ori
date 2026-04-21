@@ -55,10 +55,12 @@ function timeAgo(dateStr: string) {
 function CompetitorThumbnail({ post }: { post: Post }) {
   const [src, setSrc] = useState<string | null>(post.thumbnail_url)
   const [failed, setFailed] = useState(false)
+  const [triedApi, setTriedApi] = useState(false)
 
   useEffect(() => {
-    if (src || failed) return
+    if (src || triedApi) return
     if (!post.url) { setFailed(true); return }
+    setTriedApi(true)
     fetch(`/api/thumbnail?url=${encodeURIComponent(post.url)}`)
       .then(r => r.json())
       .then(d => {
@@ -66,7 +68,7 @@ function CompetitorThumbnail({ post }: { post: Post }) {
         else setFailed(true)
       })
       .catch(() => setFailed(true))
-  }, [src, failed, post.url])
+  }, [src, triedApi, post.url])
 
   if (!src) {
     return (
@@ -81,7 +83,7 @@ function CompetitorThumbnail({ post }: { post: Post }) {
       src={src}
       alt=""
       className="w-14 h-18 rounded-lg object-cover bg-muted shrink-0"
-      onError={() => { setFailed(true); setSrc(null) }}
+      onError={() => { setSrc(null); setFailed(!triedApi) }}
     />
   )
 }
@@ -121,7 +123,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
   return (
-    <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 md:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
@@ -145,7 +147,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
         {groups.map((group) => (
           <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} />
         ))}
