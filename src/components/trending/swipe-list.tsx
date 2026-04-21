@@ -20,11 +20,13 @@ import { downloadVideo } from '@/lib/instagram-download'
 function Thumbnail({ post }: { post: Post }) {
   const [src, setSrc] = useState(post.thumbnail_url)
   const [failed, setFailed] = useState(false)
+  const [triedApi, setTriedApi] = useState(false)
 
   useEffect(() => {
-    if (src || failed) return
+    if (src || triedApi) return
     if (!post.url) { setFailed(true); return }
-    // Try fetching thumbnail via our API
+    // Try fetching thumbnail via our API (oEmbed / og:image)
+    setTriedApi(true)
     fetch(`/api/thumbnail?url=${encodeURIComponent(post.url)}`)
       .then(r => r.json())
       .then(d => {
@@ -32,7 +34,7 @@ function Thumbnail({ post }: { post: Post }) {
         else setFailed(true)
       })
       .catch(() => setFailed(true))
-  }, [src, failed, post.url])
+  }, [src, triedApi, post.url])
 
   if (failed && !src) {
     // Platform-colored placeholder
@@ -56,7 +58,7 @@ function Thumbnail({ post }: { post: Post }) {
       src={src}
       alt=""
       className="w-14 h-18 rounded-lg object-cover shrink-0 bg-muted"
-      onError={() => { setFailed(true); setSrc(null) }}
+      onError={() => { setSrc(null); setFailed(!triedApi) }}
     />
   )
 }

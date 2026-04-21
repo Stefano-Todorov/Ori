@@ -28,6 +28,16 @@ export async function GET(req: NextRequest) {
   try {
     // Try oEmbed for known platforms
     const thumbnail = await fetchOEmbed(url) ?? await fetchOgImage(url)
+
+    // Persist the fresh thumbnail back to the DB so we don't re-fetch next time
+    if (thumbnail) {
+      await supabase
+        .from('posts')
+        .update({ thumbnail_url: thumbnail })
+        .eq('user_id', user.id)
+        .eq('url', url)
+    }
+
     return NextResponse.json({ thumbnail })
   } catch {
     return NextResponse.json({ thumbnail: null })
