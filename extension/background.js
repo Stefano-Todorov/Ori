@@ -194,6 +194,17 @@ async function handleMessage(msg) {
     case 'BULK_IMPORT': {
       const { platform, posts } = msg
       if (!posts || posts.length === 0) return { ingested: 0, skipped: 0 }
+
+      // Convert thumbnails to base64 in parallel batches to persist them server-side
+      const THUMB_BATCH = 10
+      const thumbMap = new Map()
+      const thumbPosts = posts.filter(p => p.thumbnail)
+      for (let i = 0; i < thumbPosts.length; i += THUMB_BATCH) {
+        const batch = thumbPosts.slice(i, i + THUMB_BATCH)
+        const results = await Promise.all(batch.map(p => fetchThumbnailBase64(p.thumbnail)))
+        batch.forEach((p, idx) => { if (results[idx]) thumbMap.set(p.url || p.thumbnail, results[idx]) })
+      }
+
       return apiPost('/api/extension/ingest', {
         platform,
         is_trending: true,
@@ -207,6 +218,7 @@ async function handleMessage(msg) {
           saves: p.saves ?? 0,
           hashtags: [],
           thumbnail: p.thumbnail ?? null,
+          thumbnail_base64: thumbMap.get(p.url || p.thumbnail) ?? null,
         })),
       })
     }

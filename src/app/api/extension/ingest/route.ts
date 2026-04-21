@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { authenticateExtensionRequest, optionsResponse, jsonResponse, errorResponse } from '@/lib/extension-auth'
+import { createServiceClient } from '@/lib/supabase/service'
 import { z } from 'zod'
 
 const PostSchema = z.object({
@@ -14,7 +15,28 @@ const PostSchema = z.object({
   hashtags: z.array(z.string()).default([]),
   posted_at: z.string().nullish(),
   thumbnail: z.string().nullish(),
+  thumbnail_base64: z.string().nullish(),
 })
+
+async function persistThumbnail(userId: string, base64: string | null | undefined): Promise<string | null> {
+  if (!base64) return null
+  try {
+    const buffer = Buffer.from(base64, 'base64')
+    const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
+    const service = createServiceClient()
+    const { error } = await service.storage
+      .from('thumbnails')
+      .upload(path, buffer, { contentType: 'image/jpeg', upsert: false })
+    if (error) {
+      console.error('[extension/ingest] thumbnail upload error:', error.message)
+      return null
+    }
+    return service.storage.from('thumbnails').getPublicUrl(path).data.publicUrl
+  } catch (err) {
+    console.error('[extension/ingest] thumbnail crash:', err)
+    return null
+  }
+}
 
 const IngestSchema = z.object({
   platform: z.enum(['tiktok', 'instagram']),
@@ -82,7 +104,15 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  const postRecords = posts.map((p) => ({
+  // Persist base64 thumbnails to Supabase storage in parallel
+  const thumbnailUrls = await Promise.all(
+    posts.map(async (p) => {
+      const persisted = await persistThumbnail(user.id, p.thumbnail_base64)
+      return persisted ?? p.thumbnail ?? null
+    })
+  )
+
+  const postRecords = posts.map((p, i) => ({
     user_id: user.id,
     platform,
     url: p.url ?? null,
@@ -98,7 +128,7 @@ export async function POST(request: NextRequest) {
     is_competitor: !!competitor_handle,
     competitor_handle: competitor_handle?.replace('@', '') ?? null,
     is_trending,
-    thumbnail_url: p.thumbnail ?? null,
+    thumbnail_url: thumbnailUrls[i],
   }))
 
   const { error } = await supabase.from('posts').insert(postRecords)
