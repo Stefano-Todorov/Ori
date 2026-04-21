@@ -18,7 +18,11 @@
   ],
   "host_permissions": [
     "*://*.tiktok.com/*",
+    "*://*.tiktokcdn.com/*",
+    "*://*.tiktokcdn-us.com/*",
     "*://*.instagram.com/*",
+    "*://*.cdninstagram.com/*",
+    "*://*.fbcdn.net/*",
     "https://zpowetkkmppaffqbgvzq.supabase.co/*",
     "https://ori-nine.vercel.app/*"
   ],

@@ -89,14 +89,18 @@ async function fetchThumbnailBase64(url) {
   if (!url) return null
   try {
     const res = await fetch(url)
-    if (!res.ok) return null
+    if (!res.ok) {
+      console.warn('[Orianna BG] thumbnail fetch failed:', res.status, url)
+      return null
+    }
     const blob = await res.blob()
     const buf = await blob.arrayBuffer()
     const bytes = new Uint8Array(buf)
     let binary = ''
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
     return btoa(binary)
-  } catch {
+  } catch (err) {
+    console.warn('[Orianna BG] thumbnail fetch error:', err.message, url)
     return null
   }
 }
