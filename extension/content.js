@@ -1122,7 +1122,7 @@ function extractMediaNodes(obj, results = []) {
   return results
 }
 
-function cacheMediaNode(node) {
+function cacheMediaNode(node, sourceUserId) {
   const sc = node.shortcode ?? node.code
   if (!sc || igMetricsCache.has(sc)) return
   const captionText = node.caption?.text ?? node.edge_media_to_caption?.edges?.[0]?.node?.text ?? null
@@ -1143,6 +1143,9 @@ function cacheMediaNode(node) {
     posted_at: postedAt,
     caption: captionText,
     ownerId: ownerId ? String(ownerId) : null,
+    // Track which profile's API returned this post — collabs/tagged posts
+    // have a different ownerId but still belong to the profile being synced
+    sourceUserId: sourceUserId ? String(sourceUserId) : null,
   })
 }
 
@@ -1218,7 +1221,7 @@ async function fetchInstagramMetrics(items) {
             const profileData = await profileRes.json()
             // Also extract media from the profile response itself
             const profileNodes = extractMediaNodes(profileData)
-            profileNodes.forEach(cacheMediaNode)
+            profileNodes.forEach(n => cacheMediaNode(n))
 
             const followerCountFromApi = profileData?.data?.user?.edge_followed_by?.count
               ?? profileData?.data?.user?.follower_count
@@ -1236,7 +1239,7 @@ async function fetchInstagramMetrics(items) {
                 const feedData = await feedRes.json()
                 const nodes = extractMediaNodes(feedData)
                 console.log(`[Orianna] Feed page ${page}: ${nodes.length} nodes, more_available=${feedData.more_available}, nextMaxId=${feedData.next_max_id ? 'yes' : 'no'}`)
-                nodes.forEach(cacheMediaNode)
+                nodes.forEach(n => cacheMediaNode(n, userId))
                 nextMaxId = feedData.next_max_id
                 if (!feedData.more_available || !nextMaxId) break
               }
@@ -1258,7 +1261,7 @@ async function fetchInstagramMetrics(items) {
                   console.log(`[Orianna] Reels page ${page}: ${reelItems.length} items, more=${reelsData?.paging_info?.more_available}`)
                   for (const ri of reelItems) {
                     const node = ri?.media
-                    if (node) cacheMediaNode(node)
+                    if (node) cacheMediaNode(node, userId)
                   }
                   const pagingInfo = reelsData?.paging_info
                   reelsMaxId = pagingInfo?.max_id
@@ -1790,7 +1793,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           for (const [sc, cached] of igMetricsCache) {
             if (seenShortcodes.has(sc)) continue
             // Guard: only include posts owned by the profile we're syncing.
-            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId) continue
+            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId && cached.sourceUserId !== currentProfileUserId) continue
             apiOnlyCount++
             posts.push({
               url: `https://www.instagram.com/p/${sc}/`,
@@ -1811,7 +1814,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           // No grid in DOM — still try the API
           await fetchInstagramMetrics([])
           for (const [sc, cached] of igMetricsCache) {
-            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId) continue
+            if (currentProfileUserId && cached.ownerId && cached.ownerId !== currentProfileUserId && cached.sourceUserId !== currentProfileUserId) continue
             posts.push({
               url: `https://www.instagram.com/p/${sc}/`,
               caption: cached.caption || null,
