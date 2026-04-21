@@ -195,17 +195,8 @@ async function handleMessage(msg) {
       const { platform, posts } = msg
       if (!posts || posts.length === 0) return { ingested: 0, skipped: 0 }
 
-      // Convert thumbnails to base64 in parallel batches to persist them server-side
-      const THUMB_BATCH = 10
-      const thumbMap = new Map()
-      const thumbPosts = posts.filter(p => p.thumbnail)
-      for (let i = 0; i < thumbPosts.length; i += THUMB_BATCH) {
-        const batch = thumbPosts.slice(i, i + THUMB_BATCH)
-        const results = await Promise.all(batch.map(p => fetchThumbnailBase64(p.thumbnail)))
-        batch.forEach((p, idx) => { if (results[idx]) thumbMap.set(p.url || p.thumbnail, results[idx]) })
-      }
-
-      return apiPost('/api/extension/ingest', {
+      // Save posts first with CDN URLs (small payload)
+      const result = await apiPost('/api/extension/ingest', {
         platform,
         is_trending: true,
         posts: posts.map(p => ({
@@ -218,15 +209,63 @@ async function handleMessage(msg) {
           saves: p.saves ?? 0,
           hashtags: [],
           thumbnail: p.thumbnail ?? null,
-          thumbnail_base64: thumbMap.get(p.url || p.thumbnail) ?? null,
         })),
       })
+
+      // Then persist thumbnails to Supabase Storage in the background
+      // (one at a time to avoid large payloads)
+      const thumbPosts = posts.filter(p => p.thumbnail && p.url)
+      if (thumbPosts.length > 0) {
+        ;(async () => {
+          const BATCH = 5
+          for (let i = 0; i < thumbPosts.length; i += BATCH) {
+            const batch = thumbPosts.slice(i, i + BATCH)
+            await Promise.all(batch.map(async (p) => {
+              try {
+                const b64 = await fetchThumbnailBase64(p.thumbnail)
+                if (!b64) return
+                await apiPost('/api/extension/persist-thumb', {
+                  post_url: p.url,
+                  thumbnail_base64: b64,
+                })
+              } catch {}
+            }))
+          }
+          console.log('[Orianna BG] Finished persisting', thumbPosts.length, 'thumbnails')
+        })()
+      }
+
+      return result
     }
 
     case 'SYNC_MY_VIDEOS': {
       const { platform, follower_count, posts } = msg
       if (!posts || posts.length === 0) return { synced: 0, new: 0, updated: 0, suggested_links: [] }
-      return apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts })
+      const result = await apiPost('/api/extension/sync-my-videos', { platform, follower_count, posts })
+
+      // Persist thumbnails to Supabase Storage in the background
+      const thumbsToSync = posts.filter(p => p.thumbnail && p.url)
+      if (thumbsToSync.length > 0) {
+        ;(async () => {
+          const BATCH = 5
+          for (let i = 0; i < thumbsToSync.length; i += BATCH) {
+            const batch = thumbsToSync.slice(i, i + BATCH)
+            await Promise.all(batch.map(async (p) => {
+              try {
+                const b64 = await fetchThumbnailBase64(p.thumbnail)
+                if (!b64) return
+                await apiPost('/api/extension/persist-thumb', {
+                  post_url: p.url,
+                  thumbnail_base64: b64,
+                })
+              } catch {}
+            }))
+          }
+          console.log('[Orianna BG] Finished persisting', thumbsToSync.length, 'my-video thumbnails')
+        })()
+      }
+
+      return result
     }
 
     case 'SYNC_TAGS': {
