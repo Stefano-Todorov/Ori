@@ -13,7 +13,7 @@ interface DisplayMessage {
 const INITIAL_MESSAGE: DisplayMessage = {
   role: 'assistant',
   content:
-    "Hey! I'm Orianna, your AI content coach. Before we dive into strategy, I'd love to get to know you and your content journey a bit. What kind of content do you create (or want to create)?",
+    "Hey! I'm Orianna, your content coach. Think of this as our first session together — I want to understand you and your content before we start strategizing. So tell me, what kind of content do you create or want to create?",
 }
 
 export function OnboardingChat() {

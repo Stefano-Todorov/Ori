@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic, MODEL } from '@/lib/claude'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { getUserTier } from '@/lib/usage'
 import type Anthropic from '@anthropic-ai/sdk'
 
 const SAVE_PROFILE_TOOL: Anthropic.Tool = {
   name: 'save_profile',
   description:
-    'Save the creator profile when you have gathered enough information about their niche, goals, platforms, posting frequency, and context. Call this once you feel confident you understand the creator well enough to coach them effectively.',
+    'Save the creator profile when you have gathered enough information. Call this once you feel confident you understand the creator well enough to coach them effectively. Do NOT call this too early — make sure you have dug deep enough.',
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -21,7 +22,7 @@ const SAVE_PROFILE_TOOL: Anthropic.Tool = {
       },
       goals: {
         type: 'string',
-        description: 'Their content and growth goals, as specific as possible',
+        description: 'Their content and growth goals, as specific as possible including timeline and metrics if mentioned',
       },
       platforms: {
         type: 'array',
@@ -35,41 +36,141 @@ const SAVE_PROFILE_TOOL: Anthropic.Tool = {
       creator_context: {
         type: 'string',
         description:
-          'Rich narrative summary of the creator: their experience level, target audience, content style, unique strengths, pain points, what makes them different, and anything else relevant for coaching. This will be used by all AI features to personalize advice.',
+          'Rich, detailed narrative summary (5-8 sentences) of the creator: experience level, target audience demographics and psychographics, content style and tone, unique angle/differentiator, strengths, pain points, what has or hasn\'t worked before, monetization intent, and anything else relevant for personalized coaching.',
       },
     },
     required: ['niche', 'goals', 'platforms', 'posting_target', 'creator_context'],
   },
 }
 
-const ONBOARDING_SYSTEM_PROMPT = `You are Orianna, an elite AI content coach for short-form video creators (TikTok and Instagram Reels). You're meeting a new creator for the first time during onboarding.
+function buildOnboardingPrompt(isPaid: boolean): string {
+  const baseCoachingStyle = `You are Orianna, an elite AI content coach for short-form video creators (TikTok and Instagram Reels). You're meeting a new creator for the first time. Think of this as your intake session — the better you understand them, the better you can coach them.
 
-YOUR GOAL: Get to know this creator through natural conversation so you can build their profile and give them personalized coaching. You need to understand their niche, goals, platforms, posting habits, experience level, target audience, content style, and pain points.
+YOUR COACHING STYLE:
+- Be warm but direct — like a coach who genuinely cares, not a customer service bot
+- Use active listening: reflect back what you hear ("So you're saying..." / "It sounds like...")
+- Show genuine curiosity — react to what they say before asking the next question
+- Share brief, relevant observations ("That's actually a really smart angle because..." or "A lot of creators in [niche] struggle with that")
+- Keep messages concise — 2-4 sentences max. Don't lecture. Ask and listen.
+- ONE question or topic per message. Never stack multiple questions.
+- Match their energy — if they're brief, stay brief. If they're detailed, engage with the details.
+- Use their words back to them — it shows you're listening`
 
-HOW TO CONDUCT THE CONVERSATION:
-- Be warm, conversational, and genuinely curious — like a real coach meeting a new client
-- Ask ONE topic at a time, then probe deeper based on their answer before moving on
-- Start by asking about what kind of content they create (or want to create)
-- Follow up on interesting details — dig into their angle, what makes them different, who their audience is
-- Naturally discover their goals (ask what success looks like to them, any timeline)
-- Ask about which platforms they use or want to focus on
-- Ask about their current posting habits and what frequency feels realistic
-- Pick up on experience level, pain points, and content style from context clues
-- Do NOT ask all questions at once — this should feel like a conversation, not an interview
-- Keep your messages concise (2-4 sentences typically). Be encouraging but not over-the-top
-- After 3-5 exchanges, when you have a clear picture, call the save_profile tool
+  if (!isPaid) {
+    return `${baseCoachingStyle}
 
-WHEN CALLING save_profile:
-- Fill in ALL fields based on what you've learned. Infer what you can from context
-- The creator_context field should be a rich 3-5 sentence narrative summary — not just bullet points
-- For posting_target, if they didn't give an exact number, use your best judgment (default to 3 if unclear)
-- After calling the tool, send a warm welcome message summarizing what you learned about them and what you'll help them with. Keep it to 2-3 sentences. End with something encouraging about getting started.
+CONVERSATION FLOW (free plan — efficient but warm):
+You have about 3-5 exchanges to understand this creator. Be efficient but still conversational.
+
+1. NICHE & ANGLE: Start by asking what content they create or want to create. If their answer is broad, ask one follow-up to narrow it down ("What's your specific angle on that?")
+2. GOALS: Ask what they're trying to achieve — but frame it as "what does winning look like for you?" not "what are your goals"
+3. PLATFORMS & HABITS: Ask where they post (or want to post) and how often they're currently creating
+4. WRAP UP: Once you have a clear picture, call save_profile
 
 IMPORTANT:
-- You must call the save_profile tool exactly once during this conversation
-- Do not mention the tool or "saving profile" to the user — just naturally wrap up
-- If the user seems eager to get started or gives very brief answers, don't drag out the conversation — adapt and call the tool sooner
-- If the user gives detailed answers, you can probe less — they're already giving you what you need`
+- You must call save_profile exactly once during this conversation
+- Do not mention saving, profiles, or onboarding — just naturally wrap up
+- The creator_context should be a rich 3-5 sentence narrative summary
+- If the user gives detailed answers, adapt — you might be able to call the tool after 3 exchanges
+- For posting_target, default to 3 if they don't specify`
+  }
+
+  return `${baseCoachingStyle}
+
+CONVERSATION FLOW (paid plan — deep intake session):
+This creator is paying for premium coaching. Give them a thorough intake that makes them feel understood. Aim for 5-8 exchanges before saving their profile. Dig deep — the more you learn now, the better all your future coaching will be.
+
+1. NICHE & ANGLE (1-2 messages):
+   - Start by asking what content they create or want to create
+   - Dig into their specific angle: "What makes YOUR take on [niche] different from the 10,000 other [niche] creators?"
+   - If they don't know their angle yet, that's valuable info — note it as a pain point
+
+2. AUDIENCE (1 message):
+   - Ask who they're trying to reach — not just demographics but psychographics: "Who's your ideal viewer? Like if you could describe the one person who watches every video..."
+   - If they say "everyone," gently push back: "Everyone is no one. Who specifically would share your content?"
+
+3. GOALS & VISION (1-2 messages):
+   - Ask what winning looks like for them — follower count? Brand deals? Building a business? Just having fun?
+   - If they mention monetization, ask what specifically (sponsorships, products, courses, affiliate)
+   - Ask about timeline: "Where do you want to be in 6 months?"
+
+4. CURRENT STATE & EXPERIENCE (1 message):
+   - Ask about their experience: "Are you starting from scratch or do you already have some content out there?"
+   - If they have content: "What's been working? What hasn't?"
+   - If they're new: "What's been holding you back from starting?"
+
+5. CONTENT PROCESS & PAIN POINTS (1 message):
+   - Ask about their biggest challenge right now: "What's the #1 thing that frustrates you about creating content?"
+   - This reveals whether they need help with ideas, scripting, consistency, editing, growth, etc.
+
+6. PLATFORMS & POSTING (1 message):
+   - Ask where they post and how often
+   - If they're on multiple platforms, ask which one they want to focus on first
+   - Get a realistic posting target based on their schedule
+
+7. WRAP UP: When you have a thorough understanding, call save_profile
+
+IMPORTANT:
+- You must call save_profile exactly once during this conversation
+- Do not mention saving, profiles, or onboarding — just naturally wrap up
+- The creator_context MUST be detailed (5-8 sentences) — this is your notes from the intake session
+- Include: experience level, audience, content style, unique angle, strengths, pain points, monetization intent, what has/hasn't worked
+- Do NOT rush through topics just to check boxes — if something interesting comes up, follow that thread
+- If the creator seems eager to jump in, you can shorten the flow — read the room
+- For posting_target, push them toward a realistic number based on what they told you about their schedule`
+}
+
+async function streamResponse(
+  params: Anthropic.MessageCreateParams,
+  controller: ReadableStreamDefaultController,
+  encoder: TextEncoder,
+): Promise<{ content: Anthropic.ContentBlock[]; stopReason: string | null }> {
+  const stream = anthropic.messages.stream(params)
+  const content: Anthropic.ContentBlock[] = []
+  let currentToolInput = ''
+  let currentToolId = ''
+  let currentToolName = ''
+  let stopReason: string | null = null
+
+  for await (const event of stream) {
+    if (event.type === 'content_block_start') {
+      if (event.content_block.type === 'text') {
+        content.push({ ...event.content_block })
+      } else if (event.content_block.type === 'tool_use') {
+        currentToolId = event.content_block.id
+        currentToolName = event.content_block.name
+        currentToolInput = ''
+      }
+    } else if (event.type === 'content_block_delta') {
+      if (event.delta.type === 'text_delta') {
+        controller.enqueue(encoder.encode(event.delta.text))
+        // Update the last text block
+        const lastText = content[content.length - 1]
+        if (lastText && lastText.type === 'text') {
+          (lastText as Anthropic.TextBlock).text += event.delta.text
+        }
+      } else if (event.delta.type === 'input_json_delta') {
+        currentToolInput += event.delta.partial_json
+      }
+    } else if (event.type === 'content_block_stop') {
+      if (currentToolId) {
+        content.push({
+          type: 'tool_use',
+          id: currentToolId,
+          name: currentToolName,
+          input: JSON.parse(currentToolInput || '{}'),
+        } as Anthropic.ToolUseBlock)
+        currentToolId = ''
+        currentToolName = ''
+        currentToolInput = ''
+      }
+    } else if (event.type === 'message_delta') {
+      stopReason = event.delta.stop_reason
+    }
+  }
+
+  return { content, stopReason }
+}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -97,6 +198,11 @@ export async function POST(request: NextRequest) {
     content: m.content.slice(0, 10000),
   }))
 
+  // Check user's tier for prompt depth
+  const tier = await getUserTier(user.id)
+  const isPaid = tier !== 'starter'
+  const systemPrompt = buildOnboardingPrompt(isPaid)
+
   const messages: Anthropic.MessageParam[] = [
     ...history,
     { role: 'user' as const, content: message },
@@ -107,96 +213,87 @@ export async function POST(request: NextRequest) {
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        const response = await anthropic.messages.create({
-          model: MODEL,
-          max_tokens: 1024,
-          system: ONBOARDING_SYSTEM_PROMPT,
-          tools: [SAVE_PROFILE_TOOL],
-          messages,
-        })
+        // Stream the main response
+        const { content, stopReason } = await streamResponse(
+          {
+            model: MODEL,
+            max_tokens: 1024,
+            system: systemPrompt,
+            tools: [SAVE_PROFILE_TOOL],
+            messages,
+          },
+          controller,
+          encoder,
+        )
 
-        let profileSaved = false
+        // Check if the model called the tool
+        const toolUseBlock = content.find(
+          (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use' && b.name === 'save_profile'
+        )
 
-        for (const block of response.content) {
-          if (block.type === 'text') {
-            controller.enqueue(encoder.encode(block.text))
-          } else if (block.type === 'tool_use' && block.name === 'save_profile') {
-            const input = block.input as {
-              niche: string
-              sub_niche?: string
-              goals: string
-              platforms: string[]
-              posting_target: number
-              creator_context: string
-            }
-
-            // Save profile to DB
-            const { error } = await supabase.from('profiles').upsert(
-              {
-                user_id: user.id,
-                email: user.email ?? '',
-                niche: input.niche,
-                sub_niche: input.sub_niche || null,
-                goals: input.goals,
-                platforms: input.platforms,
-                posting_target: Math.min(Math.max(input.posting_target, 1), 14),
-                creator_context: input.creator_context,
-                onboarding_completed: true,
-              },
-              { onConflict: 'user_id' }
-            )
-
-            if (error) {
-              controller.enqueue(encoder.encode('\n\nI had trouble saving your profile. Please try refreshing the page.'))
-              controller.close()
-              return
-            }
-
-            profileSaved = true
+        if (toolUseBlock && stopReason === 'tool_use') {
+          const input = toolUseBlock.input as {
+            niche: string
+            sub_niche?: string
+            goals: string
+            platforms: string[]
+            posting_target: number
+            creator_context: string
           }
-        }
 
-        // If the model called the tool, we need to send the tool result back
-        // to get the final assistant message (the welcome summary)
-        if (profileSaved && response.stop_reason === 'tool_use') {
-          const toolUseBlock = response.content.find(
-            (b) => b.type === 'tool_use'
+          // Save profile to DB
+          const { error } = await supabase.from('profiles').upsert(
+            {
+              user_id: user.id,
+              email: user.email ?? '',
+              niche: input.niche,
+              sub_niche: input.sub_niche || null,
+              goals: input.goals,
+              platforms: input.platforms,
+              posting_target: Math.min(Math.max(input.posting_target, 1), 14),
+              creator_context: input.creator_context,
+              onboarding_completed: true,
+            },
+            { onConflict: 'user_id' }
           )
 
-          if (toolUseBlock && toolUseBlock.type === 'tool_use') {
-            const followUp = await anthropic.messages.create({
+          if (error) {
+            controller.enqueue(encoder.encode('\n\nI had trouble saving your profile. Please try refreshing the page.'))
+            controller.close()
+            return
+          }
+
+          // Stream the follow-up welcome message
+          await streamResponse(
+            {
               model: MODEL,
               max_tokens: 1024,
-              system: ONBOARDING_SYSTEM_PROMPT,
+              system: systemPrompt,
               tools: [SAVE_PROFILE_TOOL],
               messages: [
                 ...messages,
-                { role: 'assistant' as const, content: response.content },
+                { role: 'assistant' as const, content },
                 {
                   role: 'user' as const,
                   content: [
                     {
                       type: 'tool_result' as const,
                       tool_use_id: toolUseBlock.id,
-                      content: 'Profile saved successfully. Now send a warm welcome message.',
+                      content: 'Profile saved successfully. Now send a warm welcome message summarizing what you learned and what you\'ll help them with.',
                     },
                   ],
                 },
               ],
-            })
-
-            for (const block of followUp.content) {
-              if (block.type === 'text') {
-                controller.enqueue(encoder.encode(block.text))
-              }
-            }
-          }
+            },
+            controller,
+            encoder,
+          )
 
           controller.enqueue(encoder.encode('\n__ONBOARDING_COMPLETE__'))
         }
 
         controller.close()
-      } catch (err) {
+      } catch {
         controller.enqueue(encoder.encode('\n\nSomething went wrong. Please try refreshing the page.'))
         controller.close()
       }
