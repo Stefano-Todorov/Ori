@@ -77,14 +77,20 @@ const FOCUS_BLOCKED_PATTERNS = {
     /^https?:\/\/(www\.)?instagram\.com\/stories(\/|$)/,
     /^https?:\/\/(www\.)?instagram\.com\/notifications/,
   ],
+  // These platforms are fully blocked (no productive use case)
+  youtube:   [/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/],
+  twitter:   [/^https?:\/\/(www\.)?(twitter\.com|x\.com)/],
+  reddit:    [/^https?:\/\/(www\.|old\.)?reddit\.com/],
+  facebook:  [/^https?:\/\/(www\.)?(facebook\.com|fb\.com)/],
+  snapchat:  [/^https?:\/\/(www\.)?snapchat\.com/],
+  threads:   [/^https?:\/\/(www\.)?threads\.net/],
 }
 
 function isUrlBlockedByFocusMode(url) {
-  const platform = url.includes('tiktok.com') ? 'tiktok'
-                 : url.includes('instagram.com') ? 'instagram'
-                 : null
-  if (!platform) return false
-  return FOCUS_BLOCKED_PATTERNS[platform].some(re => re.test(url))
+  for (const patterns of Object.values(FOCUS_BLOCKED_PATTERNS)) {
+    if (patterns.some(re => re.test(url))) return true
+  }
+  return false
 }
 
 let focusModeEnabled = false

@@ -23,6 +23,13 @@
     "*://*.instagram.com/*",
     "*://*.cdninstagram.com/*",
     "*://*.fbcdn.net/*",
+    "*://*.youtube.com/*",
+    "*://*.twitter.com/*",
+    "*://*.x.com/*",
+    "*://*.reddit.com/*",
+    "*://*.facebook.com/*",
+    "*://*.snapchat.com/*",
+    "*://*.threads.net/*",
     "https://zpowetkkmppaffqbgvzq.supabase.co/*",
     "https://ori-nine.vercel.app/*"
   ],
@@ -42,7 +49,14 @@
     {
       "matches": [
         "*://*.tiktok.com/*",
-        "*://*.instagram.com/*"
+        "*://*.instagram.com/*",
+        "*://*.youtube.com/*",
+        "*://*.twitter.com/*",
+        "*://*.x.com/*",
+        "*://*.reddit.com/*",
+        "*://*.facebook.com/*",
+        "*://*.snapchat.com/*",
+        "*://*.threads.net/*"
       ],
       "js": [
         "content.js"
