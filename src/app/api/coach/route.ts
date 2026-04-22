@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
     goals: profile?.goals ?? 'grow my social media presence',
     platforms: profile?.platforms ?? [],
     postingTarget: profile?.posting_target ?? 3,
+    creatorContext: profile?.creator_context ?? undefined,
     posts: posts ?? undefined,
     inspirationPosts: inspirationPosts ?? undefined,
     competitors: competitors ?? undefined,

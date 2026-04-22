@@ -72,6 +72,7 @@ export const RATE_LIMITS = {
   'extension-persist-thumb':  { maxTokens: 60, refillRate: 60 / 60 },
   'share-mobile':             { maxTokens: 20, refillRate: 20 / 60 },
   // AI routes — burst protection (monthly limits in usage.ts handle the cap)
+  'onboarding-chat':          { maxTokens: 10, refillRate: 10 / 60 },
   'coach':                    { maxTokens: 5,  refillRate: 5 / 60 },
   'script-generate':          { maxTokens: 5,  refillRate: 5 / 60 },
   'idea-generate':            { maxTokens: 3,  refillRate: 3 / 60 },

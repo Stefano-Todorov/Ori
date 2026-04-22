@@ -17,6 +17,7 @@ export interface Profile {
   onboarding_completed: boolean
   auto_sync_own_profile: boolean
   auto_save_competitor_ideas: boolean
+  creator_context: string | null
   last_synced_at: Record<string, string>
   created_at: string
   updated_at: string

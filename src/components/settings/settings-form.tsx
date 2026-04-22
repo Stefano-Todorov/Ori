@@ -46,6 +46,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
     tiktok: socialAccounts.find(a => a.platform === 'tiktok')?.username ?? '',
     instagram: socialAccounts.find(a => a.platform === 'instagram')?.username ?? '',
   })
+  const [creatorContext, setCreatorContext] = useState(profile?.creator_context ?? '')
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -76,6 +77,7 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
       platforms,
       posting_target: postingTarget,
       batch_size: batchSize,
+      creator_context: creatorContext || null,
       auto_sync_own_profile: autoSync,
     })
     if (profileResult?.error) {
@@ -155,6 +157,16 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
             <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground">Goals</label>
             <Textarea value={goals} onChange={(e) => setGoals(e.target.value)} rows={3} placeholder="Your content goals..." className={inputClass} />
           </div>
+          {creatorContext && (
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground flex items-center gap-2">
+                About you
+                <span className="text-[10px] font-medium normal-case tracking-normal px-1.5 py-0.5 rounded bg-muted text-muted-foreground/60">AI context</span>
+              </label>
+              <p className="text-xs text-muted-foreground -mt-1">This is what your AI coach knows about you from onboarding. Edit it to refine your coaching.</p>
+              <Textarea value={creatorContext} onChange={(e) => setCreatorContext(e.target.value)} rows={4} className={inputClass} />
+            </div>
+          )}
         </div>
       </div>
 

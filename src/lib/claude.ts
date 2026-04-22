@@ -24,6 +24,7 @@ export interface CoachContext {
   goals: string
   platforms: string[]
   postingTarget: number
+  creatorContext?: string
   posts?: PostSummary[]
   competitors?: { handle: string; platform: string; avg_views: number | null }[]
   scripts?: { topic: string; status: string; hook: string }[]
@@ -123,7 +124,7 @@ USER PROFILE:
 - Goals: ${ctx.goals}
 - Active platforms: ${ctx.platforms.join(', ')}
 - Posting target: ${ctx.postingTarget} posts per week
-${analyticsSection}${competitorSection}${inspirationSection}${pipelineSection}
+${ctx.creatorContext ? `\nCREATOR CONTEXT (from onboarding conversation):\n${ctx.creatorContext}\n` : ''}${analyticsSection}${competitorSection}${inspirationSection}${pipelineSection}
 
 YOUR EXPERTISE:
 ${hookSummary}
