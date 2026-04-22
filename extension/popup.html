@@ -15,7 +15,7 @@
       font-size: 13px;
       background: #0f0f13;
       color: #fafafa;
-      min-height: 200px;
+      min-height: 100px;
       border-radius: 12px;
       overflow: hidden;
     }
@@ -39,13 +39,24 @@
       width: 20px; height: 20px; flex-shrink: 0;
       -webkit-text-fill-color: initial;
     }
-    .header-right { display: flex; align-items: center; gap: 8px; }
-    .user-email { font-size: 10px; color: #52525b; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .logout-btn { font-size: 10px; cursor: pointer; background: none; border: none; color: #52525b; transition: color 0.15s; }
-    .logout-btn:hover { color: #e4e4e7; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .user-email { font-size: 10px; color: #71717a; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .logout-btn { font-size: 10px; cursor: pointer; background: none; border: none; color: #71717a; transition: color 0.15s; padding: 2px 0; }
+    .logout-btn:hover { color: #c4b5fd; }
     .dashboard-link { font-size: 11px; cursor: pointer; font-weight: 600; background: rgba(124, 58, 237, 0.15); border: 1px solid rgba(124, 58, 237, 0.3); color: #a78bfa; padding: 4px 10px; border-radius: 6px; transition: all 0.2s; text-decoration: none; }
     .dashboard-link:hover { background: rgba(124, 58, 237, 0.25); border-color: rgba(124, 58, 237, 0.5); color: #c4b5fd; transform: translateY(-1px); }
     .logo a { text-decoration: none; -webkit-text-fill-color: inherit; background: inherit; -webkit-background-clip: text; background-clip: text; }
+    .focus-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; margin: 0 12px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); }
+    .focus-bar:hover { border-color: rgba(124, 58, 237, 0.25); background: #1e1b3a; }
+    .focus-bar-left { display: flex; align-items: center; gap: 8px; }
+    .focus-bar-icon { font-size: 14px; color: #7c3aed; display: flex; align-items: center; }
+    .focus-bar-label { font-size: 11px; font-weight: 600; color: #a1a1aa; }
+    .focus-bar.on .focus-bar-label { color: #c4b5fd; }
+    .focus-bar.on { border-color: rgba(124, 58, 237, 0.3); background: rgba(124, 58, 237, 0.08); }
+    .focus-switch { width: 32px; height: 18px; border-radius: 9px; background: rgba(255,255,255,0.12); position: relative; transition: background 0.2s; flex-shrink: 0; }
+    .focus-switch.on { background: #7c3aed; }
+    .focus-switch-knob { width: 14px; height: 14px; border-radius: 50%; background: #fafafa; position: absolute; top: 2px; left: 2px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .focus-switch.on .focus-switch-knob { transform: translateX(14px); }
     .signup-link { text-align: center; font-size: 12px; color: #52525b; margin-top: 4px; }
     .signup-link a { color: #a78bfa; text-decoration: none; }
     .signup-link a:hover { color: #c4b5fd; text-decoration: underline; }
@@ -98,11 +109,11 @@
 
     /* Not on a post */
     .no-post {
-      padding: 32px 18px;
+      padding: 20px 24px;
       text-align: center;
-      color: #52525b;
+      color: #a1a1aa;
       font-size: 12px;
-      line-height: 1.6;
+      line-height: 1.5;
     }
 
     /* Notes */

@@ -45,6 +45,108 @@ function extractHashtags(text) {
   return matches.map(h => h.slice(1))
 }
 
+// ─── Focus Mode ──────────────────────────────────────────────────────────
+
+const FOCUS_BLOCKED_PATTERNS = {
+  tiktok: [
+    /^https?:\/\/(www\.)?tiktok\.com\/?(\?.*)?(#.*)?$/,   // root = FYP
+    /^https?:\/\/(www\.)?tiktok\.com\/foryou/,
+    /^https?:\/\/(www\.)?tiktok\.com\/explore/,
+    /^https?:\/\/(www\.)?tiktok\.com\/search/,
+    /^https?:\/\/(www\.)?tiktok\.com\/following/,
+    /^https?:\/\/(www\.)?tiktok\.com\/messages/,
+    /^https?:\/\/(www\.)?tiktok\.com\/tag\//,
+    /^https?:\/\/(www\.)?tiktok\.com\/music\//,
+  ],
+  instagram: [
+    /^https?:\/\/(www\.)?instagram\.com\/?(\?.*)?(#.*)?$/, // root = feed
+    /^https?:\/\/(www\.)?instagram\.com\/explore(\/|$)/,
+    /^https?:\/\/(www\.)?instagram\.com\/reels(\/|$)/,     // reels FEED (not /reel/ single)
+    /^https?:\/\/(www\.)?instagram\.com\/direct(\/|$)/,
+    /^https?:\/\/(www\.)?instagram\.com\/stories(\/|$)/,
+    /^https?:\/\/(www\.)?instagram\.com\/notifications/,
+  ],
+}
+
+function isUrlBlockedByFocusMode(url) {
+  const platform = url.includes('tiktok.com') ? 'tiktok'
+                 : url.includes('instagram.com') ? 'instagram'
+                 : null
+  if (!platform) return false
+  return FOCUS_BLOCKED_PATTERNS[platform].some(re => re.test(url))
+}
+
+let focusModeEnabled = false
+let focusOverlayEl = null
+
+function checkFocusMode() {
+  if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
+    showFocusOverlay()
+  } else {
+    removeFocusOverlay()
+  }
+}
+
+function showFocusOverlay() {
+  if (focusOverlayEl) return
+  focusOverlayEl = document.createElement('div')
+  focusOverlayEl.id = 'orianna-focus-overlay'
+  Object.assign(focusOverlayEl.style, {
+    position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+    zIndex: '2147483647', background: '#0f0f13',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif', color: '#fafafa',
+  })
+  focusOverlayEl.innerHTML = `
+    <div style="text-align:center;max-width:420px;padding:24px">
+      <div style="font-size:48px;margin-bottom:16px">🎯</div>
+      <h1 style="font-size:24px;font-weight:700;margin:0 0 8px;
+          background:linear-gradient(135deg,#7c3aed,#a855f7);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent">
+        Focus Mode is On
+      </h1>
+      <p style="color:#71717a;font-size:14px;line-height:1.6;margin:0 0 24px">
+        This page is blocked to help you stay productive.<br>
+        Profiles, individual posts, and creator tools are still accessible.
+      </p>
+      <button id="orianna-focus-disable" style="
+        padding:12px 32px;border-radius:10px;border:1.5px solid rgba(168,85,247,0.5);
+        background:transparent;color:#a855f7;font-size:14px;font-weight:600;
+        cursor:pointer;font-family:Inter,-apple-system,sans-serif;transition:all 0.2s">
+        Disable Focus Mode
+      </button>
+    </div>
+  `
+  document.documentElement.appendChild(focusOverlayEl)
+  document.body.style.overflow = 'hidden'
+
+  focusOverlayEl.querySelector('#orianna-focus-disable').addEventListener('click', () => {
+    chrome.storage.local.set({ focusModeEnabled: false })
+  })
+}
+
+function removeFocusOverlay() {
+  if (focusOverlayEl) {
+    focusOverlayEl.remove()
+    focusOverlayEl = null
+    document.body.style.overflow = ''
+  }
+}
+
+// Load initial focus mode state
+chrome.storage.local.get('focusModeEnabled', (result) => {
+  focusModeEnabled = result.focusModeEnabled ?? false
+  checkFocusMode()
+})
+
+// React to focus mode changes from popup or other tabs
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.focusModeEnabled) {
+    focusModeEnabled = changes.focusModeEnabled.newValue ?? false
+    checkFocusMode()
+  }
+})
+
 // ─── TikTok Video ─────────────────────────────────────────────────────────
 
 // Try to extract TikTok video stats from embedded JSON (SIGI_STATE or __UNIVERSAL_DATA_FOR_REHYDRATION__)
@@ -1452,6 +1554,7 @@ const urlObserver = new MutationObserver(() => {
     lastUrl = window.location.href
     igMetricsCache = new Map()
     ttMetricsCache = new Map()
+    checkFocusMode()
   }
 })
 urlObserver.observe(document.body, { childList: true, subtree: true })
@@ -1459,6 +1562,12 @@ urlObserver.observe(document.body, { childList: true, subtree: true })
 // ─── Message handlers for popup ──────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'FOCUS_CHECK') {
+    focusModeEnabled = msg.enabled ?? false
+    checkFocusMode()
+    sendResponse({ ok: true })
+    return
+  }
   if (msg.type === 'EXTRACT') {
     (async () => {
       const data = extractCurrentPage()

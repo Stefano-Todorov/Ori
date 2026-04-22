@@ -24,6 +24,7 @@ let state = {
   showDuplicatePrompt: false,
   showTagDropdown: false,
   dontAskCompetitor: false,
+  focusModeEnabled: false,
   showCreateInspo: false,
   createInspoItems: [''],
   createInspoTags: [],
@@ -41,6 +42,59 @@ let state = {
 function setState(patch) {
   state = { ...state, ...patch }
   render()
+}
+
+const LOGO_SVG = '<svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>'
+
+function renderHeader({ showAuth = false } = {}) {
+  if (!showAuth) {
+    return `<div class="header"><span class="logo">${LOGO_SVG}Orianna</span></div>`
+  }
+  return `<div class="header">
+    <span class="logo">${LOGO_SVG}Orianna</span>
+    <div class="header-right">
+      <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
+      <span class="user-email">${state.auth?.email ?? ''}</span>
+      <button class="logout-btn" id="logout-btn">Sign out</button>
+    </div>
+  </div>`
+}
+
+function renderFocusBar() {
+  const isOn = state.focusModeEnabled
+  return `<div class="focus-bar ${isOn ? 'on' : ''}" id="focus-toggle">
+    <div class="focus-bar-left">
+      <span class="focus-bar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+      <span class="focus-bar-label">Focus Mode</span>
+    </div>
+    <div class="focus-switch ${isOn ? 'on' : ''}">
+      <div class="focus-switch-knob"></div>
+    </div>
+  </div>`
+}
+
+async function handleFocusModeToggle() {
+  const newVal = !state.focusModeEnabled
+  chrome.storage.local.set({ focusModeEnabled: newVal })
+  setState({ focusModeEnabled: newVal })
+
+  // Directly notify the active tab (in case its content script predates the storage listener)
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+  if (tab?.id && tab.url && (tab.url.includes('tiktok.com') || tab.url.includes('instagram.com'))) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: 'FOCUS_CHECK', enabled: newVal })
+    } catch {
+      // Content script not loaded or outdated — inject fresh copy and retry
+      try {
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] })
+        await chrome.tabs.sendMessage(tab.id, { type: 'FOCUS_CHECK', enabled: newVal })
+      } catch {}
+    }
+  }
+}
+
+function wireFocusToggle() {
+  document.getElementById('focus-toggle')?.addEventListener('click', handleFocusModeToggle)
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -70,15 +124,17 @@ async function init() {
         if (attempt < 2) await new Promise(r => setTimeout(r, 800))
       }
     }
-    setState({ view: 'login', auth, postData })
+    const focusStored = await chrome.storage.local.get('focusModeEnabled')
+    setState({ view: 'login', auth, postData, focusModeEnabled: focusStored.focusModeEnabled ?? false })
     return
   }
 
   // Load "don't ask again" preference
-  const stored = await chrome.storage.local.get(['dontAskCompetitor'])
+  const stored = await chrome.storage.local.get(['dontAskCompetitor', 'focusModeEnabled'])
   const dontAskCompetitor = stored.dontAskCompetitor ?? false
+  const focusModeEnabled = stored.focusModeEnabled ?? false
 
-  setState({ auth, dontAskCompetitor })
+  setState({ auth, dontAskCompetitor, focusModeEnabled })
 
   let postData = null
   // Try extraction, with retries for SPA navigation (DOM may not be ready)
@@ -528,7 +584,7 @@ function render() {
       : ''
 
     app.innerHTML = `
-      <div class="header"><span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span></div>
+      ${renderHeader()}
 
       ${isProfile ? `
         <div class="profile-header">
@@ -601,7 +657,8 @@ function render() {
         </div>
       ` : `
         <div class="no-post">
-          Navigate to a TikTok or Instagram video to capture it.
+          <span style="font-size:20px;display:block;margin-bottom:6px">✦</span>
+        Open any TikTok or Instagram post<br>to capture, analyze, or download it
         </div>
       `}
 
@@ -625,7 +682,9 @@ function render() {
         <span class="dot">&middot;</span>
         <a href="${ORIANNA_URL}/legal/terms" target="_blank">Terms</a>
       </div>
+      ${renderFocusBar()}
     `
+    wireFocusToggle()
     document.getElementById('login-btn').addEventListener('click', () => {
       const email = document.getElementById('email').value.trim()
       const password = document.getElementById('password').value
@@ -657,10 +716,7 @@ function render() {
     const idea = state.ideas[0]
 
     app.innerHTML = `
-      <div class="header">
-        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
-        <span class="user-email">${state.auth?.email ?? ''}</span>
-      </div>
+      ${renderHeader({ showAuth: true })}
       <div class="ideas-result">
         <h3>Idea saved to Orianna</h3>
         ${idea ? `
@@ -672,7 +728,10 @@ function render() {
         <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board</a>
         <button class="btn btn-outline" id="back-btn" style="margin-top:6px">Back</button>
       </div>
+      ${renderFocusBar()}
     `
+    wireFocusToggle()
+    document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
     document.getElementById('back-btn').addEventListener('click', () => setState({ view: 'main' }))
     return
   }
@@ -710,14 +769,7 @@ function render() {
       : ''
 
     app.innerHTML = `
-      <div class="header">
-        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
-        <div class="header-right">
-          <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
-          <span class="user-email">${state.auth?.email ?? ''}</span>
-          <button class="logout-btn" id="logout-btn">Sign out</button>
-        </div>
-      </div>
+      ${renderHeader({ showAuth: true })}
 
       <div class="bookmark-header">
         <span class="platform-badge ${platformClass}">${state.postData?.platform ?? ''}</span>
@@ -759,9 +811,11 @@ function render() {
           <div class="bookmark-hint">Scroll the page to load more, then reopen extension</div>
         </div>
       `}
+      ${renderFocusBar()}
     `
 
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+    wireFocusToggle()
     document.getElementById('select-all-btn')?.addEventListener('click', selectAllBookmarks)
     document.getElementById('deselect-all-btn')?.addEventListener('click', deselectAllBookmarks)
     document.getElementById('import-btn')?.addEventListener('click', handleBulkImport)
@@ -809,14 +863,7 @@ function render() {
       : ''
 
     app.innerHTML = `
-      <div class="header">
-        <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
-        <div class="header-right">
-          <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
-          <span class="user-email">${state.auth?.email ?? ''}</span>
-          <button class="logout-btn" id="logout-btn">Sign out</button>
-        </div>
-      </div>
+      ${renderHeader({ showAuth: true })}
 
       <div class="profile-header">
         <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
@@ -882,10 +929,12 @@ function render() {
           <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
         </div>
       ` : ''}
+      ${renderFocusBar()}
     `
 
     // Wire events
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
+    wireFocusToggle()
     document.getElementById('sync-my-videos-btn')?.addEventListener('click', handleSyncMyVideos)
     document.getElementById('add-competitor-btn')?.addEventListener('click', handleAddCompetitor)
     document.getElementById('sort-btn')?.addEventListener('click', handleSort)
@@ -916,14 +965,7 @@ function render() {
   const mc = state.matchedCompetitor
 
   app.innerHTML = `
-    <div class="header">
-      <span class="logo"><svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>Orianna</span>
-      <div class="header-right">
-        <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
-        <span class="user-email">${state.auth?.email ?? ''}</span>
-        <button class="logout-btn" id="logout-btn">Sign out</button>
-      </div>
-    </div>
+    ${renderHeader({ showAuth: true })}
 
     ${hasPost ? `
       <div class="detected">
@@ -1050,11 +1092,15 @@ function render() {
 
     ` : `
       <div class="no-post">
-        Navigate to a TikTok or Instagram video to capture it.
+        <span style="font-size:20px;display:block;margin-bottom:6px">✦</span>
+        Open any TikTok or Instagram post<br>to capture, analyze, or download it
       </div>
     `}
+
+    ${renderFocusBar()}
   `
 
+  wireFocusToggle()
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
 
   if (hasPost) {
