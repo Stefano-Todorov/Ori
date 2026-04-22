@@ -1,5 +1,16 @@
 // Orianna content script — extracts post data from TikTok and Instagram
 
+// Guard against duplicate injection (popup re-injects if content script isn't responding)
+if (window.__orianna_loaded) {
+  // Already loaded — just re-check focus mode with fresh storage state
+  chrome.storage.local.get('focusModeEnabled', (result) => {
+    if (typeof window.__orianna_recheckFocus === 'function') {
+      window.__orianna_recheckFocus(result.focusModeEnabled ?? false)
+    }
+  })
+} else {
+window.__orianna_loaded = true
+
 function parseNumber(str) {
   if (!str) return null
   const s = str.replace(/,/g, '').trim()
@@ -79,6 +90,12 @@ function isUrlBlockedByFocusMode(url) {
 let focusModeEnabled = false
 let focusOverlayEl = null
 
+// Expose for re-injection guard
+window.__orianna_recheckFocus = function(enabled) {
+  focusModeEnabled = enabled
+  checkFocusMode()
+}
+
 function checkFocusMode() {
   if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
     showFocusOverlay()
@@ -118,7 +135,7 @@ function showFocusOverlay() {
     </div>
   `
   document.documentElement.appendChild(focusOverlayEl)
-  document.body.style.overflow = 'hidden'
+  if (document.body) document.body.style.overflow = 'hidden'
 
   focusOverlayEl.querySelector('#orianna-focus-disable').addEventListener('click', () => {
     chrome.storage.local.set({ focusModeEnabled: false })
@@ -129,7 +146,7 @@ function removeFocusOverlay() {
   if (focusOverlayEl) {
     focusOverlayEl.remove()
     focusOverlayEl = null
-    document.body.style.overflow = ''
+    if (document.body) document.body.style.overflow = ''
   }
 }
 
@@ -2053,3 +2070,5 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   return true
 })
+
+} // end of __orianna_loaded guard
