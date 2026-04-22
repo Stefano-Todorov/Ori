@@ -102,12 +102,67 @@ window.__orianna_recheckFocus = function(enabled) {
   checkFocusMode()
 }
 
+let focusDistractionObserver = null
+
 function checkFocusMode() {
   if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
     showFocusOverlay()
+    stopHidingDistractions()
+  } else if (focusModeEnabled && window.location.href.includes('instagram.com')) {
+    removeFocusOverlay()
+    startHidingDistractions()
   } else {
     removeFocusOverlay()
+    stopHidingDistractions()
   }
+}
+
+// On allowed Instagram pages (individual posts), hide recommendation sections
+// like "More posts from ___" that pull you into browsing
+function hideDistractions() {
+  if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
+  const url = window.location.href
+  const isPostPage = url.includes('/p/') || url.includes('/reel/')
+  if (!isPostPage) return
+
+  // Find and hide elements containing distraction triggers
+  const distractionTexts = ['More posts from', 'Suggested posts', 'Related content', 'You might also like']
+  document.querySelectorAll('h2, span, div, a').forEach(el => {
+    const text = el.textContent?.trim()
+    if (!text) return
+    if (!distractionTexts.some(t => text.includes(t))) return
+    // Walk up to find the containing section (usually 3-5 levels up)
+    let container = el
+    for (let i = 0; i < 6; i++) {
+      if (!container.parentElement || container.parentElement === document.body) break
+      container = container.parentElement
+    }
+    if (container && container !== document.body && !container.dataset.oriHidden) {
+      container.dataset.oriHidden = '1'
+      container.style.display = 'none'
+    }
+  })
+}
+
+function startHidingDistractions() {
+  hideDistractions()
+  if (focusDistractionObserver) return
+  focusDistractionObserver = new MutationObserver(() => hideDistractions())
+  if (document.body) {
+    focusDistractionObserver.observe(document.body, { childList: true, subtree: true })
+  }
+}
+
+function stopHidingDistractions() {
+  if (focusDistractionObserver) {
+    focusDistractionObserver.disconnect()
+    focusDistractionObserver = null
+  }
+  // Restore any hidden sections
+  document.querySelectorAll('[data-ori-hidden]').forEach(el => {
+    el.style.display = ''
+    delete el.dataset.oriHidden
+  })
 }
 
 function showFocusOverlay() {
