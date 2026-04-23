@@ -162,7 +162,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
             <button
               onClick={handleSave}
               disabled={!url.trim() || loading}
-              className="flex items-center gap-1.5 px-5 py-2 rounded-l-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 h-9 px-5 rounded-l-xl bg-purple-600 text-white text-sm font-semibold hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <><Loader2 size={13} className="animate-spin" /> Fetching...</> : 'Save'}
             </button>
@@ -236,7 +236,7 @@ function TagDropdown({ tags, allTags, onChange }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-2 py-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
+        className="flex items-center gap-1 h-9 px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
       >
         <Tag size={13} />
         <ChevronDown size={10} />
