@@ -92,18 +92,25 @@ function renderFocusPlatforms() {
 }
 
 function renderHeader({ showAuth = false } = {}) {
+  const platforms = renderFocusPlatforms()
   if (!showAuth) {
-    return `<div class="header">
-      <span class="logo">${LOGO_SVG}Orianna</span>
-      <div class="header-right">${renderFocusToggle()}</div>
+    return `<div class="header-wrap">
+      <div class="header">
+        <span class="logo">${LOGO_SVG}Orianna</span>
+        <div class="header-right">${renderFocusToggle()}</div>
+      </div>
+      ${platforms}
     </div>`
   }
-  return `<div class="header">
-    <span class="logo">${LOGO_SVG}Orianna</span>
-    <div class="header-right">
-      <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
-      ${renderFocusToggle()}
+  return `<div class="header-wrap">
+    <div class="header">
+      <span class="logo">${LOGO_SVG}Orianna</span>
+      <div class="header-right">
+        <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
+        ${renderFocusToggle()}
+      </div>
     </div>
+    ${platforms}
   </div>`
 }
 
@@ -743,7 +750,7 @@ function render() {
           <div class="signup-link">No account? <a href="${ORIANNA_URL}/signup" target="_blank">Sign up free</a></div>
         </div>
       `}
-      ${renderFocusPlatforms()}
+
       <div class="footer-links">
         <a href="${ORIANNA_URL}" target="_blank">Open Orianna</a>
         <span class="dot">&middot;</span>
@@ -802,7 +809,7 @@ function render() {
       </div>
 
       ${renderUserBar()}
-      ${renderFocusPlatforms()}
+
     `
     wireFocusToggle()
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
@@ -887,7 +894,7 @@ function render() {
       `}
 
       ${renderUserBar()}
-      ${renderFocusPlatforms()}
+
     `
 
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
@@ -1007,7 +1014,7 @@ function render() {
       ` : ''}
 
       ${renderUserBar()}
-      ${renderFocusPlatforms()}
+
     `
 
     // Wire events
@@ -1176,7 +1183,6 @@ function render() {
     `}
 
     ${renderUserBar()}
-    ${renderFocusPlatforms()}
   `
 
   wireFocusToggle()
