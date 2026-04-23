@@ -232,11 +232,11 @@ function TagDropdown({ tags, allTags, onChange }: {
   const suggestions = allTags.filter(t => !tags.includes(t))
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative h-9" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 h-9 px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
+        className="flex items-center gap-1 h-full px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
       >
         <Tag size={13} />
         <ChevronDown size={10} />
