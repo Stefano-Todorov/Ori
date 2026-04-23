@@ -118,30 +118,54 @@ function checkFocusMode() {
 }
 
 // On allowed Instagram pages (individual posts), hide recommendation sections
-// like "More posts from ___" that pull you into browsing
+// like "More posts from ___" that pull you into browsing.
+// Strategy: inject a CSS rule that hides everything after the main post article,
+// plus scan for text-based triggers as a fallback.
 function hideDistractions() {
   if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
-  const url = window.location.href
-  const isPostPage = url.includes('/p/') || url.includes('/reel/')
+  const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
   if (!isPostPage) return
 
-  // Find and hide elements containing distraction triggers
-  const distractionTexts = ['More posts from', 'Suggested posts', 'Related content', 'You might also like']
-  document.querySelectorAll('h2, span, div, a').forEach(el => {
-    const text = el.textContent?.trim()
-    if (!text) return
-    if (!distractionTexts.some(t => text.includes(t))) return
-    // Walk up to find the containing section (usually 3-5 levels up)
-    let container = el
-    for (let i = 0; i < 6; i++) {
-      if (!container.parentElement || container.parentElement === document.body) break
-      container = container.parentElement
-    }
-    if (container && container !== document.body && !container.dataset.oriHidden) {
-      container.dataset.oriHidden = '1'
-      container.style.display = 'none'
+  // Approach 1: Inject a style that hides siblings after the main article
+  if (!document.getElementById('orianna-focus-style')) {
+    const style = document.createElement('style')
+    style.id = 'orianna-focus-style'
+    style.textContent = `
+      /* Hide everything after the main post article */
+      article ~ *,
+      article ~ div,
+      /* Hide any section whose heading says "More posts from" etc. */
+      [class] > [class] > [class] > h2 { visibility: visible; }
+    `
+    document.head.appendChild(style)
+  }
+
+  // Approach 2: Find "More posts from" text and hide its container
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) => {
+      const t = node.textContent?.trim()
+      if (t && (t.startsWith('More posts from') || t === 'Suggested posts' || t === 'Related content'))
+        return NodeFilter.FILTER_ACCEPT
+      return NodeFilter.FILTER_REJECT
     }
   })
+  while (walker.nextNode()) {
+    // Walk up from the text node to find a major container to hide
+    let el = walker.currentNode.parentElement
+    // Find an ancestor that's a direct child of a high-level container
+    // (keeps going up until the parent is main, body, or a role="main" element)
+    let target = el
+    for (let i = 0; i < 15; i++) {
+      if (!target.parentElement) break
+      const parent = target.parentElement
+      if (parent === document.body || parent.tagName === 'MAIN' || parent.getAttribute('role') === 'main') break
+      target = parent
+    }
+    if (target && target !== document.body && !target.dataset.oriHidden) {
+      target.dataset.oriHidden = '1'
+      target.style.display = 'none'
+    }
+  }
 }
 
 function startHidingDistractions() {
@@ -158,6 +182,8 @@ function stopHidingDistractions() {
     focusDistractionObserver.disconnect()
     focusDistractionObserver = null
   }
+  // Remove injected style
+  document.getElementById('orianna-focus-style')?.remove()
   // Restore any hidden sections
   document.querySelectorAll('[data-ori-hidden]').forEach(el => {
     el.style.display = ''
