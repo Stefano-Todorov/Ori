@@ -102,122 +102,12 @@ window.__orianna_recheckFocus = function(enabled) {
   checkFocusMode()
 }
 
-let focusDistractionObserver = null
-
 function checkFocusMode() {
-  const url = window.location.href
-  const blocked = isUrlBlockedByFocusMode(url)
-  console.log('[Orianna Focus] checkFocusMode:', { focusModeEnabled, blocked, url: url.slice(0, 80) })
-  if (focusModeEnabled && blocked) {
+  if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
     showFocusOverlay()
-    stopHidingDistractions()
-  } else if (focusModeEnabled && url.includes('instagram.com')) {
-    removeFocusOverlay()
-    console.log('[Orianna Focus] Starting distraction hiding for IG post page')
-    startHidingDistractions()
   } else {
     removeFocusOverlay()
-    stopHidingDistractions()
   }
-}
-
-// On allowed Instagram pages (individual posts), hide recommendation sections
-// like "More posts from ___" that pull you into browsing.
-// Uses XPath to find the trigger text (works regardless of nesting) + setInterval for reliability.
-function hideDistractions() {
-  if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
-  const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
-  if (!isPostPage || !document.body) return
-
-  console.log('[Orianna Focus] hideDistractions running on', window.location.href)
-
-  // Strategy 1: XPath to find elements with direct text containing triggers
-  const triggers = ['More posts from', 'Suggested for you']
-  for (const trigger of triggers) {
-    try {
-      const xpath = `//*[contains(text(), '${trigger}')]`
-      const result = document.evaluate(xpath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-      console.log(`[Orianna Focus] XPath "${trigger}": ${result.snapshotLength} matches`)
-      if (result.snapshotLength > 0) {
-        for (let i = 0; i < result.snapshotLength; i++) {
-          const el = result.snapshotItem(i)
-          if (el.closest('[data-ori-hidden]')) continue
-          console.log('[Orianna Focus] Found trigger element:', el.tagName, el.textContent?.slice(0, 60))
-          hideFromElement(el)
-          return
-        }
-      }
-    } catch (e) { console.log('[Orianna Focus] XPath error:', e) }
-  }
-
-  // Strategy 2: Fallback — scan textContent of small elements (h2, h3, a, span)
-  const candidates = document.body.querySelectorAll('h2, h3, a, span, header')
-  for (const el of candidates) {
-    if (el.closest('[data-ori-hidden]')) continue
-    const text = el.textContent?.trim()
-    if (!text || text.length > 100) continue
-    if (triggers.some(t => text.includes(t))) {
-      console.log('[Orianna Focus] Fallback found:', el.tagName, text.slice(0, 60))
-      hideFromElement(el)
-      return
-    }
-  }
-
-  console.log('[Orianna Focus] No trigger found on page')
-}
-
-function hideFromElement(el) {
-  // Walk up from the found element to a substantial container
-  let target = el
-  for (let j = 0; j < 20; j++) {
-    const parent = target.parentElement
-    if (!parent || parent === document.body) break
-    if (['SECTION', 'ARTICLE', 'ASIDE', 'MAIN'].includes(parent.tagName)) {
-      target = parent
-      break
-    }
-    if (parent.offsetHeight > 200 && parent.children.length >= 2) {
-      target = parent
-      break
-    }
-    target = parent
-  }
-
-  // Hide the target and all siblings after it
-  if (target && target !== document.body && !target.dataset.oriHidden) {
-    const parent = target.parentElement
-    console.log('[Orianna Focus] Hiding from:', target.tagName, 'class:', target.className?.slice?.(0, 40), 'height:', target.offsetHeight)
-    if (parent) {
-      const siblings = Array.from(parent.children)
-      const idx = siblings.indexOf(target)
-      console.log('[Orianna Focus] Hiding siblings', idx, 'through', siblings.length - 1, 'of', parent.tagName)
-      for (let k = idx; k < siblings.length; k++) {
-        if (!siblings[k].dataset.oriHidden) {
-          siblings[k].dataset.oriHidden = '1'
-          siblings[k].style.display = 'none'
-        }
-      }
-    }
-  }
-}
-
-function startHidingDistractions() {
-  hideDistractions()
-  if (focusDistractionObserver) return
-  // Use setInterval instead of MutationObserver — more reliable for lazy-loaded content
-  focusDistractionObserver = setInterval(hideDistractions, 2000)
-}
-
-function stopHidingDistractions() {
-  if (focusDistractionObserver) {
-    clearInterval(focusDistractionObserver)
-    focusDistractionObserver = null
-  }
-  // Restore any hidden sections
-  document.querySelectorAll('[data-ori-hidden]').forEach(el => {
-    el.style.display = ''
-    delete el.dataset.oriHidden
-  })
 }
 
 function showFocusOverlay() {
@@ -2192,7 +2082,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 // ─── Standalone Instagram distraction hider ─────────────────────────────────
 // Runs independently — checks storage directly every 2s.
 // Doesn't depend on checkFocusMode or any focus mode variables.
-let __distractionScanCount = 0
 setInterval(() => {
   const url = window.location.href
   if (!url.includes('instagram.com')) return
@@ -2209,67 +2098,37 @@ setInterval(() => {
 
     if (document.querySelector('[data-ori-distraction-hidden]')) return
 
-    __distractionScanCount++
-    // Log every 5th scan so we can see it's running
-    if (__distractionScanCount % 5 === 1) {
-      console.log('[Orianna Focus] Scanning for distractions... (scan #' + __distractionScanCount + ')')
-    }
-
-    // Search the ENTIRE page text to check if "More posts from" even exists
     const bodyText = document.body?.innerText || ''
     const hasMorePosts = bodyText.includes('More posts from')
     const hasSuggested = bodyText.includes('Suggested for you')
-    if (__distractionScanCount <= 3) {
-      console.log('[Orianna Focus] Page text check:', { hasMorePosts, hasSuggested, bodyTextLength: bodyText.length })
-    }
+    if (!hasMorePosts && !hasSuggested) return
 
-    if (!hasMorePosts && !hasSuggested) return // Text not on page yet
-
-    // Walk every element on the page to find one whose DIRECT innerText contains the trigger
-    // Use a targeted approach: find elements where innerText is short and contains the trigger
     const trigger = hasMorePosts ? 'More posts from' : 'Suggested for you'
     let found = null
-
-    // Strategy: walk all elements, check innerText (not textContent — innerText respects visibility)
     const all = document.body.getElementsByTagName('*')
     for (let i = 0; i < all.length; i++) {
       const el = all[i]
       if (el.closest('[data-ori-distraction-hidden]')) continue
-      // Skip very large elements (they contain the whole page)
       const it = el.innerText?.trim()
       if (!it || it.length > 200 || it.length < trigger.length) continue
-      if (it.startsWith(trigger)) {
-        found = el
-        console.log('[Orianna Focus] Found trigger:', el.tagName, el.className?.slice?.(0, 50), 'text:', it.slice(0, 60))
-        break
-      }
+      if (it.startsWith(trigger)) { found = el; break }
     }
+    if (!found) return
 
-    if (!found) {
-      if (__distractionScanCount <= 3) console.log('[Orianna Focus] Trigger element not found despite text being on page')
-      return
-    }
-
-    // Walk up to a container large enough to include the thumbnail grid
     let target = found
     for (let j = 0; j < 25; j++) {
       const p = target.parentElement
       if (!p || p === document.body) break
       target = p
-      // Stop when we hit a container that's big enough to include the grid (> 300px)
       if (target.offsetHeight > 300) break
     }
 
-    if (target && target !== document.body) {
-      const parent = target.parentElement
-      if (parent) {
-        const sibs = Array.from(parent.children)
-        const idx = sibs.indexOf(target)
-        console.log('[Orianna Focus] Hiding from', target.tagName, 'idx', idx, '/', sibs.length, 'height:', target.offsetHeight)
-        for (let k = idx; k < sibs.length; k++) {
-          sibs[k].dataset.oriDistractionHidden = '1'
-          sibs[k].style.display = 'none'
-        }
+    if (target && target !== document.body && target.parentElement) {
+      const sibs = Array.from(target.parentElement.children)
+      const idx = sibs.indexOf(target)
+      for (let k = idx; k < sibs.length; k++) {
+        sibs[k].dataset.oriDistractionHidden = '1'
+        sibs[k].style.display = 'none'
       }
     }
   })
