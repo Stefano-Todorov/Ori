@@ -125,51 +125,75 @@ function hideDistractions() {
   const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
   if (!isPostPage || !document.body) return
 
-  // Use XPath to efficiently find any element containing "More posts from" text
+  console.log('[Orianna Focus] hideDistractions running on', window.location.href)
+
+  // Strategy 1: XPath to find elements with direct text containing triggers
   const triggers = ['More posts from', 'Suggested for you']
   for (const trigger of triggers) {
     try {
       const xpath = `//*[contains(text(), '${trigger}')]`
       const result = document.evaluate(xpath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
-      for (let i = 0; i < result.snapshotLength; i++) {
-        const el = result.snapshotItem(i)
-        if (el.closest('[data-ori-hidden]')) continue
-
-        // Walk up from the found element to a substantial container
-        let target = el
-        for (let j = 0; j < 20; j++) {
-          const parent = target.parentElement
-          if (!parent || parent === document.body) break
-          // Stop at semantic section tags
-          if (['SECTION', 'ARTICLE', 'ASIDE', 'MAIN'].includes(parent.tagName)) {
-            target = parent
-            break
-          }
-          // Stop at a large enough container (the recommendation grid)
-          if (parent.offsetHeight > 200 && parent.children.length >= 2) {
-            target = parent
-            break
-          }
-          target = parent
-        }
-
-        // Hide the target and all siblings after it
-        if (target && target !== document.body && !target.dataset.oriHidden) {
-          const parent = target.parentElement
-          if (parent) {
-            const siblings = Array.from(parent.children)
-            const idx = siblings.indexOf(target)
-            for (let k = idx; k < siblings.length; k++) {
-              if (!siblings[k].dataset.oriHidden) {
-                siblings[k].dataset.oriHidden = '1'
-                siblings[k].style.display = 'none'
-              }
-            }
-          }
+      console.log(`[Orianna Focus] XPath "${trigger}": ${result.snapshotLength} matches`)
+      if (result.snapshotLength > 0) {
+        for (let i = 0; i < result.snapshotLength; i++) {
+          const el = result.snapshotItem(i)
+          if (el.closest('[data-ori-hidden]')) continue
+          console.log('[Orianna Focus] Found trigger element:', el.tagName, el.textContent?.slice(0, 60))
+          hideFromElement(el)
           return
         }
       }
-    } catch {}
+    } catch (e) { console.log('[Orianna Focus] XPath error:', e) }
+  }
+
+  // Strategy 2: Fallback — scan textContent of small elements (h2, h3, a, span)
+  const candidates = document.body.querySelectorAll('h2, h3, a, span, header')
+  for (const el of candidates) {
+    if (el.closest('[data-ori-hidden]')) continue
+    const text = el.textContent?.trim()
+    if (!text || text.length > 100) continue
+    if (triggers.some(t => text.includes(t))) {
+      console.log('[Orianna Focus] Fallback found:', el.tagName, text.slice(0, 60))
+      hideFromElement(el)
+      return
+    }
+  }
+
+  console.log('[Orianna Focus] No trigger found on page')
+}
+
+function hideFromElement(el) {
+  // Walk up from the found element to a substantial container
+  let target = el
+  for (let j = 0; j < 20; j++) {
+    const parent = target.parentElement
+    if (!parent || parent === document.body) break
+    if (['SECTION', 'ARTICLE', 'ASIDE', 'MAIN'].includes(parent.tagName)) {
+      target = parent
+      break
+    }
+    if (parent.offsetHeight > 200 && parent.children.length >= 2) {
+      target = parent
+      break
+    }
+    target = parent
+  }
+
+  // Hide the target and all siblings after it
+  if (target && target !== document.body && !target.dataset.oriHidden) {
+    const parent = target.parentElement
+    console.log('[Orianna Focus] Hiding from:', target.tagName, 'class:', target.className?.slice?.(0, 40), 'height:', target.offsetHeight)
+    if (parent) {
+      const siblings = Array.from(parent.children)
+      const idx = siblings.indexOf(target)
+      console.log('[Orianna Focus] Hiding siblings', idx, 'through', siblings.length - 1, 'of', parent.tagName)
+      for (let k = idx; k < siblings.length; k++) {
+        if (!siblings[k].dataset.oriHidden) {
+          siblings[k].dataset.oriHidden = '1'
+          siblings[k].style.display = 'none'
+        }
+      }
+    }
   }
 }
 
