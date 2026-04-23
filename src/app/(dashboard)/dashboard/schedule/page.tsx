@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar'
 import { PlanPostForm } from '@/components/schedule/plan-post-form'
 import { ProductionTracker } from '@/components/schedule/production-tracker'
@@ -41,7 +42,10 @@ export default async function SchedulePage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Schedule</h1>
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          Schedule
+          <InfoTooltip text="Plan your posting calendar and track ideas through production — from recording to editing to posted." />
+        </h1>
         <p className="text-muted-foreground mt-1">Plan your posts and track production</p>
       </div>
 

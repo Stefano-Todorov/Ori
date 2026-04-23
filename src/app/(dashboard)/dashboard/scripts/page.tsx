@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ScriptGenerator } from '@/components/scripts/script-generator'
 import { ScriptList } from '@/components/scripts/script-list'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 
 export default async function ScriptsPage() {
   const supabase = await createClient()
@@ -20,7 +21,10 @@ export default async function ScriptsPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Script Generator</h1>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          Script Generator
+          <InfoTooltip text="Generate AI-powered video scripts with hooks, body sections, and CTAs. Choose a topic, pick your style, and get a full script ready to record." />
+        </h1>
         <p className="text-muted-foreground mt-1">
           Generate hooks, full scripts, and content variations for your videos
         </p>

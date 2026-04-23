@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, VideoIcon } from 'lucide-react'
+import { Search, ArrowUpDown, Eye, Heart, MessageCircle, Share2, Bookmark, TrendingUp, Link as LinkIcon, X, ExternalLink, FileText, VideoIcon, Play } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { linkVideoToIdea, unlinkVideoFromIdea } from '@/app/actions'
 import type { Post, ContentIdea, Script } from '@/lib/types'
 
@@ -144,7 +146,10 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">My Videos</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            My Videos
+            <InfoTooltip text="Your synced TikTok and Instagram posts with analytics. Use the Chrome extension to import your videos, then track views, likes, and engagement over time." />
+          </h1>
           {lastSyncEntries.length > 0 && (
             <p className="text-sm text-muted-foreground mt-1">
               Last synced: {lastSyncEntries.map(([platform, timestamp]) => (
@@ -212,14 +217,11 @@ export function MyVideosList({ posts, ideas, scripts, lastSyncedAt }: Props) {
 
       {/* Empty state */}
       {posts.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-2">No videos synced yet</p>
-            <p className="text-sm text-muted-foreground">
-              Visit your TikTok or Instagram profile with the Orianna extension installed, then click &quot;Sync My Videos&quot; to import your posts.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Play}
+          title="No videos synced yet"
+          description="Visit your TikTok or Instagram profile with the Orianna extension installed, then click 'Sync My Videos' to import your posts."
+        />
       )}
 
       {/* Video grid */}

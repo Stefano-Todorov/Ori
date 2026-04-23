@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { AddSwipeButton } from '@/components/trending/add-swipe-button'
 import { InspoList } from '@/components/trending/swipe-list'
 import { DismissibleTip } from '@/components/ui/dismissible-tip'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { getAllUserTags } from '@/lib/tags'
 
 export default async function InspoPage() {
@@ -35,7 +36,10 @@ export default async function InspoPage() {
     <div className="p-4 sm:p-6 md:p-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Inspo</h1>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            Inspo
+            <InfoTooltip text="Save trending videos that inspire you. Analyze what makes them work, then turn the best ones into your own content ideas." />
+          </h1>
           <p className="text-muted-foreground mt-1">
             Save videos that inspire you. Study what works, then turn the best ones into your own ideas.
           </p>

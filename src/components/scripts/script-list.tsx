@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { DeleteButton } from '@/components/ui/delete-button'
+import { EmptyState } from '@/components/ui/empty-state'
 import type { Script, PostStatus } from '@/lib/types'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, FileText } from 'lucide-react'
 import { deleteScript, updateScriptStatus } from '@/app/actions'
 
 interface Props {
@@ -192,7 +193,11 @@ export function ScriptList({ scripts: initialScripts }: Props) {
       <h2 className="text-lg font-bold text-foreground">Saved scripts ({scripts.length})</h2>
 
       {scripts.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">No scripts yet.</p>
+        <EmptyState
+          icon={FileText}
+          title="No scripts yet"
+          description="Generate AI-powered scripts with hooks, bodies, and CTAs tailored to your niche. Use the generator above to create your first one."
+        />
       ) : (
         <div className="space-y-5">
           {scripts.map((script) => (

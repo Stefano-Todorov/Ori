@@ -7,6 +7,7 @@ import {
   SortAsc, Plus, Bookmark, Send, CheckSquare, Square, X, Tag,
   Download,
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
 import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, syncInspoTags, deleteInspoTag } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -292,10 +293,11 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
 
   if (posts.length === 0 && archivedPosts.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-2">
-        <p className="font-bold text-foreground">No inspo saved yet</p>
-        <p className="text-sm text-muted-foreground">Save videos that inspire you — add a URL above or use the Chrome extension while browsing.</p>
-      </div>
+      <EmptyState
+        icon={Bookmark}
+        title="No inspo saved yet"
+        description="Save videos that inspire you — paste a URL above or use the Chrome extension to capture trending content while you browse."
+      />
     )
   }
 

@@ -8,6 +8,8 @@ import {
   X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
   Download,
 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import { AddPostButton } from '@/components/competitors/add-post-button'
 import { deleteCompetitor, deletePost, updateCompetitorNotes, updateCompetitorUrl, updatePostNotes, updatePostTitle, linkCompetitors, unlinkCompetitor, addIdea } from '@/app/actions'
@@ -129,6 +131,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             Competitors
+            <InfoTooltip text="Track other creators in your niche. Save their top-performing videos and use AI to generate content ideas inspired by what's working for them." />
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-400">
               {groups.length + orphanedHandles.length}
             </span>
@@ -141,10 +144,11 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
       {/* Competitor cards */}
       {groups.length === 0 && orphanedHandles.length === 0 && (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-2">
-          <p className="font-bold text-foreground">No competitors yet</p>
-          <p className="text-sm text-muted-foreground">Add a competitor to start tracking their content and get AI-generated ideas from their top posts.</p>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No competitors yet"
+          description="Add a competitor to start tracking their content and get AI-generated ideas from their top posts."
+        />
       )}
 
       <div className="space-y-4">

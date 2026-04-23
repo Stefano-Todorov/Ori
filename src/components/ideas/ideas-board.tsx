@@ -2,11 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal } from 'lucide-react'
+import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal, Lightbulb } from 'lucide-react'
 import { deleteIdea, updateProductionStatus, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
+import { EmptyState } from '@/components/ui/empty-state'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 interface Props {
@@ -733,7 +735,10 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       {/* ─── Header row ──────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-white">Ideas</h2>
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            Ideas
+            <InfoTooltip text="Your video idea backlog. Add ideas manually, from AI coach suggestions, or from competitor analysis. Track each idea from concept through recording, editing, and posting." />
+          </h2>
           <span className="text-xs text-[#52525b] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-0.5 font-medium">
             {hasActiveFilters ? `${filtered.length} of ${ideas.length}` : ideas.length} idea{(hasActiveFilters ? filtered.length : ideas.length) !== 1 ? 's' : ''}
           </span>
@@ -868,15 +873,20 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
       {/* ─── Cards ───────────────────────────────────────────────── */}
       <div>
         {filtered.length === 0 ? (
-          <div className="rounded-xl border border-white/[0.06] bg-[#1a1a2e] py-16 text-center">
-            <p className="text-[#52525b] text-sm">
-              {filter === 'all' && !q
-                ? 'No ideas yet. Add your first one!'
-                : q
-                  ? 'No ideas match your search.'
-                  : `No ${STATUS_LABEL[filter as IdeaStatus].toLowerCase()} ideas.`}
-            </p>
-          </div>
+          ideas.length === 0 ? (
+            <EmptyState
+              icon={Lightbulb}
+              title="No ideas yet"
+              description="Collect video ideas from your AI coach, competitor analysis, or add your own. Track them from concept to posted."
+              action={{ label: 'Add your first idea', onClick: () => setAddOpen(true) }}
+            />
+          ) : (
+            <div className="rounded-xl border border-white/[0.06] bg-[#1a1a2e] py-16 text-center">
+              <p className="text-[#52525b] text-sm">
+                {q ? 'No ideas match your search.' : `No ${STATUS_LABEL[filter as IdeaStatus].toLowerCase()} ideas.`}
+              </p>
+            </div>
+          )
         ) : groupByStatus ? (
           <div className="space-y-4">
             {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => {

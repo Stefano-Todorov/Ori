@@ -4,7 +4,8 @@ import { useState, useTransition, useEffect, useCallback } from 'react'
 import { updateProductionStatus, reorderIdeas } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
-import { Pencil, GripVertical, ExternalLink } from 'lucide-react'
+import { Pencil, GripVertical, ExternalLink, CalendarClock } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -498,9 +499,11 @@ export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
         </div>
 
         {localIdeas.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No ideas in the pipeline yet. Create ideas and update their production status to track progress.
-          </p>
+          <EmptyState
+            icon={CalendarClock}
+            title="No ideas in the pipeline"
+            description="Create ideas and update their production status to track progress from concept to posted."
+          />
         ) : (
           <DndContext
             sensors={sensors}
