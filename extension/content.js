@@ -2122,21 +2122,25 @@ if (!window.__orianna_distraction_interval) {
       }
       if (!found) return
 
+      // Walk up from the trigger element to find the section container.
+      // Strategy: go up until we find an ancestor that has siblings after it
+      // (meaning there's a grid of thumbnails as a sibling). Stay shallow to
+      // avoid reaching the main page container.
       let target = found
-      for (let j = 0; j < 25; j++) {
+      for (let j = 0; j < 10; j++) {
         const p = target.parentElement
         if (!p || p === document.body) break
-        target = p
-        if (target.offsetHeight > 300) break
-      }
-
-      if (target && target !== document.body && target.parentElement) {
-        const sibs = Array.from(target.parentElement.children)
+        const sibs = Array.from(p.children)
         const idx = sibs.indexOf(target)
-        for (let k = idx; k < sibs.length; k++) {
-          sibs[k].dataset.oriDistractionHidden = '1'
-          sibs[k].style.display = 'none'
+        // If this element has siblings after it, this is the right level to hide from
+        if (idx < sibs.length - 1) {
+          for (let k = idx; k < sibs.length; k++) {
+            sibs[k].dataset.oriDistractionHidden = '1'
+            sibs[k].style.display = 'none'
+          }
+          return
         }
+        target = p
       }
     })
   }, 2000)
