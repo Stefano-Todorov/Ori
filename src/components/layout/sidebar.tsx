@@ -73,7 +73,7 @@ function saveOrder(items: NavItem[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(i => i.href)))
 }
 
-function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
+function SidebarContent({ onNavClick, unreadCoachCount = 0 }: { onNavClick?: () => void; unreadCoachCount?: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const [items, setItems] = useState(DEFAULT_NAV_ITEMS)
@@ -176,6 +176,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 />
                 <Icon size={16} />
                 {item.label}
+                {item.href === '/dashboard/coach' && unreadCoachCount > 0 && !isActive && (
+                  <span className="ml-auto w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                )}
               </Link>
             </div>
           )
@@ -199,7 +202,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ unreadCoachCount = 0 }: { unreadCoachCount?: number }) {
   const pathname = usePathname()
   const { isOpen, close } = useMobileSidebar()
 
@@ -212,7 +215,7 @@ export function Sidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border bg-sidebar flex-col h-full">
-        <SidebarContent />
+        <SidebarContent unreadCoachCount={unreadCoachCount} />
       </aside>
 
       {/* Mobile drawer overlay */}
@@ -230,7 +233,7 @@ export function Sidebar() {
             >
               <X size={18} className="text-muted-foreground" />
             </button>
-            <SidebarContent onNavClick={close} />
+            <SidebarContent onNavClick={close} unreadCoachCount={unreadCoachCount} />
           </aside>
         </div>
       )}

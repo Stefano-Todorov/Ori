@@ -18,6 +18,9 @@ export interface Profile {
   auto_sync_own_profile: boolean
   auto_save_competitor_ideas: boolean
   creator_context: string | null
+  last_proactive_at: string | null
+  unanswered_proactive: number
+  last_coach_read_at: string | null
   last_synced_at: Record<string, string>
   created_at: string
   updated_at: string
@@ -97,6 +100,7 @@ export interface CoachMessage {
   user_id: string
   role: 'user' | 'assistant'
   content: string
+  proactive: boolean
   created_at: string
 }
 

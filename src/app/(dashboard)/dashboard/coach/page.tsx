@@ -7,12 +7,19 @@ export default async function CoachPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: history } = await supabase
-    .from('coach_messages')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(50)
+  const [{ data: history }] = await Promise.all([
+    supabase
+      .from('coach_messages')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(50),
+    // Mark all coach messages as read
+    supabase
+      .from('profiles')
+      .update({ last_coach_read_at: new Date().toISOString() })
+      .eq('user_id', user.id),
+  ])
 
   return (
     <div className="flex flex-col h-full bg-background">

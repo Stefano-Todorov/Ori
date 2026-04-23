@@ -91,12 +91,15 @@ export async function POST(request: NextRequest) {
     ideas: ideas ?? undefined,
   })
 
-  // Save user message
-  await supabase.from('coach_messages').insert({
-    user_id: user.id,
-    role: 'user',
-    content: message,
-  })
+  // Save user message and reset proactive counter (user is engaging)
+  await Promise.all([
+    supabase.from('coach_messages').insert({
+      user_id: user.id,
+      role: 'user',
+      content: message,
+    }),
+    supabase.from('profiles').update({ unanswered_proactive: 0 }).eq('user_id', user.id),
+  ])
 
   // Build messages array
   const messages = [
