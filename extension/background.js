@@ -289,3 +289,28 @@ async function handleMessage(msg) {
   }
 }
 
+// ─── Focus Mode enforcement ────────────────────────────────────────────────
+// Watch for tab navigations to blocked domains and ensure the overlay is shown.
+// This is more reliable than relying solely on the content script's auto-injection.
+
+const FOCUS_DOMAINS = ['tiktok.com', 'instagram.com', 'youtube.com', 'youtu.be', 'twitter.com', 'x.com', 'reddit.com', 'facebook.com', 'fb.com', 'snapchat.com', 'threads.net']
+
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== 'complete' || !tab.url) return
+  if (!FOCUS_DOMAINS.some(d => tab.url.includes(d))) return
+
+  const stored = await chrome.storage.local.get('focusModeEnabled')
+  if (!stored.focusModeEnabled) return
+
+  // Content script should already be injected (manifest), but send FOCUS_CHECK to be sure
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: 'FOCUS_CHECK', enabled: true })
+  } catch {
+    // Content script not ready — inject and retry
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['content.js'] })
+      await chrome.tabs.sendMessage(tabId, { type: 'FOCUS_CHECK', enabled: true })
+    } catch {}
+  }
+})
+
