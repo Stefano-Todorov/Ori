@@ -119,36 +119,44 @@ function checkFocusMode() {
 
 // On allowed Instagram pages (individual posts), hide recommendation sections
 // like "More posts from ___" that pull you into browsing.
-// JS-only approach: find the trigger text, then hide everything below the main post.
 function hideDistractions() {
   if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
   const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
   if (!isPostPage || !document.body) return
 
-  // Find the main post article — the first <article> on the page
-  const mainArticle = document.querySelector('article')
-  if (!mainArticle) return
-
-  // Hide all sibling elements that come AFTER the main article's top-level container.
-  // Walk up from the article to find the container that has siblings after it.
-  let postContainer = mainArticle
-  while (postContainer.parentElement && postContainer.parentElement !== document.body) {
-    const parent = postContainer.parentElement
-    // Check if this parent has content after our container (the recommendations)
-    const siblings = Array.from(parent.children)
-    const idx = siblings.indexOf(postContainer)
-    const hasAfterContent = siblings.slice(idx + 1).some(s => s.offsetHeight > 50 && !s.dataset.oriHidden)
-    if (hasAfterContent) {
-      // Hide all siblings after the post container
-      siblings.slice(idx + 1).forEach(s => {
-        if (!s.dataset.oriHidden && s.offsetHeight > 50) {
-          s.dataset.oriHidden = '1'
-          s.style.display = 'none'
-        }
-      })
-      break
+  // Strategy: find any element whose own direct text includes "More posts from",
+  // then walk up to a large enough container and hide it + all following siblings.
+  const allEls = document.body.querySelectorAll('*')
+  for (const el of allEls) {
+    if (el.closest('[data-ori-hidden]')) continue
+    // Check only the element's own text, not children's text
+    let ownText = ''
+    for (const node of el.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) ownText += node.textContent
     }
-    postContainer = parent
+    ownText = ownText.trim()
+    if (!ownText.startsWith('More posts from') && !ownText.startsWith('Suggested for you')) continue
+
+    // Found the trigger — walk up until we find a container worth hiding
+    // (one whose parent has multiple children, so hiding it doesn't break layout)
+    let target = el
+    for (let i = 0; i < 20; i++) {
+      const parent = target.parentElement
+      if (!parent || parent === document.body) break
+      if (parent.children.length > 1) {
+        // Hide this target and all siblings after it
+        const siblings = Array.from(parent.children)
+        const idx = siblings.indexOf(target)
+        for (let j = idx; j < siblings.length; j++) {
+          if (!siblings[j].dataset.oriHidden) {
+            siblings[j].dataset.oriHidden = '1'
+            siblings[j].style.display = 'none'
+          }
+        }
+        return // done
+      }
+      target = parent
+    }
   }
 }
 
@@ -217,6 +225,8 @@ function removeFocusOverlay() {
     focusOverlayEl.remove()
     focusOverlayEl = null
     if (document.body) document.body.style.overflow = ''
+    // Reload the page so it renders properly after being hidden behind the overlay
+    window.location.reload()
   }
 }
 
