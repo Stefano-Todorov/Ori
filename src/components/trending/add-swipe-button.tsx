@@ -158,7 +158,7 @@ export function AddSwipeButton({ allTags = [] }: Props) {
           <button onClick={() => setOpen(false)} className="px-4 py-2 rounded-xl border border-border dark:border-white/10 text-sm font-medium text-foreground hover:bg-muted dark:hover:bg-white/5 transition-all">
             Cancel
           </button>
-          <div className="flex items-stretch">
+          <div className="flex items-center">
             <button
               onClick={handleSave}
               disabled={!url.trim() || loading}
@@ -232,11 +232,11 @@ function TagDropdown({ tags, allTags, onChange }: {
   const suggestions = allTags.filter(t => !tags.includes(t))
 
   return (
-    <div className="relative flex" ref={ref}>
+    <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 h-full px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
+        className="flex items-center gap-1 py-2 px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
       >
         <Tag size={13} />
         <ChevronDown size={10} />
