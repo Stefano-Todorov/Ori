@@ -25,6 +25,7 @@ let state = {
   showTagDropdown: false,
   dontAskCompetitor: false,
   focusModeEnabled: false,
+  focusBlockedPlatforms: { tiktok: true, instagram: true, youtube: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true },
   showCreateInspo: false,
   createInspoItems: [''],
   createInspoTags: [],
@@ -37,6 +38,7 @@ let state = {
   loadingBookmarks: false,
   importProgress: null,
   importError: null,
+  showLoginForm: false,
 }
 
 function setState(patch) {
@@ -46,14 +48,50 @@ function setState(patch) {
 
 const LOGO_SVG = '<svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="ls" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M32,4 C36,24 40,28 60,32 C40,36 36,40 32,60 C28,40 24,36 4,32 C24,28 28,24 32,4 Z" fill="url(#ls)"/></svg>'
 
+const FOCUS_PLATFORM_LABELS = {
+  tiktok: 'TikTok', instagram: 'Instagram', youtube: 'YouTube',
+  twitter: 'Twitter / X', reddit: 'Reddit', facebook: 'Facebook',
+  snapchat: 'Snapchat', threads: 'Threads',
+}
+
+function renderFocusToggle() {
+  const isOn = state.focusModeEnabled
+  return `<div class="header-focus ${isOn ? 'on' : ''}" id="focus-toggle" title="Focus Mode">
+    <span class="header-focus-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+    <span class="header-focus-label">Focus</span>
+    <div class="focus-switch ${isOn ? 'on' : ''}">
+      <div class="focus-switch-knob"></div>
+    </div>
+  </div>`
+}
+
+function renderFocusPlatforms() {
+  if (!state.focusModeEnabled) return ''
+  const p = state.focusBlockedPlatforms
+  return `<div class="focus-platforms">${
+    Object.entries(FOCUS_PLATFORM_LABELS).map(([key, label]) =>
+      `<div class="focus-platform-row" data-platform="${key}">
+        <span class="focus-platform-name">${label}</span>
+        <div class="focus-platform-switch ${p[key] ? 'on' : ''}">
+          <div class="focus-switch-knob"></div>
+        </div>
+      </div>`
+    ).join('')
+  }</div>`
+}
+
 function renderHeader({ showAuth = false } = {}) {
   if (!showAuth) {
-    return `<div class="header"><span class="logo">${LOGO_SVG}Orianna</span></div>`
+    return `<div class="header">
+      <span class="logo">${LOGO_SVG}Orianna</span>
+      <div class="header-right">${renderFocusToggle()}</div>
+    </div>`
   }
   return `<div class="header">
     <span class="logo">${LOGO_SVG}Orianna</span>
     <div class="header-right">
       <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
+      ${renderFocusToggle()}
     </div>
   </div>`
 }
@@ -67,18 +105,6 @@ function renderUserBar() {
   </div>`
 }
 
-function renderFocusBar() {
-  const isOn = state.focusModeEnabled
-  return `<div class="focus-bar ${isOn ? 'on' : ''}" id="focus-toggle">
-    <div class="focus-bar-left">
-      <span class="focus-bar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
-      <span class="focus-bar-label">Focus Mode</span>
-    </div>
-    <div class="focus-switch ${isOn ? 'on' : ''}">
-      <div class="focus-switch-knob"></div>
-    </div>
-  </div>`
-}
 
 async function handleFocusModeToggle() {
   const newVal = !state.focusModeEnabled
@@ -101,8 +127,17 @@ async function handleFocusModeToggle() {
   }
 }
 
+function handlePlatformToggle(platform) {
+  const updated = { ...state.focusBlockedPlatforms, [platform]: !state.focusBlockedPlatforms[platform] }
+  chrome.storage.local.set({ focusBlockedPlatforms: updated })
+  setState({ focusBlockedPlatforms: updated })
+}
+
 function wireFocusToggle() {
   document.getElementById('focus-toggle')?.addEventListener('click', handleFocusModeToggle)
+  document.querySelectorAll('.focus-platform-row').forEach(row => {
+    row.addEventListener('click', () => handlePlatformToggle(row.dataset.platform))
+  })
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
@@ -132,17 +167,22 @@ async function init() {
         if (attempt < 2) await new Promise(r => setTimeout(r, 800))
       }
     }
-    const focusStored = await chrome.storage.local.get('focusModeEnabled')
-    setState({ view: 'login', auth, postData, focusModeEnabled: focusStored.focusModeEnabled ?? false })
+    const focusStored = await chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'])
+    setState({
+      view: 'login', auth, postData,
+      focusModeEnabled: focusStored.focusModeEnabled ?? false,
+      focusBlockedPlatforms: { ...state.focusBlockedPlatforms, ...(focusStored.focusBlockedPlatforms ?? {}) },
+    })
     return
   }
 
   // Load "don't ask again" preference
-  const stored = await chrome.storage.local.get(['dontAskCompetitor', 'focusModeEnabled'])
+  const stored = await chrome.storage.local.get(['dontAskCompetitor', 'focusModeEnabled', 'focusBlockedPlatforms'])
   const dontAskCompetitor = stored.dontAskCompetitor ?? false
   const focusModeEnabled = stored.focusModeEnabled ?? false
+  const focusBlockedPlatforms = { ...state.focusBlockedPlatforms, ...(stored.focusBlockedPlatforms ?? {}) }
 
-  setState({ auth, dontAskCompetitor, focusModeEnabled })
+  setState({ auth, dontAskCompetitor, focusModeEnabled, focusBlockedPlatforms })
 
   let postData = null
   // Try extraction, with retries for SPA navigation (DOM may not be ready)
@@ -635,9 +675,8 @@ function render() {
           </div>
         ` : ''}
 
-        <div class="locked-actions">
-          <div class="locked-action">🔒 Track as Competitor</div>
-          <div class="locked-action">🔒 Sync Videos</div>
+        <div class="locked-teasers">
+          <button class="btn btn-locked outline">🔒 Track as Competitor</button>
         </div>
       ` : hasPost ? `
         <div class="detected">
@@ -658,10 +697,9 @@ function render() {
             </div>`
           })() : ''}
         </div>
-        <div class="locked-actions">
-          <div class="locked-action">🔒 Save as Inspiration</div>
-          <div class="locked-action">🔒 Create from Inspo</div>
-          <div class="locked-action">🔒 Download</div>
+        <div class="locked-teasers">
+          <button class="btn btn-locked primary">🔒 Save as Inspiration</button>
+          <button class="btn btn-locked secondary">🔒 Download</button>
         </div>
       ` : `
         <div class="no-post">
@@ -670,19 +708,25 @@ function render() {
         </div>
       `}
 
-      <div class="login-section">
-        <h2>${p ? 'Sign in to unlock all features' : 'Sign in to Orianna'}</h2>
-        <p>Use your Orianna account credentials</p>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <input id="email" type="email" placeholder="Email" />
-          <input id="password" type="password" placeholder="Password" />
-          ${state.errors.login ? `<div class="error-msg">${escHtml(state.errors.login)}</div>` : ''}
-          <button class="btn btn-primary" id="login-btn" ${state.saving === 'login' ? 'disabled' : ''}>
-            ${state.saving === 'login' ? '<span class="spinner"></span>' : 'Sign in'}
-          </button>
-          <div class="signup-link">Don't have an account? <a href="${ORIANNA_URL}/signup" target="_blank">Sign up</a></div>
+      ${!state.showLoginForm && (hasPost || isProfile) ? `
+        <div class="login-bar">
+          <span class="login-bar-text">Sign in for free to unlock</span>
+          <button class="login-bar-btn primary" id="show-login-btn">Sign in</button>
+          <a class="login-bar-btn secondary" href="${ORIANNA_URL}/signup" target="_blank">Sign up</a>
         </div>
-      </div>
+      ` : `
+        <div class="login-expand">
+          <div class="login-row">
+            <input id="email" type="email" placeholder="Email" />
+            <input id="password" type="password" placeholder="Password" />
+            <button class="btn btn-primary" id="login-btn" ${state.saving === 'login' ? 'disabled' : ''}>
+              ${state.saving === 'login' ? '<span class="spinner"></span>' : 'Sign in'}
+            </button>
+          </div>
+          ${state.errors.login ? `<div class="error-msg">${escHtml(state.errors.login)}</div>` : ''}
+          <div class="signup-link">No account? <a href="${ORIANNA_URL}/signup" target="_blank">Sign up free</a></div>
+        </div>
+      `}
       <div class="footer-links">
         <a href="${ORIANNA_URL}" target="_blank">Open Orianna</a>
         <span class="dot">&middot;</span>
@@ -690,15 +734,18 @@ function render() {
         <span class="dot">&middot;</span>
         <a href="${ORIANNA_URL}/legal/terms" target="_blank">Terms</a>
       </div>
-      ${renderFocusBar()}
+
     `
     wireFocusToggle()
-    document.getElementById('login-btn').addEventListener('click', () => {
+    document.getElementById('show-login-btn')?.addEventListener('click', () => {
+      setState({ showLoginForm: true })
+    })
+    document.getElementById('login-btn')?.addEventListener('click', () => {
       const email = document.getElementById('email').value.trim()
       const password = document.getElementById('password').value
       if (email && password) handleLogin(email, password)
     })
-    document.getElementById('password').addEventListener('keydown', (e) => {
+    document.getElementById('password')?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') document.getElementById('login-btn').click()
     })
     // Sort functionality works without login
@@ -736,8 +783,9 @@ function render() {
         <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board</a>
         <button class="btn btn-outline" id="back-btn" style="margin-top:6px">Back</button>
       </div>
+
       ${renderUserBar()}
-      ${renderFocusBar()}
+      ${renderFocusPlatforms()}
     `
     wireFocusToggle()
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
@@ -820,8 +868,9 @@ function render() {
           <div class="bookmark-hint">Scroll the page to load more, then reopen extension</div>
         </div>
       `}
+
       ${renderUserBar()}
-      ${renderFocusBar()}
+      ${renderFocusPlatforms()}
     `
 
     document.getElementById('logout-btn')?.addEventListener('click', handleLogout)
@@ -939,8 +988,9 @@ function render() {
           <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
         </div>
       ` : ''}
+
       ${renderUserBar()}
-      ${renderFocusBar()}
+      ${renderFocusPlatforms()}
     `
 
     // Wire events
@@ -1109,7 +1159,6 @@ function render() {
     `}
 
     ${renderUserBar()}
-    ${renderFocusBar()}
   `
 
   wireFocusToggle()

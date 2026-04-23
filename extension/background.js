@@ -295,12 +295,25 @@ async function handleMessage(msg) {
 
 const FOCUS_DOMAINS = ['tiktok.com', 'instagram.com', 'youtube.com', 'youtu.be', 'twitter.com', 'x.com', 'reddit.com', 'facebook.com', 'fb.com', 'snapchat.com', 'threads.net']
 
+const DOMAIN_TO_PLATFORM = {
+  'tiktok.com': 'tiktok', 'instagram.com': 'instagram', 'youtube.com': 'youtube',
+  'youtu.be': 'youtube', 'twitter.com': 'twitter', 'x.com': 'twitter',
+  'reddit.com': 'reddit', 'facebook.com': 'facebook', 'fb.com': 'facebook',
+  'snapchat.com': 'snapchat', 'threads.net': 'threads',
+}
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status !== 'complete' || !tab.url) return
   if (!FOCUS_DOMAINS.some(d => tab.url.includes(d))) return
 
-  const stored = await chrome.storage.local.get('focusModeEnabled')
+  const stored = await chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'])
   if (!stored.focusModeEnabled) return
+
+  // Check if this specific platform is blocked
+  const platforms = stored.focusBlockedPlatforms ?? {}
+  const matchedDomain = FOCUS_DOMAINS.find(d => tab.url.includes(d))
+  const platform = matchedDomain ? DOMAIN_TO_PLATFORM[matchedDomain] : null
+  if (platform && platforms[platform] === false) return
 
   // Content script should already be injected (manifest), but send FOCUS_CHECK to be sure
   try {

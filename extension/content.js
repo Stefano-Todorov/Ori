@@ -86,14 +86,16 @@ const FOCUS_BLOCKED_PATTERNS = {
   threads:   [/^https?:\/\/(www\.)?threads\.net/],
 }
 
-function isUrlBlockedByFocusMode(url) {
-  for (const patterns of Object.values(FOCUS_BLOCKED_PATTERNS)) {
+function isUrlBlockedByFocusMode(url, blockedPlatforms) {
+  for (const [platform, patterns] of Object.entries(FOCUS_BLOCKED_PATTERNS)) {
+    if (blockedPlatforms && !blockedPlatforms[platform]) continue
     if (patterns.some(re => re.test(url))) return true
   }
   return false
 }
 
 let focusModeEnabled = false
+let focusBlockedPlatforms = { tiktok: true, instagram: true, youtube: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true }
 let focusOverlayEl = null
 
 // Expose for re-injection guard
@@ -103,7 +105,7 @@ window.__orianna_recheckFocus = function(enabled) {
 }
 
 function checkFocusMode() {
-  if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
+  if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href, focusBlockedPlatforms)) {
     showFocusOverlay()
   } else {
     removeFocusOverlay()
@@ -162,15 +164,22 @@ function removeFocusOverlay() {
 }
 
 // Load initial focus mode state
-chrome.storage.local.get('focusModeEnabled', (result) => {
+chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'], (result) => {
   focusModeEnabled = result.focusModeEnabled ?? false
+  if (result.focusBlockedPlatforms) focusBlockedPlatforms = { ...focusBlockedPlatforms, ...result.focusBlockedPlatforms }
   checkFocusMode()
 })
 
 // React to focus mode changes from popup or other tabs
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.focusModeEnabled) {
+  if (area !== 'local') return
+  if (changes.focusModeEnabled) {
     focusModeEnabled = changes.focusModeEnabled.newValue ?? false
+  }
+  if (changes.focusBlockedPlatforms) {
+    focusBlockedPlatforms = { ...focusBlockedPlatforms, ...(changes.focusBlockedPlatforms.newValue ?? {}) }
+  }
+  if (changes.focusModeEnabled || changes.focusBlockedPlatforms) {
     checkFocusMode()
   }
 })
@@ -2131,11 +2140,11 @@ if (!window.__orianna_distraction_setup) {
     if (!url.includes('instagram.com')) return
     if (!url.includes('/p/') && !url.includes('/reel/')) return
 
-    chrome.storage.local.get('focusModeEnabled', (result) => {
-      if (!result.focusModeEnabled) {
+    chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'], (result) => {
+      const platforms = result.focusBlockedPlatforms ?? {}
+      if (!result.focusModeEnabled || platforms.instagram === false) {
         document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
-          el.style.display = ''
-          delete el.dataset.oriDistractionHidden
+          el.remove()
         })
         return
       }
