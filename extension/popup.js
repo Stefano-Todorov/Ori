@@ -195,6 +195,8 @@ async function init() {
   const dontAskCompetitor = stored.dontAskCompetitor ?? false
   const focusModeEnabled = stored.focusModeEnabled ?? false
   const focusBlockedPlatforms = { ...state.focusBlockedPlatforms, ...(stored.focusBlockedPlatforms ?? {}) }
+  // Persist merged defaults so new platforms (like youtubeShorts) get saved
+  chrome.storage.local.set({ focusBlockedPlatforms })
 
   setState({ auth, dontAskCompetitor, focusModeEnabled, focusBlockedPlatforms })
 
