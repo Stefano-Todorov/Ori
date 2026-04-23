@@ -149,13 +149,16 @@ function showFocusOverlay() {
 }
 
 function removeFocusOverlay() {
+  // Remove the full-page focus overlay (blocked pages)
   if (focusOverlayEl) {
     focusOverlayEl.remove()
     focusOverlayEl = null
     if (document.body) document.body.style.overflow = ''
-    // Reload the page so it renders properly after being hidden behind the overlay
-    window.location.reload()
   }
+  // Also remove Instagram distraction overlays (post pages)
+  document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
+    el.remove()
+  })
 }
 
 // Load initial focus mode state
