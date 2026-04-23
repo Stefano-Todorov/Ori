@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ExternalLink, Plus, Copy, ChevronDown } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { updateIdea, addIdea } from '@/app/actions'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
@@ -364,24 +365,30 @@ export function EditIdeaDialog({
             {hasSecondaryActions && (
               <div className="flex items-center gap-2">
                 {onAddAnother && (
-                  <button
-                    onClick={handleSaveAndNew}
-                    disabled={!form.idea.trim() || isPending}
-                    className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
-                  >
-                    <Plus size={13} />
-                    Save & add new
-                  </button>
+                  <div className="flex-1 flex items-center gap-1">
+                    <button
+                      onClick={handleSaveAndNew}
+                      disabled={!form.idea.trim() || isPending}
+                      className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      <Plus size={13} />
+                      Save & add new
+                    </button>
+                    <InfoTooltip text="Save this idea and immediately open a blank form to add another one." />
+                  </div>
                 )}
                 {onDuplicate && (
-                  <button
-                    onClick={handleSaveAndDuplicate}
-                    disabled={!form.idea.trim() || isPending}
-                    className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
-                  >
-                    <Copy size={13} />
-                    Save & duplicate
-                  </button>
+                  <div className="flex-1 flex items-center gap-1">
+                    <button
+                      onClick={handleSaveAndDuplicate}
+                      disabled={!form.idea.trim() || isPending}
+                      className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      <Copy size={13} />
+                      Save & duplicate
+                    </button>
+                    <InfoTooltip text="Save this idea and open a new form pre-filled with the same details — great for variations." />
+                  </div>
                 )}
               </div>
             )}
@@ -636,38 +643,44 @@ export function AddIdeaDialog({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleSave(true)}
-                disabled={!form.idea.trim() || isPending}
-                className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
-              >
-                <Plus size={13} />
-                Save & add new
-              </button>
-              <button
-                onClick={() => {
-                  if (!form.idea.trim()) return
-                  const savedForm = { ...form }
-                  startTransition(async () => {
-                    await addIdea(form.idea.trim(), form.source.trim() || undefined, {
-                      inspiration_url: form.inspirationUrl.trim() || undefined,
-                      hook_idea: form.hookIdea.trim() || undefined,
-                      script_snippet: form.scriptSnippet.trim() || undefined,
-                      cta: form.cta.trim() || undefined,
-                      caption: form.caption.trim() || undefined,
-                      tags: form.tags.length > 0 ? form.tags : undefined,
+              <div className="flex-1 flex items-center gap-1">
+                <button
+                  onClick={() => handleSave(true)}
+                  disabled={!form.idea.trim() || isPending}
+                  className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  <Plus size={13} />
+                  Save & add new
+                </button>
+                <InfoTooltip text="Save this idea and immediately open a blank form to add another one." />
+              </div>
+              <div className="flex-1 flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (!form.idea.trim()) return
+                    const savedForm = { ...form }
+                    startTransition(async () => {
+                      await addIdea(form.idea.trim(), form.source.trim() || undefined, {
+                        inspiration_url: form.inspirationUrl.trim() || undefined,
+                        hook_idea: form.hookIdea.trim() || undefined,
+                        script_snippet: form.scriptSnippet.trim() || undefined,
+                        cta: form.cta.trim() || undefined,
+                        caption: form.caption.trim() || undefined,
+                        tags: form.tags.length > 0 ? form.tags : undefined,
+                      })
+                      onSaved?.()
+                      // Reset with all fields pre-filled (duplicate)
+                      setForm({ ...savedForm, idea: savedForm.idea })
                     })
-                    onSaved?.()
-                    // Reset with all fields pre-filled (duplicate)
-                    setForm({ ...savedForm, idea: savedForm.idea })
-                  })
-                }}
-                disabled={!form.idea.trim() || isPending}
-                className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
-              >
-                <Copy size={13} />
-                Save & duplicate
-              </button>
+                  }}
+                  disabled={!form.idea.trim() || isPending}
+                  className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                >
+                  <Copy size={13} />
+                  Save & duplicate
+                </button>
+                <InfoTooltip text="Save this idea and open a new form pre-filled with the same details — great for variations." />
+              </div>
             </div>
           </div>
         </div>

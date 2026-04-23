@@ -1074,7 +1074,7 @@ function render() {
       </div>
       <div class="actions">
         <div class="save-row">
-          <button class="btn btn-primary save-main-btn" id="inspiration-btn" ${state.saving ? 'disabled' : ''}>
+          <button class="btn btn-primary save-main-btn" id="inspiration-btn" ${state.saving ? 'disabled' : ''} title="Save this video to your Inspo board so you can study what works and turn it into your own idea later.">
             ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : '💾 Save as Inspiration'}
           </button>
           <button class="tag-dropdown-btn" id="tag-dropdown-btn" title="Add tags">🏷️ ▾</button>
@@ -1116,7 +1116,7 @@ function render() {
         ${state.messages.inspiration ? `<div class="success-msg">${state.messages.inspiration} — <a href="${ORIANNA_URL}/dashboard/inspo" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View in Inspo</a></div>` : ''}
         ${state.errors.inspiration ? `<div class="error-msg">${escHtml(state.errors.inspiration)}</div>` : ''}
 
-        <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''}>
+        <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''} title="Turn this video into a content idea on your Ideas board — describe what you'd do differently.">
           ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
         </button>
         ${state.showCreateInspo ? `
@@ -1166,7 +1166,7 @@ function render() {
         ${state.messages.createInspo ? `<div class="success-msg">${state.messages.createInspo} — <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" style="color:#818cf8;text-decoration:underline;font-size:11px">View Ideas</a></div>` : ''}
         ${state.errors.createInspo ? `<div class="error-msg">${escHtml(state.errors.createInspo)}</div>` : ''}
 
-        <button class="btn btn-secondary" id="download-btn" ${state.saving ? 'disabled' : ''}>
+        <button class="btn btn-secondary" id="download-btn" ${state.saving ? 'disabled' : ''} title="Download this video to your device — no watermark.">
           ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download'}
         </button>
         ${state.messages.download ? `<div class="success-msg">${escHtml(state.messages.download)}</div>` : ''}
