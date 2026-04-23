@@ -1604,7 +1604,11 @@ urlObserver.observe(document.body, { childList: true, subtree: true })
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'FOCUS_CHECK') {
     focusModeEnabled = msg.enabled ?? false
-    checkFocusMode()
+    // Also load platform settings from storage to ensure they're current
+    chrome.storage.local.get('focusBlockedPlatforms', (result) => {
+      if (result.focusBlockedPlatforms) focusBlockedPlatforms = { ...focusBlockedPlatforms, ...result.focusBlockedPlatforms }
+      checkFocusMode()
+    })
     sendResponse({ ok: true })
     return
   }
