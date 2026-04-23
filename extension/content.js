@@ -105,11 +105,15 @@ window.__orianna_recheckFocus = function(enabled) {
 let focusDistractionObserver = null
 
 function checkFocusMode() {
-  if (focusModeEnabled && isUrlBlockedByFocusMode(window.location.href)) {
+  const url = window.location.href
+  const blocked = isUrlBlockedByFocusMode(url)
+  console.log('[Orianna Focus] checkFocusMode:', { focusModeEnabled, blocked, url: url.slice(0, 80) })
+  if (focusModeEnabled && blocked) {
     showFocusOverlay()
     stopHidingDistractions()
-  } else if (focusModeEnabled && window.location.href.includes('instagram.com')) {
+  } else if (focusModeEnabled && url.includes('instagram.com')) {
     removeFocusOverlay()
+    console.log('[Orianna Focus] Starting distraction hiding for IG post page')
     startHidingDistractions()
   } else {
     removeFocusOverlay()
