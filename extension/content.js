@@ -2079,60 +2079,62 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true
 })
 
-// ─── Standalone Instagram distraction hider ─────────────────────────────────
-// Runs independently — checks storage directly every 2s.
-// Doesn't depend on checkFocusMode or any focus mode variables.
-setInterval(() => {
-  const url = window.location.href
-  if (!url.includes('instagram.com')) return
-  if (!url.includes('/p/') && !url.includes('/reel/')) return
-  console.log('[Orianna] Distraction scan running')
-
-  chrome.storage.local.get('focusModeEnabled', (result) => {
-    if (!result.focusModeEnabled) {
-      document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
-        el.style.display = ''
-        delete el.dataset.oriDistractionHidden
-      })
-      return
-    }
-
-    if (document.querySelector('[data-ori-distraction-hidden]')) return
-
-    const bodyText = document.body?.innerText || ''
-    const hasMorePosts = bodyText.includes('More posts from')
-    const hasSuggested = bodyText.includes('Suggested for you')
-    if (!hasMorePosts && !hasSuggested) return
-
-    const trigger = hasMorePosts ? 'More posts from' : 'Suggested for you'
-    let found = null
-    const all = document.body.getElementsByTagName('*')
-    for (let i = 0; i < all.length; i++) {
-      const el = all[i]
-      if (el.closest('[data-ori-distraction-hidden]')) continue
-      const it = el.innerText?.trim()
-      if (!it || it.length > 200 || it.length < trigger.length) continue
-      if (it.startsWith(trigger)) { found = el; break }
-    }
-    if (!found) return
-
-    let target = found
-    for (let j = 0; j < 25; j++) {
-      const p = target.parentElement
-      if (!p || p === document.body) break
-      target = p
-      if (target.offsetHeight > 300) break
-    }
-
-    if (target && target !== document.body && target.parentElement) {
-      const sibs = Array.from(target.parentElement.children)
-      const idx = sibs.indexOf(target)
-      for (let k = idx; k < sibs.length; k++) {
-        sibs[k].dataset.oriDistractionHidden = '1'
-        sibs[k].style.display = 'none'
-      }
-    }
-  })
-}, 2000)
-
 } // end of __orianna_loaded guard
+
+// ─── Standalone Instagram distraction hider ─────────────────────────────────
+// Runs OUTSIDE the guard — always starts, even on re-injection.
+// Checks storage directly every 2s. Fully independent.
+if (!window.__orianna_distraction_interval) {
+  window.__orianna_distraction_interval = setInterval(() => {
+    const url = window.location.href
+    if (!url.includes('instagram.com')) return
+    if (!url.includes('/p/') && !url.includes('/reel/')) return
+
+    chrome.storage.local.get('focusModeEnabled', (result) => {
+      if (!result.focusModeEnabled) {
+        document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
+          el.style.display = ''
+          delete el.dataset.oriDistractionHidden
+        })
+        return
+      }
+
+      if (document.querySelector('[data-ori-distraction-hidden]')) return
+      if (!document.body) return
+
+      const bodyText = document.body.innerText || ''
+      const hasMorePosts = bodyText.includes('More posts from')
+      const hasSuggested = bodyText.includes('Suggested for you')
+      if (!hasMorePosts && !hasSuggested) return
+
+      const trigger = hasMorePosts ? 'More posts from' : 'Suggested for you'
+      let found = null
+      const all = document.body.getElementsByTagName('*')
+      for (let i = 0; i < all.length; i++) {
+        const el = all[i]
+        if (el.closest('[data-ori-distraction-hidden]')) continue
+        const it = el.innerText?.trim()
+        if (!it || it.length > 200 || it.length < trigger.length) continue
+        if (it.startsWith(trigger)) { found = el; break }
+      }
+      if (!found) return
+
+      let target = found
+      for (let j = 0; j < 25; j++) {
+        const p = target.parentElement
+        if (!p || p === document.body) break
+        target = p
+        if (target.offsetHeight > 300) break
+      }
+
+      if (target && target !== document.body && target.parentElement) {
+        const sibs = Array.from(target.parentElement.children)
+        const idx = sibs.indexOf(target)
+        for (let k = idx; k < sibs.length; k++) {
+          sibs[k].dataset.oriDistractionHidden = '1'
+          sibs[k].style.display = 'none'
+        }
+      }
+    })
+  }, 2000)
+}
