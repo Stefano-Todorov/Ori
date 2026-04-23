@@ -57,7 +57,7 @@ const FOCUS_PLATFORM_LABELS = {
 
 function renderFocusToggle() {
   const isOn = state.focusModeEnabled
-  return `<div class="header-focus ${isOn ? 'on' : ''}" id="focus-toggle" title="Focus Mode">
+  return `<div class="header-focus ${isOn ? 'on' : ''}" id="focus-toggle" title="Focus Mode — hides distracting content (feeds, recommendations, shorts) on social media so you can stay on task.">
     <span class="header-focus-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
     <span class="header-focus-label">Focus</span>
     <div class="focus-switch ${isOn ? 'on' : ''}">
