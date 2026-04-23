@@ -232,7 +232,7 @@ function TagDropdown({ tags, allTags, onChange }: {
   const suggestions = allTags.filter(t => !tags.includes(t))
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative flex" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
