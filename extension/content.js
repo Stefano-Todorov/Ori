@@ -2086,6 +2086,7 @@ setInterval(() => {
   const url = window.location.href
   if (!url.includes('instagram.com')) return
   if (!url.includes('/p/') && !url.includes('/reel/')) return
+  console.log('[Orianna] Distraction scan running')
 
   chrome.storage.local.get('focusModeEnabled', (result) => {
     if (!result.focusModeEnabled) {
