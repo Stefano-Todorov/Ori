@@ -35,12 +35,12 @@ export default async function InspoPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             Inspo
             <InfoTooltip text="Save trending videos that inspire you. Analyze what makes them work, then turn the best ones into your own content ideas." />
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Save videos that inspire you. Study what works, then turn the best ones into your own ideas.
           </p>
         </div>
