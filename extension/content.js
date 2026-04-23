@@ -77,8 +77,8 @@ const FOCUS_BLOCKED_PATTERNS = {
     /^https?:\/\/(www\.)?instagram\.com\/stories(\/|$)/,
     /^https?:\/\/(www\.)?instagram\.com\/notifications/,
   ],
-  // These platforms are fully blocked (no productive use case)
-  youtube:   [/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/],
+  // YouTube: only block Shorts (rest of YouTube stays accessible)
+  youtube:   [/^https?:\/\/(www\.)?youtube\.com\/shorts(\/|$)/],
   twitter:   [/^https?:\/\/(www\.)?(twitter\.com|x\.com)/],
   reddit:    [/^https?:\/\/(www\.|old\.)?reddit\.com/],
   facebook:  [/^https?:\/\/(www\.)?(facebook\.com|fb\.com)/],
@@ -2132,35 +2132,74 @@ function __oriannaApplyOverlay() {
   return false
 }
 
+// ─── YouTube Shorts shelf hider ─────────────────────────────────────────────
+function __oriannaHideYouTubeShorts() {
+  if (!document.body) return
+  // YouTube uses custom elements for Shorts shelves
+  const selectors = [
+    'ytd-rich-shelf-renderer[is-shorts]',          // Shorts shelf on home
+    'ytd-reel-shelf-renderer',                      // Shorts reel shelf
+    'ytd-rich-shelf-renderer',                      // General shelf (check for "Shorts" title)
+  ]
+  for (const sel of selectors) {
+    document.querySelectorAll(sel).forEach(el => {
+      if (el.dataset.oriDistractionHidden) return
+      // For generic shelves, check if it's actually a Shorts shelf
+      if (sel === 'ytd-rich-shelf-renderer' && !el.hasAttribute('is-shorts')) {
+        const title = el.querySelector('#title, #title-text, .title')
+        if (!title || !title.textContent?.includes('Shorts')) return
+      }
+      el.dataset.oriDistractionHidden = '1'
+      el.style.display = 'none'
+    })
+  }
+  // Also hide inline Shorts in search results and sidebar
+  document.querySelectorAll('ytd-video-renderer, ytd-grid-video-renderer').forEach(el => {
+    if (el.dataset.oriDistractionHidden) return
+    const link = el.querySelector('a[href*="/shorts/"]')
+    if (link) {
+      el.dataset.oriDistractionHidden = '1'
+      el.style.display = 'none'
+    }
+  })
+}
+
 if (!window.__orianna_distraction_setup) {
   window.__orianna_distraction_setup = true
 
   function __oriannaCheckDistractions() {
     try { chrome.runtime.id } catch { clearInterval(window.__orianna_distraction_fallback); __oriObserver?.disconnect(); return }
     const url = window.location.href
-    if (!url.includes('instagram.com')) return
-    if (!url.includes('/p/') && !url.includes('/reel/')) return
 
     chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'], (result) => {
       const platforms = result.focusBlockedPlatforms ?? {}
-      if (!result.focusModeEnabled || platforms.instagram === false) {
+      if (!result.focusModeEnabled) {
         document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
-          el.remove()
+          el.style.display = ''
+          delete el.dataset.oriDistractionHidden
         })
         return
       }
-      __oriannaApplyOverlay()
+
+      // Instagram: hide "More posts from" on post pages
+      if (url.includes('instagram.com') && (url.includes('/p/') || url.includes('/reel/')) && platforms.instagram !== false) {
+        __oriannaApplyOverlay()
+      }
+
+      // YouTube: hide Shorts shelves on all YouTube pages
+      if (url.includes('youtube.com') && platforms.youtube !== false) {
+        __oriannaHideYouTubeShorts()
+      }
     })
   }
 
-  // MutationObserver — fires instantly when Instagram adds new nodes
+  // MutationObserver — fires instantly when new nodes are added
   const __oriObserver = new MutationObserver((mutations) => {
-    // Quick check: does any added node contain trigger text? (textContent is fast, no reflow)
     for (const mut of mutations) {
       for (const node of mut.addedNodes) {
         if (node.nodeType !== 1) continue
         const tc = node.textContent
-        if (tc && (tc.includes('More posts from') || tc.includes('Suggested for you'))) {
+        if (tc && (tc.includes('More posts from') || tc.includes('Suggested for you') || tc.includes('Shorts'))) {
           __oriannaCheckDistractions()
           return
         }
