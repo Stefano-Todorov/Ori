@@ -54,9 +54,16 @@ function renderHeader({ showAuth = false } = {}) {
     <span class="logo">${LOGO_SVG}Orianna</span>
     <div class="header-right">
       <a class="dashboard-link" href="${ORIANNA_URL}/dashboard" target="_blank">Dashboard</a>
-      <span class="user-email">${state.auth?.email ?? ''}</span>
-      <button class="logout-btn" id="logout-btn">Sign out</button>
     </div>
+  </div>`
+}
+
+function renderUserBar() {
+  if (!state.auth?.isLoggedIn) return ''
+  return `<div class="user-bar">
+    <span class="user-email">${state.auth?.email ?? ''}</span>
+    <span style="color:#27272a">&middot;</span>
+    <button class="logout-btn" id="logout-btn">Sign out</button>
   </div>`
 }
 
@@ -79,8 +86,9 @@ async function handleFocusModeToggle() {
   setState({ focusModeEnabled: newVal })
 
   // Directly notify the active tab (in case its content script predates the storage listener)
+  const FOCUS_DOMAINS = ['tiktok.com', 'instagram.com', 'youtube.com', 'youtu.be', 'twitter.com', 'x.com', 'reddit.com', 'facebook.com', 'fb.com', 'snapchat.com', 'threads.net']
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  if (tab?.id && tab.url && (tab.url.includes('tiktok.com') || tab.url.includes('instagram.com'))) {
+  if (tab?.id && tab.url && FOCUS_DOMAINS.some(d => tab.url.includes(d))) {
     try {
       await chrome.tabs.sendMessage(tab.id, { type: 'FOCUS_CHECK', enabled: newVal })
     } catch {
@@ -728,6 +736,7 @@ function render() {
         <a href="${ORIANNA_URL}/dashboard/ideas" target="_blank" class="btn btn-link">Open Ideas Board</a>
         <button class="btn btn-outline" id="back-btn" style="margin-top:6px">Back</button>
       </div>
+      ${renderUserBar()}
       ${renderFocusBar()}
     `
     wireFocusToggle()
@@ -811,6 +820,7 @@ function render() {
           <div class="bookmark-hint">Scroll the page to load more, then reopen extension</div>
         </div>
       `}
+      ${renderUserBar()}
       ${renderFocusBar()}
     `
 
@@ -929,6 +939,7 @@ function render() {
           <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
         </div>
       ` : ''}
+      ${renderUserBar()}
       ${renderFocusBar()}
     `
 
@@ -1097,6 +1108,7 @@ function render() {
       </div>
     `}
 
+    ${renderUserBar()}
     ${renderFocusBar()}
   `
 
