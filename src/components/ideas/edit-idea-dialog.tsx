@@ -635,14 +635,40 @@ export function AddIdeaDialog({
                 </button>
               </div>
             </div>
-            <button
-              onClick={() => handleSave(true)}
-              disabled={!form.idea.trim() || isPending}
-              className="w-full py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
-            >
-              <Plus size={13} />
-              Save & add another
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleSave(true)}
+                disabled={!form.idea.trim() || isPending}
+                className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                <Plus size={13} />
+                Save & add new
+              </button>
+              <button
+                onClick={() => {
+                  if (!form.idea.trim()) return
+                  const savedForm = { ...form }
+                  startTransition(async () => {
+                    await addIdea(form.idea.trim(), form.source.trim() || undefined, {
+                      inspiration_url: form.inspirationUrl.trim() || undefined,
+                      hook_idea: form.hookIdea.trim() || undefined,
+                      script_snippet: form.scriptSnippet.trim() || undefined,
+                      cta: form.cta.trim() || undefined,
+                      caption: form.caption.trim() || undefined,
+                      tags: form.tags.length > 0 ? form.tags : undefined,
+                    })
+                    onSaved?.()
+                    // Reset with all fields pre-filled (duplicate)
+                    setForm({ ...savedForm, idea: savedForm.idea })
+                  })
+                }}
+                disabled={!form.idea.trim() || isPending}
+                className="flex-1 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                <Copy size={13} />
+                Save & duplicate
+              </button>
+            </div>
           </div>
         </div>
       </DialogContent>
