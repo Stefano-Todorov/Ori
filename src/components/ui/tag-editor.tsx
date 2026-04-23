@@ -182,15 +182,15 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
   const [editing, setEditing] = useState(false)
   if (allTags.length === 0) return null
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <Tag size={13} className="text-muted-foreground" />
-      <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Tag:</span>
+    <div className="flex items-center gap-1.5 flex-wrap border-t border-border/50 dark:border-white/5 pt-2.5">
+      <Tag size={12} className="text-muted-foreground/60" />
+      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold mr-0.5">Tags</span>
       <button
         onClick={() => onChange('all')}
-        className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-all ${
           activeTag === 'all'
-            ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-sm'
+            : 'text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-white/5'
         }`}
       >
         All
@@ -199,10 +199,10 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
         <span key={tag} className="relative inline-flex items-center">
           <button
             onClick={() => !editing && onChange(tag)}
-            className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
+            className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-all ${
               activeTag === tag
                 ? `border ${tagColor(tag)}`
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-white/5'
             } ${editing ? 'pr-6' : ''}`}
           >
             {tag}
@@ -220,10 +220,10 @@ export function TagFilter({ allTags, activeTag, onChange, onDelete }: TagFilterP
       {onDelete && (
         <button
           onClick={() => setEditing(!editing)}
-          className={`text-xs font-medium px-2 py-1 rounded-lg transition-all ${
+          className={`text-[11px] font-medium px-2 py-1 rounded-md transition-all ${
             editing
               ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              : 'text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-white/5'
           }`}
           title={editing ? 'Done editing' : 'Manage tags'}
         >

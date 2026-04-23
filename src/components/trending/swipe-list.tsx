@@ -320,64 +320,76 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
         </div>
       )}
 
-      {/* Sort + select controls */}
+      {/* Filters bar */}
       {activePosts.length > 1 && (
-        <div className="flex items-center gap-2">
-          <SortAsc size={13} className="text-muted-foreground" />
-          <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Sort:</span>
-          {(['date', 'views', 'likes'] as SortMode[]).map(mode => (
-            <button
-              key={mode}
-              onClick={() => setSortMode(mode)}
-              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all capitalize ${
-                sortMode === mode
-                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-1.5">
-            <button
-              onClick={selectAll}
-              className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all ${
-                selectMode
-                  ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              }`}
-            >
-              {selected.size === sorted.length ? 'Deselect all' : selectMode ? `${selected.size} selected` : 'Select'}
-            </button>
-          </div>
-        </div>
-      )}
+        <div className="rounded-xl border border-border dark:border-white/6 bg-muted/30 dark:bg-[#1a1a2e] p-3 space-y-2.5">
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
+            {/* Sort */}
+            <div className="flex items-center gap-1.5">
+              <SortAsc size={12} className="text-muted-foreground/60" />
+              <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold">Sort</span>
+              <div className="flex items-center bg-background dark:bg-white/5 rounded-lg p-0.5 border border-border/50 dark:border-white/5">
+                {(['date', 'views', 'likes'] as SortMode[]).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setSortMode(mode)}
+                    className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-all capitalize ${
+                      sortMode === mode
+                        ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      {/* Platform filter */}
-      {(() => {
-        const platforms = [...new Set(activePosts.map(p => p.platform).filter(Boolean))].sort()
-        if (platforms.length <= 1) return null
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-wide mr-0.5">Platform:</span>
-            {['all', ...platforms].map(p => (
+            {/* Platform */}
+            {(() => {
+              const platforms = [...new Set(activePosts.map(p => p.platform).filter(Boolean))].sort()
+              if (platforms.length <= 1) return null
+              return (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold">Platform</span>
+                  <div className="flex items-center bg-background dark:bg-white/5 rounded-lg p-0.5 border border-border/50 dark:border-white/5">
+                    {['all', ...platforms].map(p => (
+                      <button
+                        key={p}
+                        onClick={() => { setPlatformFilter(p); setSelected(new Set()) }}
+                        className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-all capitalize ${
+                          platformFilter === p
+                            ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {p === 'all' ? 'All' : p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Select */}
+            <div className="ml-auto">
               <button
-                key={p}
-                onClick={() => { setPlatformFilter(p); setSelected(new Set()) }}
-                className={`text-xs font-medium px-2.5 py-1 rounded-lg transition-all capitalize ${
-                  platformFilter === p
+                onClick={selectAll}
+                className={`text-[11px] font-medium px-3 py-1.5 rounded-lg transition-all ${
+                  selectMode
                     ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-white/5'
                 }`}
               >
-                {p}
+                {selected.size === sorted.length ? 'Deselect all' : selectMode ? `${selected.size} selected` : 'Select'}
               </button>
-            ))}
+            </div>
           </div>
-        )
-      })()}
 
-      <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} onDelete={handleDeleteTag} />
+          {/* Tags */}
+          <TagFilter allTags={allTags} activeTag={tagFilter} onChange={setTagFilter} onDelete={handleDeleteTag} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
       {sorted.map((post) => (
