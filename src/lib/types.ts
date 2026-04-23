@@ -21,6 +21,8 @@ export interface Profile {
   last_proactive_at: string | null
   unanswered_proactive: number
   last_coach_read_at: string | null
+  timezone: string | null
+  coach_checkins_enabled: boolean
   last_synced_at: Record<string, string>
   created_at: string
   updated_at: string

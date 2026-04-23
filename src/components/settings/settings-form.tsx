@@ -17,6 +17,25 @@ const PLATFORMS: { id: Platform; label: string; dotColor: string; placeholder: s
 
 const THEME_ICONS = { system: Monitor, light: Sun, dark: Moon }
 
+const TIMEZONES = [
+  { value: 'Pacific/Honolulu', label: 'Hawaii (HST)' },
+  { value: 'America/Anchorage', label: 'Alaska (AKST)' },
+  { value: 'America/Los_Angeles', label: 'Pacific (PST)' },
+  { value: 'America/Denver', label: 'Mountain (MST)' },
+  { value: 'America/Chicago', label: 'Central (CST)' },
+  { value: 'America/New_York', label: 'Eastern (EST)' },
+  { value: 'America/Sao_Paulo', label: 'Brazil (BRT)' },
+  { value: 'Europe/London', label: 'London (GMT)' },
+  { value: 'Europe/Paris', label: 'Central Europe (CET)' },
+  { value: 'Europe/Helsinki', label: 'Eastern Europe (EET)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Asia/Kolkata', label: 'India (IST)' },
+  { value: 'Asia/Shanghai', label: 'China (CST)' },
+  { value: 'Asia/Tokyo', label: 'Japan (JST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+  { value: 'Pacific/Auckland', label: 'New Zealand (NZST)' },
+]
+
 interface Props {
   profile: Profile | null
   socialAccounts: { platform: string; username: string | null }[]
@@ -48,6 +67,8 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
   })
   const [creatorContext, setCreatorContext] = useState(profile?.creator_context ?? '')
   const [autoSync, setAutoSync] = useState(profile?.auto_sync_own_profile ?? true)
+  const [coachCheckins, setCoachCheckins] = useState(profile?.coach_checkins_enabled ?? true)
+  const [timezone, setTimezone] = useState(profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,6 +100,8 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
       batch_size: batchSize,
       creator_context: creatorContext || null,
       auto_sync_own_profile: autoSync,
+      coach_checkins_enabled: coachCheckins,
+      timezone,
     })
     if (profileResult?.error) {
       setError(profileResult.error)
@@ -292,6 +315,43 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
             <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${autoSync ? 'translate-x-4' : ''}`} />
           </button>
         </div>
+      </div>
+
+      {/* Coach Check-ins */}
+      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+        <div>
+          <p className="text-sm font-bold text-foreground">Coach Check-ins</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Weekly proactive messages from your AI coach</p>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-foreground">Weekly check-ins</p>
+            <p className="text-xs text-muted-foreground">Your coach will message you Monday mornings with personalized advice</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCoachCheckins(!coachCheckins)}
+            className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${coachCheckins ? 'bg-purple-600' : 'bg-muted border border-border'}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${coachCheckins ? 'translate-x-4' : ''}`} />
+          </button>
+        </div>
+
+        {coachCheckins && (
+          <div className="space-y-2 pt-1 border-t border-border">
+            <label className="text-xs uppercase tracking-[0.05em] font-semibold text-muted-foreground pt-3 block">Your timezone</label>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full bg-muted dark:bg-[#1e1e2e] border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

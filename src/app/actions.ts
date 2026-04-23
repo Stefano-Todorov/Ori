@@ -229,6 +229,8 @@ export async function updateProfile(fields: {
   auto_sync_own_profile?: boolean
   auto_save_competitor_ideas?: boolean
   creator_context?: string | null
+  timezone?: string | null
+  coach_checkins_enabled?: boolean
   onboarding_completed?: boolean
 }) {
   const supabase = await createClient()
