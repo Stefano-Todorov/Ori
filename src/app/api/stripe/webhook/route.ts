@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createServiceClient } from '@/lib/supabase/service'
 import type { TierSlug } from '@/lib/tiers'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+const UPGRADE_MESSAGE = `Welcome to your upgraded coaching experience! Now that we're working together more closely, I want to make sure I really understand you and your content so I can give you the best advice possible.
+
+I'd love to dig a bit deeper — what's been your biggest challenge or frustration with creating content so far? And is there anything specific you're hoping to achieve now that you've upgraded?`
+
+async function sendUpgradeCoachMessage(supabase: SupabaseClient, userId: string) {
+  // Check if the user was previously on starter (or had no tier)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier, creator_context')
+    .eq('user_id', userId)
+    .single()
+
+  // Only send if upgrading FROM starter/null (the tier is already updated at this point,
+  // so we check if creator_context is shallow — indicating they had a free onboarding)
+  const creatorContext = profile?.creator_context ?? ''
+  if (creatorContext.length > 300) return // Already has deep context, no need
+
+  await supabase.from('coach_messages').insert({
+    user_id: userId,
+    role: 'assistant',
+    content: UPGRADE_MESSAGE,
+    proactive: true,
+  })
+}
 
 // Map Stripe price IDs to tier slugs (monthly + yearly)
 function tierFromPriceId(priceId: string): TierSlug {
@@ -60,6 +86,11 @@ export async function POST(req: NextRequest) {
           stripe_subscription_id: subscriptionId,
         })
         .eq('user_id', userId)
+
+      // Send a proactive coach message if upgrading from free
+      if (tier !== 'starter') {
+        await sendUpgradeCoachMessage(supabase, userId)
+      }
 
       break
     }
