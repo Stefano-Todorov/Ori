@@ -172,6 +172,7 @@ chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'], (result)
 
 // React to focus mode changes from popup or other tabs
 chrome.storage.onChanged.addListener((changes, area) => {
+  try { chrome.runtime.id } catch { return } // extension context dead
   if (area !== 'local') return
   if (changes.focusModeEnabled) {
     focusModeEnabled = changes.focusModeEnabled.newValue ?? false
@@ -2135,7 +2136,7 @@ if (!window.__orianna_distraction_setup) {
   window.__orianna_distraction_setup = true
 
   function __oriannaCheckDistractions() {
-    try { chrome.runtime.id } catch { return } // extension context dead
+    try { chrome.runtime.id } catch { clearInterval(window.__orianna_distraction_fallback); __oriObserver?.disconnect(); return }
     const url = window.location.href
     if (!url.includes('instagram.com')) return
     if (!url.includes('/p/') && !url.includes('/reel/')) return
@@ -2171,5 +2172,5 @@ if (!window.__orianna_distraction_setup) {
   }
 
   // Fallback interval for edge cases (SPA navigation, lazy load)
-  setInterval(__oriannaCheckDistractions, 2000)
+  window.__orianna_distraction_fallback = setInterval(__oriannaCheckDistractions, 2000)
 }
