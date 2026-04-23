@@ -2197,6 +2197,7 @@ if (!window.__orianna_distraction_setup) {
 
   // MutationObserver — fires instantly when new nodes are added
   const __oriObserver = new MutationObserver((mutations) => {
+    try { chrome.runtime.id } catch { __oriObserver.disconnect(); clearInterval(window.__orianna_distraction_fallback); return }
     for (const mut of mutations) {
       for (const node of mut.addedNodes) {
         if (node.nodeType !== 1) continue
