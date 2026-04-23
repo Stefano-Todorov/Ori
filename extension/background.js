@@ -309,11 +309,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const stored = await chrome.storage.local.get(['focusModeEnabled', 'focusBlockedPlatforms'])
   if (!stored.focusModeEnabled) return
 
-  // Check if this specific platform is blocked
+  // Check if any relevant platform is blocked for this domain
+  // YouTube needs special handling: even if 'youtube' (full block) is off,
+  // 'youtubeShorts' might be on, so we still need to inject the content script
   const platforms = stored.focusBlockedPlatforms ?? {}
   const matchedDomain = FOCUS_DOMAINS.find(d => tab.url.includes(d))
   const platform = matchedDomain ? DOMAIN_TO_PLATFORM[matchedDomain] : null
-  if (platform && platforms[platform] === false) return
+  if (platform === 'youtube') {
+    // Skip only if BOTH youtube and youtubeShorts are off
+    if (platforms.youtube === false && platforms.youtubeShorts === false) return
+  } else if (platform && platforms[platform] === false) return
 
   // Content script should already be injected (manifest), but send FOCUS_CHECK to be sure
   try {
