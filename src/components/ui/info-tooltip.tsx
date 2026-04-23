@@ -29,10 +29,10 @@ export function InfoTooltip({ text }: Props) {
         onClick={() => setOpen(!open)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="text-muted-foreground hover:text-foreground transition-colors p-0.5 rounded-md"
+        className="text-purple-400/60 hover:text-purple-400 hover:bg-purple-500/10 transition-all duration-200 p-1 rounded-lg"
         aria-label="More info"
       >
-        <HelpCircle size={15} />
+        <HelpCircle size={18} />
       </button>
       {open && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-64 px-3.5 py-2.5 rounded-xl bg-[#16161e] border border-white/10 shadow-xl text-xs text-muted-foreground leading-relaxed animate-in fade-in-0 zoom-in-95 duration-150">
