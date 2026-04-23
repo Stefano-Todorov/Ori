@@ -119,62 +119,72 @@ function checkFocusMode() {
 
 // On allowed Instagram pages (individual posts), hide recommendation sections
 // like "More posts from ___" that pull you into browsing.
+// Uses XPath to find the trigger text (works regardless of nesting) + setInterval for reliability.
 function hideDistractions() {
   if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
   const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
   if (!isPostPage || !document.body) return
 
-  // Strategy: find any element whose own direct text includes "More posts from",
-  // then walk up to a large enough container and hide it + all following siblings.
-  const allEls = document.body.querySelectorAll('*')
-  for (const el of allEls) {
-    if (el.closest('[data-ori-hidden]')) continue
-    // Check only the element's own text, not children's text
-    let ownText = ''
-    for (const node of el.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE) ownText += node.textContent
-    }
-    ownText = ownText.trim()
-    if (!ownText.startsWith('More posts from') && !ownText.startsWith('Suggested for you')) continue
+  // Use XPath to efficiently find any element containing "More posts from" text
+  const triggers = ['More posts from', 'Suggested for you']
+  for (const trigger of triggers) {
+    try {
+      const xpath = `//*[contains(text(), '${trigger}')]`
+      const result = document.evaluate(xpath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+      for (let i = 0; i < result.snapshotLength; i++) {
+        const el = result.snapshotItem(i)
+        if (el.closest('[data-ori-hidden]')) continue
 
-    // Found the trigger — walk up until we find a container worth hiding
-    // (one whose parent has multiple children, so hiding it doesn't break layout)
-    let target = el
-    for (let i = 0; i < 20; i++) {
-      const parent = target.parentElement
-      if (!parent || parent === document.body) break
-      if (parent.children.length > 1) {
-        // Hide this target and all siblings after it
-        const siblings = Array.from(parent.children)
-        const idx = siblings.indexOf(target)
-        for (let j = idx; j < siblings.length; j++) {
-          if (!siblings[j].dataset.oriHidden) {
-            siblings[j].dataset.oriHidden = '1'
-            siblings[j].style.display = 'none'
+        // Walk up from the found element to a substantial container
+        let target = el
+        for (let j = 0; j < 20; j++) {
+          const parent = target.parentElement
+          if (!parent || parent === document.body) break
+          // Stop at semantic section tags
+          if (['SECTION', 'ARTICLE', 'ASIDE', 'MAIN'].includes(parent.tagName)) {
+            target = parent
+            break
           }
+          // Stop at a large enough container (the recommendation grid)
+          if (parent.offsetHeight > 200 && parent.children.length >= 2) {
+            target = parent
+            break
+          }
+          target = parent
         }
-        return // done
+
+        // Hide the target and all siblings after it
+        if (target && target !== document.body && !target.dataset.oriHidden) {
+          const parent = target.parentElement
+          if (parent) {
+            const siblings = Array.from(parent.children)
+            const idx = siblings.indexOf(target)
+            for (let k = idx; k < siblings.length; k++) {
+              if (!siblings[k].dataset.oriHidden) {
+                siblings[k].dataset.oriHidden = '1'
+                siblings[k].style.display = 'none'
+              }
+            }
+          }
+          return
+        }
       }
-      target = parent
-    }
+    } catch {}
   }
 }
 
 function startHidingDistractions() {
   hideDistractions()
   if (focusDistractionObserver) return
-  focusDistractionObserver = new MutationObserver(() => hideDistractions())
-  if (document.body) {
-    focusDistractionObserver.observe(document.body, { childList: true, subtree: true })
-  }
+  // Use setInterval instead of MutationObserver — more reliable for lazy-loaded content
+  focusDistractionObserver = setInterval(hideDistractions, 2000)
 }
 
 function stopHidingDistractions() {
   if (focusDistractionObserver) {
-    focusDistractionObserver.disconnect()
+    clearInterval(focusDistractionObserver)
     focusDistractionObserver = null
   }
-  // Remove injected style
   // Restore any hidden sections
   document.querySelectorAll('[data-ori-hidden]').forEach(el => {
     el.style.display = ''
