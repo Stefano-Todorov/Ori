@@ -67,7 +67,6 @@ function renderFocusToggle() {
 }
 
 function renderFocusPlatforms() {
-  if (!state.focusModeEnabled) return ''
   const p = state.focusBlockedPlatforms
   const enabledCount = Object.keys(FOCUS_PLATFORM_LABELS).filter(k => p[k]).length
   const total = Object.keys(FOCUS_PLATFORM_LABELS).length
