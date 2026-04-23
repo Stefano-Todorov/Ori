@@ -2086,6 +2086,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 // Checks storage directly every 2s. Fully independent.
 if (!window.__orianna_distraction_interval) {
   window.__orianna_distraction_interval = setInterval(() => {
+    // Stop if extension was reloaded (context invalidated)
+    try { chrome.runtime.id } catch { clearInterval(window.__orianna_distraction_interval); return }
+
     const url = window.location.href
     if (!url.includes('instagram.com')) return
     if (!url.includes('/p/') && !url.includes('/reel/')) return
