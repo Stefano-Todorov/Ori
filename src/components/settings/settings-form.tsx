@@ -319,15 +319,10 @@ export function SettingsForm({ profile, socialAccounts }: Props) {
 
       {/* Coach Check-ins */}
       <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <div>
-          <p className="text-sm font-bold text-foreground">Coach Check-ins</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Weekly proactive messages from your AI coach</p>
-        </div>
-
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-foreground">Weekly check-ins</p>
-            <p className="text-xs text-muted-foreground">Your coach will message you Monday mornings with personalized advice</p>
+            <p className="text-sm font-bold text-foreground">Coach Check-ins</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Your coach will message you Monday mornings with personalized advice</p>
           </div>
           <button
             type="button"
