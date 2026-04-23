@@ -2189,4 +2189,89 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true
 })
 
+// ─── Standalone Instagram distraction hider ─────────────────────────────────
+// Runs independently — checks storage directly every 2s.
+// Doesn't depend on checkFocusMode or any focus mode variables.
+setInterval(() => {
+  const url = window.location.href
+  if (!url.includes('instagram.com')) return
+  if (!url.includes('/p/') && !url.includes('/reel/')) return
+
+  chrome.storage.local.get('focusModeEnabled', (result) => {
+    if (!result.focusModeEnabled) {
+      // Restore anything we hid
+      document.querySelectorAll('[data-ori-distraction-hidden]').forEach(el => {
+        el.style.display = ''
+        delete el.dataset.oriDistractionHidden
+      })
+      return
+    }
+
+    // Already hidden? Skip.
+    if (document.querySelector('[data-ori-distraction-hidden]')) return
+
+    // Use XPath to find "More posts from" text
+    const triggers = ['More posts from', 'Suggested for you']
+    for (const trigger of triggers) {
+      try {
+        const xpath = `//*[contains(text(), '${trigger}')]`
+        const xr = document.evaluate(xpath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null)
+        for (let i = 0; i < xr.snapshotLength; i++) {
+          const el = xr.snapshotItem(i)
+          if (el.closest('[data-ori-distraction-hidden]')) continue
+          // Walk up to a large container
+          let target = el
+          for (let j = 0; j < 25; j++) {
+            const p = target.parentElement
+            if (!p || p === document.body) break
+            target = p
+            if (p.offsetHeight > 200) break
+          }
+          if (target && target !== document.body) {
+            const parent = target.parentElement
+            if (parent) {
+              const sibs = Array.from(parent.children)
+              const idx = sibs.indexOf(target)
+              for (let k = idx; k < sibs.length; k++) {
+                sibs[k].dataset.oriDistractionHidden = '1'
+                sibs[k].style.display = 'none'
+              }
+              console.log('[Orianna Focus] Hidden "More posts from" section')
+              return
+            }
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback: check textContent of h2, a, span
+    for (const el of document.body.querySelectorAll('h2, h3, a, span')) {
+      const t = el.textContent?.trim()
+      if (!t || t.length > 80) continue
+      if (!triggers.some(tr => t.includes(tr))) continue
+      if (el.closest('[data-ori-distraction-hidden]')) continue
+      let target = el
+      for (let j = 0; j < 25; j++) {
+        const p = target.parentElement
+        if (!p || p === document.body) break
+        target = p
+        if (p.offsetHeight > 200) break
+      }
+      if (target && target !== document.body) {
+        const parent = target.parentElement
+        if (parent) {
+          const sibs = Array.from(parent.children)
+          const idx = sibs.indexOf(target)
+          for (let k = idx; k < sibs.length; k++) {
+            sibs[k].dataset.oriDistractionHidden = '1'
+            sibs[k].style.display = 'none'
+          }
+          console.log('[Orianna Focus] Fallback hidden "More posts from" section')
+          return
+        }
+      }
+    }
+  })
+}, 2000)
+
 } // end of __orianna_loaded guard
