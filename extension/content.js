@@ -2139,5 +2139,5 @@ if (!window.__orianna_distraction_interval) {
       })
       document.body.appendChild(overlay)
     })
-  }, 2000)
+  }, 500)
 }
