@@ -727,6 +727,7 @@ function render() {
           <div class="signup-link">No account? <a href="${ORIANNA_URL}/signup" target="_blank">Sign up free</a></div>
         </div>
       `}
+      ${renderFocusPlatforms()}
       <div class="footer-links">
         <a href="${ORIANNA_URL}" target="_blank">Open Orianna</a>
         <span class="dot">&middot;</span>
@@ -1159,6 +1160,7 @@ function render() {
     `}
 
     ${renderUserBar()}
+    ${renderFocusPlatforms()}
   `
 
   wireFocusToggle()
