@@ -2122,22 +2122,22 @@ if (!window.__orianna_distraction_interval) {
       }
       if (!found) return
 
-      // Walk up from the trigger to find the "More posts from" section.
-      // The section contains the header text AND a grid of thumbnail images.
-      // Stop at the first ancestor that has multiple images (the grid).
-      let target = found
-      for (let j = 0; j < 15; j++) {
-        const p = target.parentElement
-        if (!p || p === document.body) break
-        target = p
-        const imgCount = target.querySelectorAll('img').length
-        // The grid typically has 4+ thumbnails. The post above has 1-2.
-        if (imgCount >= 4) {
-          target.dataset.oriDistractionHidden = '1'
-          target.style.display = 'none'
-          return
-        }
-      }
+      // Cover everything from the trigger element downward with a solid overlay.
+      // This avoids all DOM walk-up issues — we just visually mask the section.
+      const rect = found.getBoundingClientRect()
+      const top = rect.top + window.scrollY
+      const overlay = document.createElement('div')
+      overlay.dataset.oriDistractionHidden = '1'
+      Object.assign(overlay.style, {
+        position: 'absolute',
+        top: top + 'px',
+        left: '0',
+        width: '100%',
+        height: (document.body.scrollHeight - top) + 'px',
+        background: '#000',
+        zIndex: '999999',
+      })
+      document.body.appendChild(overlay)
     })
   }, 2000)
 }
