@@ -2082,13 +2082,48 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 } // end of __orianna_loaded guard
 
 // ─── Standalone Instagram distraction hider ─────────────────────────────────
-// Runs OUTSIDE the guard — always starts, even on re-injection.
-// Checks storage directly every 2s. Fully independent.
-if (!window.__orianna_distraction_interval) {
-  window.__orianna_distraction_interval = setInterval(() => {
-    // Stop if extension was reloaded (context invalidated)
-    try { chrome.runtime.id } catch { clearInterval(window.__orianna_distraction_interval); return }
+// Uses MutationObserver to catch the section the instant it's added to the DOM
+// (before the browser paints it). Fallback interval for edge cases.
 
+function __oriannaApplyOverlay() {
+  if (document.querySelector('[data-ori-distraction-hidden]')) return
+  if (!document.body) return
+
+  const triggers = ['More posts from', 'Suggested for you']
+  for (const trigger of triggers) {
+    const all = document.body.getElementsByTagName('*')
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i]
+      if (el.closest('[data-ori-distraction-hidden]')) continue
+      const it = el.innerText?.trim()
+      if (!it || it.length > 200 || it.length < trigger.length) continue
+      if (it.startsWith(trigger)) {
+        const rect = el.getBoundingClientRect()
+        const top = rect.top + window.scrollY
+        const overlay = document.createElement('div')
+        overlay.dataset.oriDistractionHidden = '1'
+        Object.assign(overlay.style, {
+          position: 'absolute',
+          top: top + 'px',
+          left: '0',
+          width: '100%',
+          height: (document.body.scrollHeight - top) + 'px',
+          background: '#000',
+          zIndex: '999999',
+        })
+        document.body.appendChild(overlay)
+        return true
+      }
+    }
+  }
+  return false
+}
+
+if (!window.__orianna_distraction_setup) {
+  window.__orianna_distraction_setup = true
+
+  function __oriannaCheckDistractions() {
+    try { chrome.runtime.id } catch { return } // extension context dead
     const url = window.location.href
     if (!url.includes('instagram.com')) return
     if (!url.includes('/p/') && !url.includes('/reel/')) return
@@ -2101,43 +2136,28 @@ if (!window.__orianna_distraction_interval) {
         })
         return
       }
-
-      if (document.querySelector('[data-ori-distraction-hidden]')) return
-      if (!document.body) return
-
-      const bodyText = document.body.innerText || ''
-      const hasMorePosts = bodyText.includes('More posts from')
-      const hasSuggested = bodyText.includes('Suggested for you')
-      if (!hasMorePosts && !hasSuggested) return
-
-      const trigger = hasMorePosts ? 'More posts from' : 'Suggested for you'
-      let found = null
-      const all = document.body.getElementsByTagName('*')
-      for (let i = 0; i < all.length; i++) {
-        const el = all[i]
-        if (el.closest('[data-ori-distraction-hidden]')) continue
-        const it = el.innerText?.trim()
-        if (!it || it.length > 200 || it.length < trigger.length) continue
-        if (it.startsWith(trigger)) { found = el; break }
-      }
-      if (!found) return
-
-      // Cover everything from the trigger element downward with a solid overlay.
-      // This avoids all DOM walk-up issues — we just visually mask the section.
-      const rect = found.getBoundingClientRect()
-      const top = rect.top + window.scrollY
-      const overlay = document.createElement('div')
-      overlay.dataset.oriDistractionHidden = '1'
-      Object.assign(overlay.style, {
-        position: 'absolute',
-        top: top + 'px',
-        left: '0',
-        width: '100%',
-        height: (document.body.scrollHeight - top) + 'px',
-        background: '#000',
-        zIndex: '999999',
-      })
-      document.body.appendChild(overlay)
+      __oriannaApplyOverlay()
     })
-  }, 500)
+  }
+
+  // MutationObserver — fires instantly when Instagram adds new nodes
+  const __oriObserver = new MutationObserver((mutations) => {
+    // Quick check: does any added node contain trigger text? (textContent is fast, no reflow)
+    for (const mut of mutations) {
+      for (const node of mut.addedNodes) {
+        if (node.nodeType !== 1) continue
+        const tc = node.textContent
+        if (tc && (tc.includes('More posts from') || tc.includes('Suggested for you'))) {
+          __oriannaCheckDistractions()
+          return
+        }
+      }
+    }
+  })
+  if (document.body) {
+    __oriObserver.observe(document.body, { childList: true, subtree: true })
+  }
+
+  // Fallback interval for edge cases (SPA navigation, lazy load)
+  setInterval(__oriannaCheckDistractions, 2000)
 }
