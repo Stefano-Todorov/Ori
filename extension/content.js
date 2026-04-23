@@ -119,42 +119,36 @@ function checkFocusMode() {
 
 // On allowed Instagram pages (individual posts), hide recommendation sections
 // like "More posts from ___" that pull you into browsing.
-// Uses CSS to hide everything after the main article, plus JS to catch stragglers.
+// JS-only approach: find the trigger text, then hide everything below the main post.
 function hideDistractions() {
   if (!focusModeEnabled || !window.location.href.includes('instagram.com')) return
   const isPostPage = window.location.href.includes('/p/') || window.location.href.includes('/reel/')
-  if (!isPostPage) return
+  if (!isPostPage || !document.body) return
 
-  if (!document.getElementById('orianna-focus-style')) {
-    const style = document.createElement('style')
-    style.id = 'orianna-focus-style'
-    style.textContent = `
-      /* Hide all siblings after the main post article at every nesting level */
-      article ~ *, main article ~ *, [role="main"] article ~ * { display: none !important; }
-      /* Also target the common "more posts" grid pattern */
-      article + div, article + section { display: none !important; }
-    `
-    document.head?.appendChild(style) || document.documentElement.appendChild(style)
-  }
+  // Find the main post article — the first <article> on the page
+  const mainArticle = document.querySelector('article')
+  if (!mainArticle) return
 
-  // JS fallback: find any element whose text starts with "More posts from" and nuke its ancestor
-  if (document.body) {
-    document.body.querySelectorAll('a, span, h2, h3, div').forEach(el => {
-      const t = el.textContent?.trim()
-      if (!t) return
-      if (!(t.startsWith('More posts from') || t.startsWith('Suggested') || t.startsWith('Related'))) return
-      if (el.closest('[data-ori-hidden]')) return
-      // Walk up to a substantial container (min 200px tall or has many children)
-      let target = el.parentElement
-      while (target && target !== document.body) {
-        if (target.offsetHeight > 150 || target.children.length > 3) break
-        target = target.parentElement
-      }
-      if (target && target !== document.body) {
-        target.dataset.oriHidden = '1'
-        target.style.display = 'none'
-      }
-    })
+  // Hide all sibling elements that come AFTER the main article's top-level container.
+  // Walk up from the article to find the container that has siblings after it.
+  let postContainer = mainArticle
+  while (postContainer.parentElement && postContainer.parentElement !== document.body) {
+    const parent = postContainer.parentElement
+    // Check if this parent has content after our container (the recommendations)
+    const siblings = Array.from(parent.children)
+    const idx = siblings.indexOf(postContainer)
+    const hasAfterContent = siblings.slice(idx + 1).some(s => s.offsetHeight > 50 && !s.dataset.oriHidden)
+    if (hasAfterContent) {
+      // Hide all siblings after the post container
+      siblings.slice(idx + 1).forEach(s => {
+        if (!s.dataset.oriHidden && s.offsetHeight > 50) {
+          s.dataset.oriHidden = '1'
+          s.style.display = 'none'
+        }
+      })
+      break
+    }
+    postContainer = parent
   }
 }
 
@@ -173,7 +167,6 @@ function stopHidingDistractions() {
     focusDistractionObserver = null
   }
   // Remove injected style
-  document.getElementById('orianna-focus-style')?.remove()
   // Restore any hidden sections
   document.querySelectorAll('[data-ori-hidden]').forEach(el => {
     el.style.display = ''
