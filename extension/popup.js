@@ -25,7 +25,8 @@ let state = {
   showTagDropdown: false,
   dontAskCompetitor: false,
   focusModeEnabled: false,
-  focusBlockedPlatforms: { tiktok: true, instagram: true, youtube: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true },
+  focusPlatformsOpen: false,
+  focusBlockedPlatforms: { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true },
   showCreateInspo: false,
   createInspoItems: [''],
   createInspoTags: [],
@@ -50,8 +51,8 @@ const LOGO_SVG = '<svg class="logo-icon" viewBox="0 0 64 64" xmlns="http://www.w
 
 const FOCUS_PLATFORM_LABELS = {
   tiktok: 'TikTok', instagram: 'Instagram', youtube: 'YouTube',
-  twitter: 'Twitter / X', reddit: 'Reddit', facebook: 'Facebook',
-  snapchat: 'Snapchat', threads: 'Threads',
+  youtubeShorts: 'YouTube Shorts', twitter: 'Twitter / X', reddit: 'Reddit',
+  facebook: 'Facebook', snapchat: 'Snapchat', threads: 'Threads',
 }
 
 function renderFocusToggle() {
@@ -68,16 +69,26 @@ function renderFocusToggle() {
 function renderFocusPlatforms() {
   if (!state.focusModeEnabled) return ''
   const p = state.focusBlockedPlatforms
-  return `<div class="focus-platforms">${
-    Object.entries(FOCUS_PLATFORM_LABELS).map(([key, label]) =>
-      `<div class="focus-platform-row" data-platform="${key}">
-        <span class="focus-platform-name">${label}</span>
-        <div class="focus-platform-switch ${p[key] ? 'on' : ''}">
-          <div class="focus-switch-knob"></div>
-        </div>
-      </div>`
-    ).join('')
-  }</div>`
+  const enabledCount = Object.keys(FOCUS_PLATFORM_LABELS).filter(k => p[k]).length
+  const total = Object.keys(FOCUS_PLATFORM_LABELS).length
+  const isOpen = state.focusPlatformsOpen
+  return `<div class="focus-dropdown">
+    <div class="focus-dropdown-header" id="focus-dropdown-toggle">
+      <span class="focus-dropdown-label">Blocked platforms</span>
+      <span class="focus-dropdown-count">${enabledCount}/${total}</span>
+      <span class="focus-dropdown-arrow ${isOpen ? 'open' : ''}">▸</span>
+    </div>
+    ${isOpen ? `<div class="focus-platforms">${
+      Object.entries(FOCUS_PLATFORM_LABELS).map(([key, label]) =>
+        `<div class="focus-platform-row" data-platform="${key}">
+          <span class="focus-platform-name">${label}</span>
+          <div class="focus-platform-switch ${p[key] ? 'on' : ''}">
+            <div class="focus-switch-knob"></div>
+          </div>
+        </div>`
+      ).join('')
+    }</div>` : ''}
+  </div>`
 }
 
 function renderHeader({ showAuth = false } = {}) {
@@ -135,6 +146,9 @@ function handlePlatformToggle(platform) {
 
 function wireFocusToggle() {
   document.getElementById('focus-toggle')?.addEventListener('click', handleFocusModeToggle)
+  document.getElementById('focus-dropdown-toggle')?.addEventListener('click', () => {
+    setState({ focusPlatformsOpen: !state.focusPlatformsOpen })
+  })
   document.querySelectorAll('.focus-platform-row').forEach(row => {
     row.addEventListener('click', () => handlePlatformToggle(row.dataset.platform))
   })

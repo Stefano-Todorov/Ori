@@ -77,8 +77,10 @@ const FOCUS_BLOCKED_PATTERNS = {
     /^https?:\/\/(www\.)?instagram\.com\/stories(\/|$)/,
     /^https?:\/\/(www\.)?instagram\.com\/notifications/,
   ],
-  // YouTube: only block Shorts (rest of YouTube stays accessible)
-  youtube:   [/^https?:\/\/(www\.)?youtube\.com\/shorts(\/|$)/],
+  // YouTube: full site block (when enabled)
+  youtube:   [/^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/],
+  // YouTube Shorts only (selective)
+  youtubeShorts: [/^https?:\/\/(www\.)?youtube\.com\/shorts(\/|$)/],
   twitter:   [/^https?:\/\/(www\.)?(twitter\.com|x\.com)/],
   reddit:    [/^https?:\/\/(www\.|old\.)?reddit\.com/],
   facebook:  [/^https?:\/\/(www\.)?(facebook\.com|fb\.com)/],
@@ -95,7 +97,7 @@ function isUrlBlockedByFocusMode(url, blockedPlatforms) {
 }
 
 let focusModeEnabled = false
-let focusBlockedPlatforms = { tiktok: true, instagram: true, youtube: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true }
+let focusBlockedPlatforms = { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true }
 let focusOverlayEl = null
 
 // Expose for re-injection guard
@@ -2186,8 +2188,8 @@ if (!window.__orianna_distraction_setup) {
         __oriannaApplyOverlay()
       }
 
-      // YouTube: hide Shorts shelves on all YouTube pages
-      if (url.includes('youtube.com') && platforms.youtube !== false) {
+      // YouTube: hide Shorts shelves when youtubeShorts is enabled (even if youtube full block is off)
+      if (url.includes('youtube.com') && platforms.youtubeShorts !== false) {
         __oriannaHideYouTubeShorts()
       }
     })
