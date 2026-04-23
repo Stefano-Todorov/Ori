@@ -236,7 +236,7 @@ function TagDropdown({ tags, allTags, onChange }: {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
+        className="flex items-center gap-1 h-full px-2 rounded-r-xl bg-purple-700 hover:bg-purple-800 text-white border-l border-purple-400/30 transition-colors"
       >
         <Tag size={13} />
         <ChevronDown size={10} />
