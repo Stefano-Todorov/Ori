@@ -70,6 +70,20 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
 
   const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
 
+  // Zoom Y-axis to fit only the currently-visible lines so variation looks bigger.
+  const visibleKeys = PLATFORMS.filter(p => active.has(p.key)).map(p => p.key)
+  const visibleValues = data.flatMap(d =>
+    visibleKeys.map(k => d[k as keyof typeof d]).filter((v): v is number => typeof v === 'number')
+  )
+  const minValue = visibleValues.length ? Math.min(...visibleValues) : 0
+  const maxValue = visibleValues.length ? Math.max(...visibleValues) : 0
+  const range = maxValue - minValue
+  const padding = range > 0 ? range * 0.25 : Math.max(maxValue * 0.05, 1)
+  const yDomain: [number, number] = [
+    Math.max(0, Math.floor(minValue - padding)),
+    Math.ceil(maxValue + padding),
+  ]
+
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -106,11 +120,8 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
               tick={{ fontSize: 11 }}
               width={45}
               className="fill-muted-foreground"
-              domain={[
-                (dataMin: number) => Math.max(0, Math.floor(dataMin * 0.95)),
-                (dataMax: number) => Math.ceil(dataMax * 1.05),
-              ]}
-              allowDataOverflow={false}
+              domain={yDomain}
+              allowDecimals={false}
             />
             <Tooltip
               formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''}
