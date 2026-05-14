@@ -101,7 +101,17 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-            <YAxis tickFormatter={formatNumber} tick={{ fontSize: 11 }} width={45} className="fill-muted-foreground" />
+            <YAxis
+              tickFormatter={formatNumber}
+              tick={{ fontSize: 11 }}
+              width={45}
+              className="fill-muted-foreground"
+              domain={[
+                (dataMin: number) => Math.max(0, Math.floor(dataMin * 0.95)),
+                (dataMax: number) => Math.ceil(dataMax * 1.05),
+              ]}
+              allowDataOverflow={false}
+            />
             <Tooltip
               formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''}
               contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
