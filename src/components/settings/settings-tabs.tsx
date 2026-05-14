@@ -6,13 +6,11 @@ import { SettingsForm } from '@/components/settings/settings-form'
 import { BillingSection } from '@/components/settings/billing-section'
 import { UsageSection } from '@/components/settings/usage-section'
 import { FeedbackSection } from '@/components/settings/feedback-section'
-import { MobileSection } from '@/components/settings/mobile-section'
-import { User, CreditCard, BarChart3, MessageSquareWarning, Smartphone } from 'lucide-react'
+import { User, CreditCard, BarChart3, MessageSquareWarning } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: User },
-  { id: 'mobile', label: 'Mobile', icon: Smartphone },
   { id: 'usage', label: 'Usage', icon: BarChart3 },
   { id: 'billing', label: 'Billing', icon: CreditCard },
   { id: 'feedback', label: 'Feedback', icon: MessageSquareWarning },
@@ -29,7 +27,6 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
     if (tab === 'billing') setActiveTab('billing')
     if (tab === 'usage') setActiveTab('usage')
     if (tab === 'feedback') setActiveTab('feedback')
-    if (tab === 'mobile') setActiveTab('mobile')
   }, [searchParams])
 
   return (
@@ -58,7 +55,6 @@ export function SettingsTabs({ profile, socialAccounts }: { profile: Profile | n
 
       {/* Tab content */}
       {activeTab === 'profile' && <SettingsForm profile={profile} socialAccounts={socialAccounts} />}
-      {activeTab === 'mobile' && <MobileSection />}
       {activeTab === 'usage' && <UsageSection />}
       {activeTab === 'billing' && <BillingSection />}
       {activeTab === 'feedback' && <FeedbackSection />}
