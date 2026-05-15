@@ -1321,7 +1321,7 @@ function shortcodeToMediaId(shortcode) {
   return id.toString()
 }
 
-async function fetchInstagramMetrics(items) {
+async function fetchInstagramMetrics(items, maxPosts = Infinity) {
   const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? ''
   const igHeaders = { 'X-IG-App-ID': '936619743392459', 'X-CSRFToken': csrfToken }
 
@@ -1334,27 +1334,29 @@ async function fetchInstagramMetrics(items) {
     if (m) itemShortcodes.push({ item, shortcode: m[2] })
   }
 
-  if (igMetricsCache.size === 0) {
+  if (igMetricsCache.size < maxPosts) {
     // Method 1: Parse embedded <script> tags (both typed and untyped)
-    console.log('[Orianna] Parsing embedded page data...')
-    const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
-    for (const script of scripts) {
-      try {
-        const text = script.textContent?.trim()
-        if (!text || text.length < 50 || text[0] !== '{') continue
-        const data = JSON.parse(text)
-        const nodes = extractMediaNodes(data)
-        nodes.forEach(cacheMediaNode)
-      } catch {}
+    if (igMetricsCache.size === 0) {
+      console.log('[Orianna] Parsing embedded page data...')
+      const scripts = document.querySelectorAll('script[type="application/json"], script:not([src])')
+      for (const script of scripts) {
+        try {
+          const text = script.textContent?.trim()
+          if (!text || text.length < 50 || text[0] !== '{') continue
+          const data = JSON.parse(text)
+          const nodes = extractMediaNodes(data)
+          nodes.forEach(cacheMediaNode)
+        } catch {}
+      }
+      console.log('[Orianna] Found', igMetricsCache.size, 'posts from embedded data')
     }
-    console.log('[Orianna] Found', igMetricsCache.size, 'posts from embedded data')
 
-    // Method 2: Try API if we have few posts (embedded data often only has ~12)
-    if (igMetricsCache.size < 50) {
+    // Method 2: Try API if we have fewer posts than requested
+    if (igMetricsCache.size < maxPosts) {
       const handle = window.location.pathname.match(/\/([a-zA-Z0-9._]+)/)?.[1]
       if (handle) {
         try {
-          console.log('[Orianna] Trying API for', handle)
+          console.log('[Orianna] Trying API for', handle, '(target:', maxPosts === Infinity ? 'all' : maxPosts, ')')
           const profileRes = await fetchWithRetry(
             `https://www.instagram.com/api/v1/users/web_profile_info/?username=${handle}`,
             { headers: igHeaders }
@@ -1372,25 +1374,31 @@ async function fetchInstagramMetrics(items) {
             const userId = profileData?.data?.user?.id
             if (userId) {
               currentProfileUserId = String(userId)
-              console.log('[Orianna] Got user ID:', userId, '— fetching feed...')
-              let nextMaxId = null
-              for (let page = 0; ; page++) {
-                const feedUrl = `https://www.instagram.com/api/v1/feed/user/${userId}/?count=50${nextMaxId ? `&max_id=${nextMaxId}` : ''}`
-                const feedRes = await fetchWithRetry(feedUrl, { headers: igHeaders })
-                if (!feedRes) break
-                const feedData = await feedRes.json()
-                const nodes = extractMediaNodes(feedData)
-                console.log(`[Orianna] Feed page ${page}: ${nodes.length} nodes, more_available=${feedData.more_available}, nextMaxId=${feedData.next_max_id ? 'yes' : 'no'}`)
-                nodes.forEach(n => cacheMediaNode(n, userId))
-                nextMaxId = feedData.next_max_id
-                if (!feedData.more_available || !nextMaxId) break
-              }
-              console.log('[Orianna] Cached', igMetricsCache.size, 'posts from feed API')
+              console.log('[Orianna] Got user ID:', userId, '— fetching feed + reels in parallel...')
 
-              // Also fetch reels — feed endpoint often excludes them
-              try {
+              // Run feed and reels pagination in parallel — both endpoints have
+              // overlapping but non-identical coverage, so we want both. Each
+              // loop stops independently once the combined cache hits maxPosts.
+              const feedTask = (async () => {
+                let nextMaxId = null
+                for (let page = 0; ; page++) {
+                  if (igMetricsCache.size >= maxPosts) break
+                  const feedUrl = `https://www.instagram.com/api/v1/feed/user/${userId}/?count=50${nextMaxId ? `&max_id=${nextMaxId}` : ''}`
+                  const feedRes = await fetchWithRetry(feedUrl, { headers: igHeaders })
+                  if (!feedRes) break
+                  const feedData = await feedRes.json()
+                  const nodes = extractMediaNodes(feedData)
+                  console.log(`[Orianna] Feed page ${page}: ${nodes.length} nodes, cache=${igMetricsCache.size}/${maxPosts === Infinity ? '∞' : maxPosts}`)
+                  nodes.forEach(n => cacheMediaNode(n, userId))
+                  nextMaxId = feedData.next_max_id
+                  if (!feedData.more_available || !nextMaxId) break
+                }
+              })().catch(err => console.log('[Orianna] Feed API error:', err.message))
+
+              const reelsTask = (async () => {
                 let reelsMaxId = null
                 for (let page = 0; ; page++) {
+                  if (igMetricsCache.size >= maxPosts) break
                   const reelsUrl = `https://www.instagram.com/api/v1/clips/user/?target_user_id=${userId}&page_size=50${reelsMaxId ? `&max_id=${reelsMaxId}` : ''}`
                   const reelsRes = await fetchWithRetry(reelsUrl, {
                     method: 'POST',
@@ -1400,7 +1408,7 @@ async function fetchInstagramMetrics(items) {
                   if (!reelsRes) break
                   const reelsData = await reelsRes.json()
                   const reelItems = reelsData?.items ?? []
-                  console.log(`[Orianna] Reels page ${page}: ${reelItems.length} items, more=${reelsData?.paging_info?.more_available}`)
+                  console.log(`[Orianna] Reels page ${page}: ${reelItems.length} items, cache=${igMetricsCache.size}/${maxPosts === Infinity ? '∞' : maxPosts}`)
                   for (const ri of reelItems) {
                     const node = ri?.media
                     if (node) cacheMediaNode(node, userId)
@@ -1409,10 +1417,10 @@ async function fetchInstagramMetrics(items) {
                   reelsMaxId = pagingInfo?.max_id
                   if (!pagingInfo?.more_available || !reelsMaxId) break
                 }
-                console.log('[Orianna] Total cached after reels:', igMetricsCache.size)
-              } catch (err) {
-                console.log('[Orianna] Reels API error:', err.message)
-              }
+              })().catch(err => console.log('[Orianna] Reels API error:', err.message))
+
+              await Promise.all([feedTask, reelsTask])
+              console.log('[Orianna] Total cached:', igMetricsCache.size)
             }
           }
         } catch (err) {
@@ -1435,9 +1443,11 @@ async function fetchInstagramMetrics(items) {
     }
   }
 
-  // Fallback: fetch individual post info for unmatched shortcodes
-  // The info endpoint needs numeric media IDs, not shortcodes
-  if (unmatched.length > 0) {
+  // Fallback: fetch individual post info for unmatched shortcodes.
+  // Skip when we already have plenty of cached posts — the per-item /media/info/
+  // calls are slow (300ms batch gaps) and rarely add value once the feed+reels
+  // APIs have populated the cache.
+  if (unmatched.length > 0 && igMetricsCache.size < 50) {
     const toFetch = unmatched.slice(0, 30)
     console.log('[Orianna] Fetching', toFetch.length, 'individual posts...')
     // Batch in groups of 5 to avoid rate limits
@@ -2009,12 +2019,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const items = grid?.items ?? []
       const platform = grid?.platform ?? (isInstagram ? 'instagram' : null)
       const sortBy = msg.sortBy ?? 'views'
+      const sortCount = Number.isFinite(msg.sortCount) ? msg.sortCount : 25
+      // Fetch ~2× what the user wants to display so the ranking is meaningful
+      // without paginating through the whole account. Hard ceiling of 200.
+      const maxPosts = Math.min(Math.max(sortCount * 2, sortCount), 200)
       let posts = []
 
       if (platform === 'instagram') {
-        // Instagram: fetch metrics from API — this populates igMetricsCache with ALL posts
-        // Pass whatever DOM items we found (may be few/none due to virtualized grid)
-        await fetchInstagramMetrics(items)
+        // Instagram: fetch metrics from API, capped at maxPosts to keep the
+        // sort fast. Pass whatever DOM items we found (may be few/none due to
+        // virtualized grid).
+        await fetchInstagramMetrics(items, maxPosts)
 
         // Build posts from the full cache, not just DOM elements
         // (Instagram virtualizes the grid, so most posts aren't in the DOM)

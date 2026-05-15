@@ -513,7 +513,7 @@ async function handleSort() {
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   try {
-    const result = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SORTED_METRICS', sortBy })
+    const result = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SORTED_METRICS', sortBy, sortCount })
     if (result.error) {
       setState({ saving: null, errors: { sort: result.error } })
     } else {
@@ -658,8 +658,10 @@ function render() {
 
       ${isProfile ? `
         <div class="profile-header">
-          <span class="platform-badge ${(p.platform || '').toLowerCase()}">${escHtml(p.platform)}</span>
-          <span class="detected-handle">@${escHtml(p.handle)}</span>
+          <div class="profile-header-row">
+            <span class="platform-badge ${(p.platform || '').toLowerCase()}">${escHtml(p.platform)}</span>
+            <span class="detected-handle">@${escHtml(p.handle)}</span>
+          </div>
         </div>
 
         <div class="sort-box">
@@ -947,13 +949,29 @@ function render() {
     app.innerHTML = `
       ${renderHeader({ showAuth: true })}
 
+      ${(() => {
+        const platformLower = (p.platform || '').toLowerCase()
+        const isTrackedHere = mc && mc.platforms.some(pl => pl.toLowerCase() === platformLower)
+        const isTrackedElsewhere = mc && !isTrackedHere
+        const otherPlatforms = isTrackedElsewhere ? mc.platforms.map(pl => pl.charAt(0).toUpperCase() + pl.slice(1)).join(', ') : ''
+        return `
       <div class="profile-header">
-        <span class="platform-badge ${(p.platform || '').toLowerCase()}">${p.platform}</span>
-        <span class="detected-handle">@${p.handle}</span>
-        ${mc && mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase()) ? `<span class="competitor-tag">Tracked</span>` : ''}
-        ${mc && mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase()) ? `<span style="font-size:10px;color:#3f3f46;margin-left:auto">${mc.postCount} tracked</span>` : ''}
-        ${mc && !mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase()) ? `<span style="font-size:10px;color:#a78bfa;margin-left:auto">Tracked on ${mc.platforms.map(pl => pl.charAt(0).toUpperCase() + pl.slice(1)).join(', ')}</span>` : ''}
+        <div class="profile-header-row">
+          <span class="platform-badge ${platformLower}">${p.platform}</span>
+          <span class="detected-handle">@${p.handle}</span>
+          ${isTrackedHere ? `<span class="competitor-tag">Tracked</span>` : ''}
+        </div>
+        ${isTrackedHere ? `<div class="profile-meta">${mc.postCount} ${mc.postCount === 1 ? 'post' : 'posts'} tracked</div>` : ''}
+        ${isTrackedElsewhere ? `<div class="profile-meta tracked-on">Also tracked on ${otherPlatforms}</div>` : ''}
+        ${!state.isOwnProfile && !isTrackedHere ? `
+          <button class="btn-track-inline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''}>
+            ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : mc ? `+ Also track on ${p.platform}` : `+ Track @${p.handle} as Competitor`}
+          </button>
+          ${state.messages.addCompetitor ? `<div class="success-msg">${state.messages.addCompetitor}</div>` : ''}
+          ${state.errors.addCompetitor ? `<div class="error-msg">${escHtml(state.errors.addCompetitor)}</div>` : ''}
+        ` : ''}
       </div>
+      `})()}
 
       ${state.isOwnProfile ? `
         <div class="profile-actions">
@@ -962,16 +980,6 @@ function render() {
           </button>
           ${state.messages.sync ? `<div class="success-msg">${state.messages.sync}</div>` : ''}
           ${state.errors.sync ? `<div class="error-msg">${escHtml(state.errors.sync)}</div>` : ''}
-        </div>
-      ` : ''}
-
-      ${!state.isOwnProfile && (!mc || !mc.platforms.some(pl => pl.toLowerCase() === (p.platform || '').toLowerCase())) ? `
-        <div class="profile-actions">
-          <button class="btn btn-outline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''}>
-            ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : mc ? `Also track on ${p.platform}` : `Track @${p.handle} as Competitor`}
-          </button>
-          ${state.messages.addCompetitor ? `<div class="success-msg">${state.messages.addCompetitor}</div>` : ''}
-          ${state.errors.addCompetitor ? `<div class="error-msg">${escHtml(state.errors.addCompetitor)}</div>` : ''}
         </div>
       ` : ''}
 

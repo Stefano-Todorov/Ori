@@ -97,7 +97,7 @@ export function OnboardingChat() {
           setStreaming(false)
           setCompleted(true)
 
-          // Redirect after a brief pause so the user can read the welcome message
+          // Brief pause so the completion banner registers, then redirect
           setTimeout(() => {
             if (plan) {
               router.push(
@@ -106,7 +106,7 @@ export function OnboardingChat() {
             } else {
               router.push('/dashboard')
             }
-          }, 3000)
+          }, 800)
           return
         }
 

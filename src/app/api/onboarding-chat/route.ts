@@ -263,32 +263,8 @@ export async function POST(request: NextRequest) {
             return
           }
 
-          // Stream the follow-up welcome message
-          await streamResponse(
-            {
-              model: MODEL,
-              max_tokens: 1024,
-              system: systemPrompt,
-              tools: [SAVE_PROFILE_TOOL],
-              messages: [
-                ...messages,
-                { role: 'assistant' as const, content },
-                {
-                  role: 'user' as const,
-                  content: [
-                    {
-                      type: 'tool_result' as const,
-                      tool_use_id: toolUseBlock.id,
-                      content: 'Profile saved successfully. Now send a warm welcome message summarizing what you learned and what you\'ll help them with.',
-                    },
-                  ],
-                },
-              ],
-            },
-            controller,
-            encoder,
-          )
-
+          // The wrap-up text streamed before the tool_use serves as the welcome
+          // message — no need for a second Claude round-trip here.
           controller.enqueue(encoder.encode('\n__ONBOARDING_COMPLETE__'))
         }
 
