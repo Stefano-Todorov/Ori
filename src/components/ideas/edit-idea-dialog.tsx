@@ -374,7 +374,7 @@ export function EditIdeaDialog({
                       <Plus size={13} />
                       Save & add new
                     </button>
-                    <InfoTooltip text="Save this idea and immediately open a blank form to add another one." />
+                    <InfoTooltip placement="top" align="end" text="Save this idea and immediately open a blank form to add another one." />
                   </div>
                 )}
                 {onDuplicate && (
@@ -387,7 +387,7 @@ export function EditIdeaDialog({
                       <Copy size={13} />
                       Save & duplicate
                     </button>
-                    <InfoTooltip text="Save this idea and open a new form pre-filled with the same details — great for variations." />
+                    <InfoTooltip placement="top" align="end" text="Save this idea and open a new form pre-filled with the same details — great for variations." />
                   </div>
                 )}
               </div>
@@ -652,7 +652,7 @@ export function AddIdeaDialog({
                   <Plus size={13} />
                   Save & add new
                 </button>
-                <InfoTooltip text="Save this idea and immediately open a blank form to add another one." />
+                <InfoTooltip placement="top" align="end" text="Save this idea and immediately open a blank form to add another one." />
               </div>
               <div className="flex-1 flex items-center gap-1">
                 <button
@@ -679,7 +679,7 @@ export function AddIdeaDialog({
                   <Copy size={13} />
                   Save & duplicate
                 </button>
-                <InfoTooltip text="Save this idea and open a new form pre-filled with the same details — great for variations." />
+                <InfoTooltip placement="top" align="end" text="Save this idea and open a new form pre-filled with the same details — great for variations." />
               </div>
             </div>
           </div>

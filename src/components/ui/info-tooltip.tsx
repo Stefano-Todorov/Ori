@@ -5,9 +5,13 @@ import { HelpCircle } from 'lucide-react'
 
 interface Props {
   text: string
+  /** Which side of the trigger to render on. Use `top` when the trigger sits at the bottom of a scrolling container. */
+  placement?: 'top' | 'bottom'
+  /** Which edge of the trigger to align to. Use `end` when the trigger is near the right edge. */
+  align?: 'start' | 'end'
 }
 
-export function InfoTooltip({ text }: Props) {
+export function InfoTooltip({ text, placement = 'bottom', align = 'start' }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -22,6 +26,12 @@ export function InfoTooltip({ text }: Props) {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
+  const isTop = placement === 'top'
+  const isEnd = align === 'end'
+  const tooltipPos = `${isTop ? 'bottom-full mb-2' : 'top-full mt-2'} ${isEnd ? 'right-0' : 'left-0'}`
+  // Arrow's visible borders form the corner that points toward the trigger.
+  const arrowPos = `${isTop ? 'top-full -mt-1 border-r border-b' : 'bottom-full -mb-1 border-l border-t'} ${isEnd ? 'right-3' : 'left-3'}`
+
   return (
     <div ref={ref} className="relative inline-flex">
       <button
@@ -35,9 +45,9 @@ export function InfoTooltip({ text }: Props) {
         <HelpCircle size={18} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-64 px-3.5 py-2.5 rounded-xl bg-[#16161e] border border-white/10 shadow-xl text-xs text-muted-foreground leading-relaxed animate-in fade-in-0 zoom-in-95 duration-150">
+        <div className={`absolute ${tooltipPos} z-50 w-64 px-3.5 py-2.5 rounded-xl bg-[#16161e] border border-white/10 shadow-xl text-xs text-muted-foreground leading-relaxed animate-in fade-in-0 zoom-in-95 duration-150`}>
           {text}
-          <div className="absolute left-3 bottom-full w-2 h-2 rotate-45 bg-[#16161e] border-l border-t border-white/10" />
+          <div className={`absolute ${arrowPos} w-2 h-2 rotate-45 bg-[#16161e] border-white/10`} />
         </div>
       )}
     </div>
