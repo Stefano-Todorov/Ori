@@ -2123,6 +2123,26 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true
   }
 
+  if (msg.type === 'PREWARM_METRICS') {
+    // Silently populate igMetricsCache so a subsequent GET_SORTED_METRICS
+    // returns instantly. No progress broadcasts, no UI side effects.
+    (async () => {
+      const host = window.location.hostname
+      if (!host.includes('instagram.com')) { sendResponse({ ok: false, reason: 'not-instagram' }); return }
+      const grid = findGridAndItems()
+      const items = grid?.items ?? []
+      const sortCount = Number.isFinite(msg.sortCount) ? msg.sortCount : 25
+      const maxPosts = Math.min(Math.max(sortCount * 2, sortCount), 200)
+      try {
+        await fetchInstagramMetrics(items, maxPosts)
+        sendResponse({ ok: true, cached: igMetricsCache.size })
+      } catch (err) {
+        sendResponse({ ok: false, reason: err?.message ?? 'unknown' })
+      }
+    })()
+    return true
+  }
+
   return true
 })
 

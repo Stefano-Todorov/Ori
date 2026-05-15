@@ -303,10 +303,12 @@ async function init() {
     }
   }
 
-  // Pre-warm the sort cache the moment the profile view renders, so by the
-  // time the user reads the popup the leaderboard is already populated.
-  if (view === 'profile' && state.sortedPosts.length === 0 && state.saving !== 'sorting') {
-    runSort(state.sortBy ?? 'views', state.sortCount ?? 25)
+  // Pre-warm the sort cache silently in the background. No UI changes —
+  // when the user clicks Sort the cache will already be warm so results
+  // appear (near) instantly. Only Instagram benefits; TikTok's bridge
+  // already populates its cache at document_start.
+  if (view === 'profile' && postData?.platform === 'instagram') {
+    chrome.tabs.sendMessage(tab.id, { type: 'PREWARM_METRICS', sortCount: state.sortCount ?? 25 }).catch(() => {})
   }
 }
 
