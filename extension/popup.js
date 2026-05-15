@@ -880,8 +880,9 @@ function render() {
         <div class="bookmark-list">${listHtml}</div>
 
         <div class="bookmark-footer">
-          <button class="btn btn-primary" id="import-btn" ${state.saving === 'bulk-import' || checkedCount === 0 ? 'disabled' : ''}>
+          <button class="btn btn-primary" id="import-btn" ${state.saving === 'bulk-import' || checkedCount === 0 ? 'disabled' : ''} title="Add the checked saved posts to your Inspo board in one go.">
             ${state.saving === 'bulk-import' ? '<span class="spinner"></span> Importing...' : `Import ${checkedCount} as Inspo`}
+            <span class="btn-help">?</span>
           </button>
           ${state.importProgress ? `
             <div class="success-msg">
@@ -964,8 +965,9 @@ function render() {
         ${isTrackedHere ? `<div class="profile-meta">${mc.postCount} ${mc.postCount === 1 ? 'post' : 'posts'} tracked</div>` : ''}
         ${isTrackedElsewhere ? `<div class="profile-meta tracked-on">Also tracked on ${otherPlatforms}</div>` : ''}
         ${!state.isOwnProfile && !isTrackedHere ? `
-          <button class="btn-track-inline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''}>
+          <button class="btn-track-inline" id="add-competitor-btn" ${state.saving === 'add-competitor' ? 'disabled' : ''} title="Track this account's posts so you can compare performance and spot what works in your niche.">
             ${state.saving === 'add-competitor' ? '<span class="spinner"></span> Adding...' : mc ? `+ Also track on ${p.platform}` : `+ Track @${p.handle} as Competitor`}
+            <span class="btn-help">?</span>
           </button>
           ${state.messages.addCompetitor ? `<div class="success-msg">${state.messages.addCompetitor}</div>` : ''}
           ${state.errors.addCompetitor ? `<div class="error-msg">${escHtml(state.errors.addCompetitor)}</div>` : ''}
@@ -975,8 +977,9 @@ function render() {
 
       ${state.isOwnProfile ? `
         <div class="profile-actions">
-          <button class="btn btn-primary" id="sync-my-videos-btn" ${state.saving === 'syncing-videos' ? 'disabled' : ''}>
+          <button class="btn btn-primary" id="sync-my-videos-btn" ${state.saving === 'syncing-videos' ? 'disabled' : ''} title="Import your latest posts from this profile into your Orianna dashboard for analytics.">
             ${state.saving === 'syncing-videos' ? '<span class="spinner"></span> Syncing...' : '🔄 Sync My Videos'}
+            <span class="btn-help">?</span>
           </button>
           ${state.messages.sync ? `<div class="success-msg">${state.messages.sync}</div>` : ''}
           ${state.errors.sync ? `<div class="error-msg">${escHtml(state.errors.sync)}</div>` : ''}
@@ -997,7 +1000,7 @@ function render() {
             <option value="25" ${sortCount === 25 ? 'selected' : ''}>25</option>
             <option value="50" ${sortCount === 50 ? 'selected' : ''}>50</option>
           </select>
-          <button class="btn btn-primary" id="sort-btn" ${state.saving === 'sorting' ? 'disabled' : ''}>
+          <button class="btn btn-primary" id="sort-btn" ${state.saving === 'sorting' ? 'disabled' : ''} title="Rank the visible posts on this profile by views, likes, or comments.">
             ${state.saving === 'sorting' ? '<span class="spinner"></span>' : 'Sort'}
           </button>
         </div>
@@ -1084,6 +1087,7 @@ function render() {
         <div class="save-row">
           <button class="btn btn-primary save-main-btn" id="inspiration-btn" ${state.saving ? 'disabled' : ''} title="Save this video to your Inspo board so you can study what works and turn it into your own idea later.">
             ${state.saving === 'inspiration' ? '<span class="spinner"></span> Saving...' : '💾 Save as Inspiration'}
+            <span class="btn-help">?</span>
           </button>
           <button class="tag-dropdown-btn" id="tag-dropdown-btn" title="Add tags">🏷️ ▾</button>
         </div>
@@ -1126,6 +1130,7 @@ function render() {
 
         <button class="btn btn-secondary-alt" id="create-inspo-btn" ${state.saving ? 'disabled' : ''} title="Turn this video into a content idea on your Ideas board — describe what you'd do differently.">
           ${state.saving === 'create-inspo' ? '<span class="spinner"></span> Saving...' : '✨ Create from Inspo'}
+          <span class="btn-help">?</span>
         </button>
         ${state.showCreateInspo ? `
           <div class="create-inspo-panel">
@@ -1176,6 +1181,7 @@ function render() {
 
         <button class="btn btn-secondary" id="download-btn" ${state.saving ? 'disabled' : ''} title="Download this video to your device — no watermark.">
           ${state.saving === 'download' ? '<span class="spinner"></span> Downloading...' : '⬇️ Download'}
+          <span class="btn-help">?</span>
         </button>
         ${state.messages.download ? `<div class="success-msg">${escHtml(state.messages.download)}</div>` : ''}
         ${state.errors.download ? `<div class="error-msg">${escHtml(state.errors.download)}</div>` : ''}

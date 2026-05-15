@@ -99,7 +99,7 @@
     .detected-row { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
     .detected-handle { font-size: 14px; color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     .platform-badge {
-      font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+      font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
       color: #fff; text-transform: uppercase;
       letter-spacing: 0.05em; flex-shrink: 0;
     }
@@ -200,9 +200,49 @@
       transition: all 0.2s ease;
       display: flex; align-items: center; justify-content: center; gap: 6px;
     }
+    .btn { position: relative; }
     .btn:hover:not(:disabled) { transform: translateY(-1px); }
     .btn:active:not(:disabled) { transform: translateY(0); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Help indicator on buttons — tooltip is provided by the button's title attr */
+    .btn-help {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.85);
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-outline .btn-help {
+      background: rgba(168,85,247,0.18);
+      color: #c4b5fd;
+    }
+    .btn-track-inline { position: relative; }
+    .btn-track-inline .btn-help {
+      position: absolute;
+      top: 6px; right: 8px;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.85);
+      font-size: 9px; font-weight: 700; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+    }
+    /* Save-row main button has no right radius — shift ? a bit inward to avoid the joint */
+    .save-row .save-main-btn .btn-help { right: 10px; }
 
     /* Primary CTA — Save as Inspiration */
     .btn-primary {
@@ -287,16 +327,60 @@
 
     /* Profile view */
     .profile-header {
-      margin: 12px 16px 8px;
-      padding: 10px 14px;
+      margin: 12px 16px 10px;
+      padding: 14px 16px;
       background: #1a1a2e;
       border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .profile-header-row {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      min-width: 0;
+    }
+    .profile-header-row .detected-handle {
+      flex: 1;
+      font-size: 15px;
+    }
+    .profile-meta {
+      font-size: 10.5px;
+      color: #71717a;
+      margin-top: -4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      line-height: 1.4;
+    }
+    .profile-meta.tracked-on { color: #a78bfa; }
+    .profile-meta .meta-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: currentColor; opacity: 0.4;
     }
     .profile-actions { padding: 0 16px 8px; }
+
+    /* Inline track-as-competitor CTA inside profile header */
+    .btn-track-inline {
+      width: 100%;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+      transition: all 0.2s ease;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-track-inline:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,58,237,0.45); }
+    .btn-track-inline:active:not(:disabled) { transform: translateY(0); }
+    .btn-track-inline:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .sort-label { font-size: 11px; color: #52525b; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; font-weight: 600; }
 
