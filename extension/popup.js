@@ -16,7 +16,6 @@ let state = {
   matchedCompetitor: null,
   view: 'loading',
   ideas: [],
-  analysis: null,
   saving: null,
   messages: {},
   errors: {},
@@ -772,7 +771,7 @@ function render() {
       ` : `
         <div class="no-post">
           <span style="font-size:20px;display:block;margin-bottom:6px">✦</span>
-        Open any TikTok or Instagram post<br>to capture, analyze, or download it
+        Open any TikTok or Instagram post<br>to capture or download it
         </div>
       `}
 
@@ -1259,7 +1258,7 @@ function render() {
     ` : `
       <div class="no-post">
         <span style="font-size:20px;display:block;margin-bottom:6px">✦</span>
-        Open any TikTok or Instagram post<br>to capture, analyze, or download it
+        Open any TikTok or Instagram post<br>to capture or download it
       </div>
     `}
 

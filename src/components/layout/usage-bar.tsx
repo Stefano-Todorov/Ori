@@ -13,9 +13,6 @@ interface UsageData {
 const FEATURE_LABELS: Record<string, string> = {
   coach_messages: 'Coach',
   script_generations: 'Scripts',
-  idea_generations: 'Ideas',
-  competitor_analyze: 'Analysis',
-  competitor_ideas: 'Comp Ideas',
   downloads: 'Downloads',
 }
 

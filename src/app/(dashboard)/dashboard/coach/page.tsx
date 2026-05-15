@@ -26,7 +26,7 @@ export default async function CoachPage() {
       <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-border">
         <h1 className="text-2xl font-bold text-foreground">AI Coach</h1>
         <p className="text-muted-foreground text-[15px] mt-1">
-          Your AI marketing manager — strategy, content ideas, competitor analysis, and growth.
+          Your AI marketing manager — strategy, content ideas, competitor research, and growth.
         </p>
       </div>
       <CoachChat initialHistory={history ?? []} />

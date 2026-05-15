@@ -38,7 +38,7 @@ export default async function InspoPage() {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             Inspo
-            <InfoTooltip text="Save trending videos that inspire you. Analyze what makes them work, then turn the best ones into your own content ideas." />
+            <InfoTooltip text="Save trending videos that inspire you, then turn the best ones into your own content ideas." />
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Save videos that inspire you. Study what works, then turn the best ones into your own ideas.
@@ -49,7 +49,7 @@ export default async function InspoPage() {
 
       <DismissibleTip storageKey="inspo-how-it-works" title="How Inspo works">
         Save videos that catch your eye — great hooks, clever angles, high engagement. Add notes on <em>why</em> they work.
-        Use AI to analyze what made them perform. When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any inspo into your own video concept on the Ideas board.
+        When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any inspo into your own video concept on the Ideas board.
       </DismissibleTip>
 
       <InspoList posts={posts} archivedPosts={archived} allTags={allTags} />

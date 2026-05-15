@@ -737,7 +737,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             Ideas
-            <InfoTooltip text="Your video idea backlog. Add ideas manually, from AI coach suggestions, or from competitor analysis. Track each idea from concept through recording, editing, and posting." />
+            <InfoTooltip text="Your video idea backlog. Add ideas manually, from AI coach suggestions, or from saved inspo. Track each idea from concept through recording, editing, and posting." />
           </h2>
           <span className="text-xs text-[#52525b] bg-white/[0.04] border border-white/[0.06] rounded-full px-2.5 py-0.5 font-medium">
             {hasActiveFilters ? `${filtered.length} of ${ideas.length}` : ideas.length} idea{(hasActiveFilters ? filtered.length : ideas.length) !== 1 ? 's' : ''}
@@ -877,7 +877,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
             <EmptyState
               icon={Lightbulb}
               title="No ideas yet"
-              description="Collect video ideas from your AI coach, competitor analysis, or add your own. Track them from concept to posted."
+              description="Collect video ideas from your AI coach, saved inspo, or add your own. Track them from concept to posted."
               action={{ label: 'Add your first idea', onClick: () => setAddOpen(true) }}
             />
           ) : (

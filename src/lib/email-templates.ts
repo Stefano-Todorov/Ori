@@ -95,13 +95,13 @@ export function upgradeNudgeEmail(name: string, appUrl: string): { subject: stri
       <p>Your free Starter plan includes:</p>
       <div class="card">
         <h3>Starter (Free)</h3>
-        <p>3 coach messages, 1 script, and 1 idea generation per month</p>
+        <p>3 coach messages and 1 script generation per month</p>
       </div>
 
-      <p>If you're ready to level up, Plus unlocks 25 coach messages, 10 scripts, and 10 ideas per month — for just $5.99/mo:</p>
+      <p>If you're ready to level up, Plus unlocks more AI, video downloads, and more competitors — for just $5.99/mo:</p>
       <div class="card">
         <h3>Plus — $5.99/mo</h3>
-        <p>25 coach messages, 10 scripts, 10 idea generations, competitor analysis, and more. Or save with yearly billing at $4.17/mo.</p>
+        <p>25 coach messages, 10 scripts, 10 competitors tracked, and 30 video downloads per month. Or save with yearly billing at $4.17/mo.</p>
       </div>
 
       <a href="${appUrl}/dashboard/settings" class="btn">View plans & upgrade</a>

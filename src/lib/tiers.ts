@@ -14,9 +14,6 @@ export interface TierConfig {
   limits: {
     coach_messages: number    // per month, 0 = disabled
     script_generations: number
-    idea_generations: number
-    competitor_analyze: number
-    competitor_ideas: number
     competitors: number       // max tracked competitors
     downloads: number         // per month
     swipe_saves: number       // saved inspo videos per month
@@ -39,9 +36,6 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     limits: {
       coach_messages: 3,
       script_generations: 1,
-      idea_generations: 1,
-      competitor_analyze: 0,
-      competitor_ideas: 0,
       competitors: 5,
       downloads: 0,
       swipe_saves: -1, // unlimited
@@ -62,9 +56,6 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     limits: {
       coach_messages: 25,
       script_generations: 10,
-      idea_generations: 10,
-      competitor_analyze: 10,
-      competitor_ideas: 10,
       competitors: 10,
       downloads: 30,
       swipe_saves: -1,
@@ -85,9 +76,6 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     limits: {
       coach_messages: 100,
       script_generations: 40,
-      idea_generations: 40,
-      competitor_analyze: 40,
-      competitor_ideas: 40,
       competitors: 30,
       downloads: 75,
       swipe_saves: -1,
@@ -108,9 +96,6 @@ export const TIERS: Record<TierSlug, TierConfig> = {
     limits: {
       coach_messages: 300,
       script_generations: 125,
-      idea_generations: 125,
-      competitor_analyze: 125,
-      competitor_ideas: 125,
       competitors: 100,
       downloads: 300,
       swipe_saves: -1,

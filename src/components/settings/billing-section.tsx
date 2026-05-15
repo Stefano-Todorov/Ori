@@ -14,9 +14,6 @@ interface UsageData {
 const FEATURE_ROWS: { key: string; label: string }[] = [
   { key: 'coach_messages', label: 'AI Coach messages' },
   { key: 'script_generations', label: 'Script generations' },
-  { key: 'idea_generations', label: 'Idea generations' },
-  { key: 'competitor_analyze', label: 'Post analysis' },
-  { key: 'competitor_ideas', label: 'Competitor ideas' },
   { key: 'competitors', label: 'Competitors tracked' },
   { key: 'downloads', label: 'Video downloads' },
   { key: 'swipe_saves', label: 'Saved inspo videos' },

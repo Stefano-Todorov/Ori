@@ -51,7 +51,7 @@ const steps = [
   {
     num: '02',
     title: 'Research & collect inspiration',
-    description: 'Track competitors, save trending videos with the Chrome extension, and let Orianna analyze what\'s working in your space.',
+    description: 'Track competitors and save trending videos with the Chrome extension to build a personal library of what\'s working in your space.',
   },
   {
     num: '03',
@@ -63,7 +63,7 @@ const steps = [
 const faqs = [
   {
     q: 'Is Orianna really free?',
-    a: 'Yes — the Starter plan is free forever and includes 3 AI coach messages, 1 script, and 1 idea generation per month so you can try everything. Need more? Plans start at $5.99/month (or $4.17/month billed yearly).',
+    a: 'Yes — the Starter plan is free forever and includes 3 AI coach messages and 1 script generation per month so you can try everything. Need more? Plans start at $5.99/month (or $4.17/month billed yearly).',
   },
   {
     q: 'What platforms does it support?',
@@ -848,7 +848,6 @@ export default function LandingPage() {
                 {[
                   { text: '3 AI coach messages/mo', ai: true },
                   { text: '1 script generation/mo', ai: true },
-                  { text: '1 idea generation/mo', ai: true },
                   { text: '5 competitors tracked' },
                   { text: 'Unlimited inspo saves' },
                   { text: 'Unlimited manual ideas' },
@@ -884,9 +883,6 @@ export default function LandingPage() {
                 {[
                   { text: '25 AI coach messages/mo', ai: true },
                   { text: '10 script generations/mo', ai: true },
-                  { text: '10 idea generations/mo', ai: true },
-                  { text: '10 post analyses/mo', ai: true },
-                  { text: '10 competitor idea gens/mo', ai: true },
                   { text: '10 competitors tracked' },
                   { text: '30 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },
@@ -926,9 +922,6 @@ export default function LandingPage() {
                 {[
                   { text: '100 AI coach messages/mo', ai: true },
                   { text: '40 script generations/mo', ai: true },
-                  { text: '40 idea generations/mo', ai: true },
-                  { text: '40 post analyses/mo', ai: true },
-                  { text: '40 competitor idea gens/mo', ai: true },
                   { text: '30 competitors tracked' },
                   { text: '75 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },
@@ -965,9 +958,6 @@ export default function LandingPage() {
                 {[
                   { text: '300 AI coach messages/mo', ai: true },
                   { text: '125 script generations/mo', ai: true },
-                  { text: '125 idea generations/mo', ai: true },
-                  { text: '125 post analyses/mo', ai: true },
-                  { text: '125 competitor idea gens/mo', ai: true },
                   { text: '100 competitors tracked' },
                   { text: '300 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },

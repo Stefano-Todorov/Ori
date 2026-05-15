@@ -227,7 +227,6 @@ export async function updateProfile(fields: {
   batch_size?: number | null
   telegram_chat_id?: string | null
   auto_sync_own_profile?: boolean
-  auto_save_competitor_ideas?: boolean
   creator_context?: string | null
   timezone?: string | null
   coach_checkins_enabled?: boolean

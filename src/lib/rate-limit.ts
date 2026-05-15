@@ -75,9 +75,6 @@ export const RATE_LIMITS = {
   'onboarding-chat':          { maxTokens: 10, refillRate: 10 / 60 },
   'coach':                    { maxTokens: 5,  refillRate: 5 / 60 },
   'script-generate':          { maxTokens: 5,  refillRate: 5 / 60 },
-  'idea-generate':            { maxTokens: 3,  refillRate: 3 / 60 },
-  'competitor-analyze':       { maxTokens: 3,  refillRate: 3 / 60 },
-  'competitor-ideas':         { maxTokens: 3,  refillRate: 3 / 60 },
   'post-eval':                { maxTokens: 5,  refillRate: 5 / 60 },
   'download':                 { maxTokens: 5,  refillRate: 5 / 60 },
 } as const satisfies Record<string, RateLimitConfig>

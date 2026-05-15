@@ -14,9 +14,6 @@ interface UsageData {
 const ICONS: Record<string, string> = {
   coach_messages: '\u{1F916}',
   script_generations: '\u{270D}\uFE0F',
-  idea_generations: '\u{1F4A1}',
-  competitor_analyze: '\u{1F50D}',
-  competitor_ideas: '\u{1F50D}',
   competitors: '\u{1F50D}',
   downloads: '\u{1F4E5}',
   swipe_saves: '\u{1F516}',
@@ -33,14 +30,11 @@ const SECTIONS: Section[] = [
     rows: [
       { key: 'coach_messages', label: 'AI Coach messages' },
       { key: 'script_generations', label: 'Script generations' },
-      { key: 'idea_generations', label: 'Idea generations' },
     ],
   },
   {
     label: 'Research',
     rows: [
-      { key: 'competitor_analyze', label: 'Post analysis' },
-      { key: 'competitor_ideas', label: 'Competitor ideas' },
       { key: 'competitors', label: 'Competitors tracked' },
     ],
   },
