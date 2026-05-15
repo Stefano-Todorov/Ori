@@ -520,14 +520,22 @@
     }
     .skeleton-line.short { width: 40%; }
 
-    /* Rotating coaching tip during sort */
-    .sort-tip {
-      font-size: 11px;
+    /* Live stage label during sort */
+    .sort-stage {
       color: #c4b5fd;
-      text-align: center;
-      padding: 8px 4px 2px;
-      line-height: 1.5;
-      opacity: 0.85;
+      font-style: normal;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    @keyframes stage-dot-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.4); opacity: 0.4; }
+    }
+    .sort-stage-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #a78bfa;
+      animation: stage-dot-pulse 1.2s ease-in-out infinite;
     }
 
     /* Save row with tag dropdown */

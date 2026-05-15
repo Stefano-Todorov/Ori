@@ -40,37 +40,13 @@ let state = {
   importProgress: null,
   importError: null,
   showLoginForm: false,
-  currentTipIndex: 0,
-}
-
-const SORT_TIPS = [
-  '💡 The first 3 seconds determine 80% of completion rate',
-  '💡 Posts with a hook in the first 2 seconds get 3× more views',
-  '💡 Saves matter more than likes for the IG algorithm',
-  '💡 Captions under 100 characters outperform longer ones on Reels',
-  '💡 Top creators in your niche post 4–5× per week',
-  '💡 Posting at the same time daily trains the algorithm faster',
-  '💡 Comments-per-view is the #1 signal of "this resonated"',
-  '💡 Watching your top videos = pattern recognition for your niche',
-]
-
-let tipIntervalId = null
-
-function startTipRotation() {
-  if (tipIntervalId) clearInterval(tipIntervalId)
-  tipIntervalId = setInterval(() => {
-    setState({ currentTipIndex: (state.currentTipIndex + 1) % SORT_TIPS.length })
-  }, 3500)
-}
-
-function stopTipRotation() {
-  if (tipIntervalId) { clearInterval(tipIntervalId); tipIntervalId = null }
+  sortCachedCount: 0,
 }
 
 // Listen for streamed partial results from content.js while a sort is in flight
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg?.type === 'SORT_PROGRESS' && state.saving === 'sorting' && Array.isArray(msg.posts)) {
-    setState({ sortedPosts: msg.posts })
+    setState({ sortedPosts: msg.posts, sortCachedCount: msg.cachedCount ?? state.sortCachedCount })
   }
 })
 
@@ -545,20 +521,17 @@ async function handleBulkImport() {
 }
 
 async function runSort(sortBy, sortCount) {
-  setState({ saving: 'sorting', errors: {}, sortBy, sortCount, sortedPosts: [], currentTipIndex: 0 })
-  startTipRotation()
+  setState({ saving: 'sorting', errors: {}, sortBy, sortCount, sortedPosts: [], sortCachedCount: 0 })
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   try {
     const result = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SORTED_METRICS', sortBy, sortCount })
-    stopTipRotation()
     if (result.error) {
       setState({ saving: null, errors: { sort: result.error } })
     } else {
       setState({ saving: null, sortedPosts: result.posts ?? [] })
     }
   } catch (err) {
-    stopTipRotation()
     setState({ saving: null, errors: { sort: 'Could not fetch metrics from page' } })
   }
 }
@@ -729,12 +702,14 @@ function render() {
           </div>
           ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
           ${state.saving === 'sorting' ? `
-            <div class="sort-status">
-              ${sortedPosts.length > 0
-                ? `Ranking ${sortedPosts.length} so far &middot; still fetching...`
-                : `Loading top ${sortCount} by ${sortBy}...`}
+            <div class="sort-status sort-stage">
+              <span class="sort-stage-dot"></span>
+              ${state.sortCachedCount === 0
+                ? 'Reading profile...'
+                : sortedPosts.length === 0
+                ? `Found ${state.sortCachedCount} posts &middot; ranking...`
+                : `Top ${sortedPosts.length} loaded &middot; fetching more (${state.sortCachedCount})...`}
             </div>
-            <div class="sort-tip" key="${state.currentTipIndex}">${SORT_TIPS[state.currentTipIndex % SORT_TIPS.length]}</div>
           ` : sortedPosts.length > 0 ? `
             <div class="sort-status">
               Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
@@ -1075,12 +1050,14 @@ function render() {
         ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
 
         ${state.saving === 'sorting' ? `
-          <div class="sort-status">
-            ${sortedPosts.length > 0
-              ? `Ranking ${sortedPosts.length} so far &middot; still fetching...`
-              : `Loading top ${sortCount} by ${sortBy}...`}
+          <div class="sort-status sort-stage">
+            <span class="sort-stage-dot"></span>
+            ${state.sortCachedCount === 0
+              ? 'Reading profile...'
+              : sortedPosts.length === 0
+              ? `Found ${state.sortCachedCount} posts &middot; ranking...`
+              : `Top ${sortedPosts.length} loaded &middot; fetching more (${state.sortCachedCount})...`}
           </div>
-          <div class="sort-tip" key="${state.currentTipIndex}">${SORT_TIPS[state.currentTipIndex % SORT_TIPS.length]}</div>
         ` : sortedPosts.length > 0 ? `
           <div class="sort-status">
             Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
