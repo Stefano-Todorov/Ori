@@ -40,7 +40,39 @@ let state = {
   importProgress: null,
   importError: null,
   showLoginForm: false,
+  currentTipIndex: 0,
 }
+
+const SORT_TIPS = [
+  '💡 The first 3 seconds determine 80% of completion rate',
+  '💡 Posts with a hook in the first 2 seconds get 3× more views',
+  '💡 Saves matter more than likes for the IG algorithm',
+  '💡 Captions under 100 characters outperform longer ones on Reels',
+  '💡 Top creators in your niche post 4–5× per week',
+  '💡 Posting at the same time daily trains the algorithm faster',
+  '💡 Comments-per-view is the #1 signal of "this resonated"',
+  '💡 Watching your top videos = pattern recognition for your niche',
+]
+
+let tipIntervalId = null
+
+function startTipRotation() {
+  if (tipIntervalId) clearInterval(tipIntervalId)
+  tipIntervalId = setInterval(() => {
+    setState({ currentTipIndex: (state.currentTipIndex + 1) % SORT_TIPS.length })
+  }, 3500)
+}
+
+function stopTipRotation() {
+  if (tipIntervalId) { clearInterval(tipIntervalId); tipIntervalId = null }
+}
+
+// Listen for streamed partial results from content.js while a sort is in flight
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg?.type === 'SORT_PROGRESS' && state.saving === 'sorting' && Array.isArray(msg.posts)) {
+    setState({ sortedPosts: msg.posts })
+  }
+})
 
 function setState(patch) {
   state = { ...state, ...patch }
@@ -294,6 +326,12 @@ async function init() {
       handleSyncMyVideos()
     }
   }
+
+  // Pre-warm the sort cache the moment the profile view renders, so by the
+  // time the user reads the popup the leaderboard is already populated.
+  if (view === 'profile' && state.sortedPosts.length === 0 && state.saving !== 'sorting') {
+    runSort(state.sortBy ?? 'views', state.sortCount ?? 25)
+  }
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -506,22 +544,29 @@ async function handleBulkImport() {
   }
 }
 
-async function handleSort() {
-  const sortBy = document.getElementById('sort-by')?.value ?? 'views'
-  const sortCount = parseInt(document.getElementById('sort-count')?.value ?? '25')
-  setState({ saving: 'sorting', errors: {}, sortBy, sortCount })
+async function runSort(sortBy, sortCount) {
+  setState({ saving: 'sorting', errors: {}, sortBy, sortCount, sortedPosts: [], currentTipIndex: 0 })
+  startTipRotation()
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   try {
     const result = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SORTED_METRICS', sortBy, sortCount })
+    stopTipRotation()
     if (result.error) {
       setState({ saving: null, errors: { sort: result.error } })
     } else {
       setState({ saving: null, sortedPosts: result.posts ?? [] })
     }
   } catch (err) {
+    stopTipRotation()
     setState({ saving: null, errors: { sort: 'Could not fetch metrics from page' } })
   }
+}
+
+async function handleSort() {
+  const sortBy = document.getElementById('sort-by')?.value ?? state.sortBy ?? 'views'
+  const sortCount = parseInt(document.getElementById('sort-count')?.value ?? String(state.sortCount ?? 25))
+  await runSort(sortBy, sortCount)
 }
 
 function handleExportCSV() {
@@ -683,7 +728,14 @@ function render() {
             </button>
           </div>
           ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
-          ${sortedPosts.length > 0 ? `
+          ${state.saving === 'sorting' ? `
+            <div class="sort-status">
+              ${sortedPosts.length > 0
+                ? `Ranking ${sortedPosts.length} so far &middot; still fetching...`
+                : `Loading top ${sortCount} by ${sortBy}...`}
+            </div>
+            <div class="sort-tip" key="${state.currentTipIndex}">${SORT_TIPS[state.currentTipIndex % SORT_TIPS.length]}</div>
+          ` : sortedPosts.length > 0 ? `
             <div class="sort-status">
               Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
             </div>
@@ -692,11 +744,26 @@ function render() {
           `}
         </div>
 
-        ${sortedPosts.length > 0 ? `
-          <div class="sorted-list">${sortListHtml}</div>
-          <div class="sort-export">
-            <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+        ${state.saving === 'sorting' && sortedPosts.length === 0 ? `
+          <div class="sorted-list">
+            ${Array.from({ length: Math.min(sortCount, 8) }, (_, i) => `
+              <div class="sorted-item skeleton">
+                <span class="sorted-rank skeleton-rank">${i + 1}</span>
+                <div class="sorted-thumb skeleton-box"></div>
+                <div class="sorted-metrics">
+                  <div class="skeleton-line skeleton-box"></div>
+                  <div class="skeleton-line short skeleton-box"></div>
+                </div>
+              </div>
+            `).join('')}
           </div>
+        ` : sortedPosts.length > 0 ? `
+          <div class="sorted-list">${sortListHtml}</div>
+          ${state.saving !== 'sorting' ? `
+            <div class="sort-export">
+              <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+            </div>
+          ` : ''}
         ` : ''}
 
         <div class="locked-teasers">
@@ -1007,7 +1074,14 @@ function render() {
 
         ${state.errors.sort ? `<div class="error-msg" style="margin-top:6px">${escHtml(state.errors.sort)}</div>` : ''}
 
-        ${sortedPosts.length > 0 ? `
+        ${state.saving === 'sorting' ? `
+          <div class="sort-status">
+            ${sortedPosts.length > 0
+              ? `Ranking ${sortedPosts.length} so far &middot; still fetching...`
+              : `Loading top ${sortCount} by ${sortBy}...`}
+          </div>
+          <div class="sort-tip" key="${state.currentTipIndex}">${SORT_TIPS[state.currentTipIndex % SORT_TIPS.length]}</div>
+        ` : sortedPosts.length > 0 ? `
           <div class="sort-status">
             Showing top ${Math.min(sortCount, sortedPosts.length)} of ${sortedPosts.length} by ${sortBy}
           </div>
@@ -1016,11 +1090,26 @@ function render() {
         `}
       </div>
 
-      ${sortedPosts.length > 0 ? `
-        <div class="sorted-list">${listHtml}</div>
-        <div class="sort-export">
-          <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+      ${state.saving === 'sorting' && sortedPosts.length === 0 ? `
+        <div class="sorted-list">
+          ${Array.from({ length: Math.min(sortCount, 8) }, (_, i) => `
+            <div class="sorted-item skeleton">
+              <span class="sorted-rank skeleton-rank">${i + 1}</span>
+              <div class="sorted-thumb skeleton-box"></div>
+              <div class="sorted-metrics">
+                <div class="skeleton-line skeleton-box"></div>
+                <div class="skeleton-line short skeleton-box"></div>
+              </div>
+            </div>
+          `).join('')}
         </div>
+      ` : sortedPosts.length > 0 ? `
+        <div class="sorted-list">${listHtml}</div>
+        ${state.saving !== 'sorting' ? `
+          <div class="sort-export">
+            <button class="btn btn-outline" id="export-btn" style="font-size:11px">Export CSV</button>
+          </div>
+        ` : ''}
       ` : ''}
 
       ${renderUserBar()}

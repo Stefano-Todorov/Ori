@@ -1321,7 +1321,7 @@ function shortcodeToMediaId(shortcode) {
   return id.toString()
 }
 
-async function fetchInstagramMetrics(items, maxPosts = Infinity) {
+async function fetchInstagramMetrics(items, maxPosts = Infinity, onProgress = null) {
   const csrfToken = document.cookie.match(/csrftoken=([^;]+)/)?.[1] ?? ''
   const igHeaders = { 'X-IG-App-ID': '936619743392459', 'X-CSRFToken': csrfToken }
 
@@ -1349,6 +1349,7 @@ async function fetchInstagramMetrics(items, maxPosts = Infinity) {
         } catch {}
       }
       console.log('[Orianna] Found', igMetricsCache.size, 'posts from embedded data')
+      if (onProgress && igMetricsCache.size > 0) onProgress(igMetricsCache.size)
     }
 
     // Method 2: Try API if we have fewer posts than requested
@@ -1390,6 +1391,7 @@ async function fetchInstagramMetrics(items, maxPosts = Infinity) {
                   const nodes = extractMediaNodes(feedData)
                   console.log(`[Orianna] Feed page ${page}: ${nodes.length} nodes, cache=${igMetricsCache.size}/${maxPosts === Infinity ? '∞' : maxPosts}`)
                   nodes.forEach(n => cacheMediaNode(n, userId))
+                  if (onProgress) onProgress(igMetricsCache.size)
                   nextMaxId = feedData.next_max_id
                   if (!feedData.more_available || !nextMaxId) break
                 }
@@ -1413,6 +1415,7 @@ async function fetchInstagramMetrics(items, maxPosts = Infinity) {
                     const node = ri?.media
                     if (node) cacheMediaNode(node, userId)
                   }
+                  if (onProgress) onProgress(igMetricsCache.size)
                   const pagingInfo = reelsData?.paging_info
                   reelsMaxId = pagingInfo?.max_id
                   if (!pagingInfo?.more_available || !reelsMaxId) break
@@ -2025,35 +2028,45 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const maxPosts = Math.min(Math.max(sortCount * 2, sortCount), 200)
       let posts = []
 
-      if (platform === 'instagram') {
-        // Instagram: fetch metrics from API, capped at maxPosts to keep the
-        // sort fast. Pass whatever DOM items we found (may be few/none due to
-        // virtualized grid).
-        await fetchInstagramMetrics(items, maxPosts)
-
-        // Build posts from the full cache, not just DOM elements
-        // (Instagram virtualizes the grid, so most posts aren't in the DOM)
-        const seenShortcodes = new Set()
-        posts = []
-
-        // First add DOM-visible items (they may have thumbnails from the page)
+      // Build a ranked post list from the current igMetricsCache + DOM items.
+      // Used both for the final result and (via onProgress) for streaming
+      // partial rankings to the popup as pages arrive.
+      const buildIgRanked = () => {
+        const seen = new Set()
+        const out = []
         for (const link of items) {
           const m = link.href.match(/\/(reel|p)\/([^/?]+)/)
           const sc = m?.[2]
-          if (!sc) continue
-          seenShortcodes.add(sc)
+          if (!sc || seen.has(sc)) continue
+          seen.add(sc)
           const cached = igMetricsCache.get(sc) ?? {}
           const domImg = link.querySelector('img')
           const thumb = cached.thumb ?? domImg?.src ?? ''
-          posts.push({ href: link.href, thumb, views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
+          out.push({ href: link.href, thumb, views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
+        }
+        for (const [sc, cached] of igMetricsCache) {
+          if (seen.has(sc)) continue
+          out.push({ href: `https://www.instagram.com/reel/${sc}/`, thumb: cached.thumb ?? '', views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
+        }
+        return out.filter(p => p.href).sort((a, b) => (b[sortBy] ?? 0) - (a[sortBy] ?? 0))
+      }
+
+      if (platform === 'instagram') {
+        // Stream partial rankings to the popup as each page lands so the
+        // user sees the leaderboard fill in instead of staring at a spinner.
+        const broadcastProgress = (cachedCount) => {
+          try {
+            chrome.runtime.sendMessage({
+              type: 'SORT_PROGRESS',
+              posts: buildIgRanked().slice(0, sortCount),
+              cachedCount,
+              done: false,
+            }).catch(() => {})
+          } catch {}
         }
 
-        // Then add all cached posts not already included (from API fetch)
-        for (const [sc, cached] of igMetricsCache) {
-          if (seenShortcodes.has(sc)) continue
-          const href = `https://www.instagram.com/reel/${sc}/`
-          posts.push({ href, thumb: cached.thumb ?? '', views: cached.views ?? null, likes: cached.likes ?? null, comments: cached.comments ?? null })
-        }
+        await fetchInstagramMetrics(items, maxPosts, broadcastProgress)
+        posts = buildIgRanked()
       } else if (platform === 'tiktok') {
         // TikTok: try to get likes/comments from embedded page data or API
         await fetchTikTokMetrics()
