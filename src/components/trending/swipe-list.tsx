@@ -44,21 +44,21 @@ function Thumbnail({ post }: { post: Post }) {
       instagram: 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-500',
     }
     return (
-      <div className={`w-14 h-18 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
+      <div className={`w-20 h-26 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
         {post.platform?.[0] ?? '?'}
       </div>
     )
   }
 
   if (!src) {
-    return <div className="w-14 h-18 rounded-lg shrink-0 bg-muted animate-pulse" />
+    return <div className="w-20 h-26 rounded-lg shrink-0 bg-muted animate-pulse" />
   }
 
   return (
     <img
       src={src}
       alt=""
-      className="w-14 h-18 rounded-lg object-cover shrink-0 bg-muted"
+      className="w-20 h-26 rounded-lg object-cover shrink-0 bg-muted"
       onError={() => { setSrc(null); setFailed(!triedApi) }}
     />
   )
@@ -575,7 +575,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             {post.competitor_handle && (
               <span className="text-[11px] font-medium text-muted-foreground">@{post.competitor_handle}</span>
             )}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-start gap-2">
               {editingTitle ? (
                 <input
                   ref={titleRef}
@@ -588,13 +588,21 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 />
               ) : (
                 <p
-                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 group/title cursor-text"
+                  className="text-sm font-semibold text-foreground leading-snug flex-1 min-w-0 line-clamp-2 break-words group/title cursor-text"
                   onClick={(e) => { e.stopPropagation(); setTitleValue(post.title || postTitle(post)); setEditingTitle(true) }}
                 >
                   {post.title || postTitle(post)}
                   <Pencil size={9} className="inline ml-1.5 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </p>
               )}
+              <ChevronDown
+                size={14}
+                className={`text-muted-foreground transition-transform duration-200 shrink-0 mt-0.5 ${expanded ? 'rotate-180' : ''}`}
+              />
+            </div>
+
+            {/* Meta row */}
+            <div className="flex items-center gap-2 flex-wrap">
               {post.platform && (
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize shrink-0 ${
                   post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
@@ -608,46 +616,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 <Calendar size={9} />
                 {timeAgo(post.created_at)}
               </span>
-              <span className="flex-1" />
-              <button
-                onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
-                className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-                title="Create idea from this inspo"
-              >
-                <Plus size={10} />
-                Create idea
-              </button>
-              {post.url && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
-                  disabled={downloading}
-                  className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
-                  title="Download video"
-                >
-                  {downloading ? <Loader2 size={10} className="animate-spin" /> : <Download size={10} />}
-                  {downloading ? 'Downloading...' : 'Download'}
-                </button>
-              )}
-              {downloadError && (
-                <span className="shrink-0 text-[10px] text-red-500">{downloadError}</span>
-              )}
-              {post.url && (
-                <a
-                  href={post.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 h-7 px-3 rounded-md bg-purple-500/10 border border-purple-500/25 inline-flex items-center gap-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
-                  title="Open original post"
-                >
-                  <ExternalLink size={10} />
-                  View original
-                </a>
-              )}
-              <ChevronDown
-                size={14}
-                className={`text-muted-foreground transition-transform duration-200 shrink-0 ${expanded ? 'rotate-180' : ''}`}
-              />
             </div>
 
             {/* Stats pills */}
@@ -694,6 +662,45 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             <div className="flex items-center gap-1.5">
               <TagPills tags={post.tags ?? []} />
               <TagEditor tags={post.tags ?? []} allTags={allTags} onChange={(tags) => onTagsChange(post.id, tags)} />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
+                className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+                title="Create idea from this inspo"
+              >
+                <Plus size={10} />
+                Create idea
+              </button>
+              {post.url && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
+                  disabled={downloading}
+                  className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+                  title="Download video"
+                >
+                  {downloading ? <Loader2 size={10} className="animate-spin" /> : <Download size={10} />}
+                  {downloading ? 'Downloading...' : 'Download'}
+                </button>
+              )}
+              {post.url && (
+                <a
+                  href={post.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 h-7 px-3 rounded-md bg-purple-500/10 border border-purple-500/25 inline-flex items-center gap-1.5 text-[10px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all"
+                  title="Open original post"
+                >
+                  <ExternalLink size={10} />
+                  View original
+                </a>
+              )}
+              {downloadError && (
+                <span className="shrink-0 text-[10px] text-red-500">{downloadError}</span>
+              )}
             </div>
           </div>
         </button>
