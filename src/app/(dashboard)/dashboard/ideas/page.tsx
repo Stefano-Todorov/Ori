@@ -8,18 +8,31 @@ export default async function IdeasPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [{ data: ideas }, allTags] = await Promise.all([
+  const [{ data: ideas }, allTags, { data: scheduled }] = await Promise.all([
     supabase
       .from('content_ideas')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     getAllUserTags(user.id),
+    supabase
+      .from('scheduled_posts')
+      .select('content_idea_id, scheduled_date')
+      .eq('user_id', user.id)
+      .order('scheduled_date', { ascending: true }),
   ])
+
+  // Earliest scheduled date per idea (matches scheduleIdea's update target)
+  const scheduledDates: Record<string, string> = {}
+  for (const s of scheduled ?? []) {
+    if (s.content_idea_id && !(s.content_idea_id in scheduledDates)) {
+      scheduledDates[s.content_idea_id] = s.scheduled_date
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <IdeasBoard ideas={ideas ?? []} allTags={allTags} />
+      <IdeasBoard ideas={ideas ?? []} allTags={allTags} scheduledDates={scheduledDates} />
     </div>
   )
 }

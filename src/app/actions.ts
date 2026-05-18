@@ -345,6 +345,48 @@ export async function schedulePost(fields: {
   return { error: null }
 }
 
+/**
+ * Schedules a content idea on a date — idempotent per idea. If the idea
+ * already has a scheduled post, its date is updated instead of inserting
+ * a duplicate. Used by the edit dialog and idea cards.
+ */
+export async function scheduleIdea(fields: {
+  content_idea_id: string
+  title?: string
+  scheduled_date: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: existing } = await supabase
+    .from('scheduled_posts')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('content_idea_id', fields.content_idea_id)
+    .order('scheduled_date', { ascending: true })
+    .limit(1)
+
+  const error = existing && existing.length > 0
+    ? (await supabase
+        .from('scheduled_posts')
+        .update({ scheduled_date: fields.scheduled_date, title: fields.title ?? null })
+        .eq('id', existing[0].id)
+        .eq('user_id', user.id)).error
+    : (await supabase.from('scheduled_posts').insert({
+        user_id: user.id,
+        content_idea_id: fields.content_idea_id,
+        title: fields.title ?? null,
+        scheduled_date: fields.scheduled_date,
+      })).error
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard')
+  return { error: null }
+}
+
 export async function deleteScheduledPost(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

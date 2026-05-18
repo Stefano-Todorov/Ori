@@ -239,6 +239,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
       <EditIdeaDialog
         key={editingIdea?.id}
         idea={editingIdea}
+        scheduledDate={editingIdea ? (localPosts.find(p => p.content_idea_id === editingIdea.id)?.scheduled_date ?? null) : null}
         onClose={() => setEditingIdea(null)}
         onStatusChange={handleStatusChange}
         onSaved={() => refreshKeepScroll(router)}

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal, Lightbulb } from 'lucide-react'
-import { deleteIdea, updateProductionStatus, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, schedulePost } from '@/app/actions'
+import { deleteIdea, updateProductionStatus, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, scheduleIdea } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
@@ -15,6 +15,8 @@ import type { ContentIdea, ProductionStatus } from '@/lib/types'
 interface Props {
   ideas: ContentIdea[]
   allTags: string[]
+  /** Earliest scheduled date per content idea id (YYYY-MM-DD). */
+  scheduledDates?: Record<string, string>
 }
 
 type IdeaStatus = ProductionStatus
@@ -188,7 +190,7 @@ function IdeaCard({
   async function handleSchedule() {
     if (!scheduleDate) return
     setScheduling(true)
-    await schedulePost({
+    await scheduleIdea({
       content_idea_id: item.id,
       title: item.idea,
       scheduled_date: scheduleDate,
@@ -482,7 +484,7 @@ function saveFilters(filters: SavedFilters) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)) } catch {}
 }
 
-export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Props) {
+export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, scheduledDates = {} }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
   const [hydrated, setHydrated] = useState(false)
   const [filter, setFilter] = useState<ProductionStatus | 'all'>('all')
@@ -894,6 +896,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags }: Pro
         key={editingIdea?.id}
         idea={editingIdea}
         allTags={allTags}
+        scheduledDate={editingIdea ? (scheduledDates[editingIdea.id] ?? null) : null}
         onClose={() => setEditingIdea(null)}
         onStatusChange={(id, status) => {
           handleStatusChange(id, status)

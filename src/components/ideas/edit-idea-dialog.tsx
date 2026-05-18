@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/ui/date-picker'
-import { ExternalLink, Plus, Copy, Check } from 'lucide-react'
+import { ExternalLink, Plus, Copy, Check, Pencil } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { updateIdea, addIdea, schedulePost } from '@/app/actions'
+import { updateIdea, addIdea, scheduleIdea } from '@/app/actions'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
@@ -36,6 +36,8 @@ interface EditIdeaDialogProps {
   idea: ContentIdea | null
   open?: boolean
   allTags?: string[]
+  /** Date this idea is already scheduled for, if any (YYYY-MM-DD). */
+  scheduledDate?: string | null
   onClose: () => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
   /** Called after a successful save with the updated fields */
@@ -86,6 +88,7 @@ export function EditIdeaDialog({
   idea,
   open: openProp,
   allTags = [],
+  scheduledDate = null,
   onClose,
   onStatusChange,
   onSaved,
@@ -100,7 +103,8 @@ export function EditIdeaDialog({
     scriptSnippet: '', cta: '', caption: '', tags: [],
   })
   const [captionExpanded, setCaptionExpanded] = useState(false)
-  const [scheduledFor, setScheduledFor] = useState<string | null>(null)
+  const [scheduledFor, setScheduledFor] = useState<string | null>(scheduledDate)
+  const [rescheduling, setRescheduling] = useState(false)
 
   // Sync form state when idea changes
   useEffect(() => {
@@ -108,7 +112,8 @@ export function EditIdeaDialog({
       const f = formFromIdea(idea)
       setForm(f)
       setCaptionExpanded(!!f.caption)
-      setScheduledFor(null)
+      setScheduledFor(scheduledDate)
+      setRescheduling(false)
     }
   }, [idea?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -178,8 +183,9 @@ export function EditIdeaDialog({
   const handleSchedule = useCallback((date: string) => {
     if (!idea || !date) return
     setScheduledFor(date)
+    setRescheduling(false)
     startTransition(async () => {
-      await schedulePost({
+      await scheduleIdea({
         content_idea_id: idea.id,
         title: form.idea.trim() || idea.idea,
         scheduled_date: date,
@@ -229,14 +235,20 @@ export function EditIdeaDialog({
                 ))}
               </SelectContent>
             </Select>
-            {scheduledFor ? (
-              <span className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[11px] font-semibold bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30">
+            {scheduledFor && !rescheduling ? (
+              <button
+                type="button"
+                onClick={() => setRescheduling(true)}
+                title="Reschedule"
+                className="group/sched flex items-center gap-1.5 h-9 px-3 rounded-lg text-[11px] font-semibold bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30 hover:bg-green-500/25 transition-colors"
+              >
                 <Check size={13} className="shrink-0" />
                 Scheduled for {formatScheduleLabel(scheduledFor)}
-              </span>
+                <Pencil size={11} className="shrink-0 opacity-50 group-hover/sched:opacity-100 transition-opacity" />
+              </button>
             ) : (
               <DatePicker
-                value=""
+                value={scheduledFor ?? ''}
                 onChange={handleSchedule}
                 compact
                 placeholder="Schedule"
