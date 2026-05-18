@@ -42,6 +42,8 @@ interface Props {
   scheduledPosts: PostWithIdea[]
   pipelineIdeas: ContentIdea[]
   availableIdeas: ContentIdea[]
+  /** Every idea — used to resolve a scheduled post back to its full idea for editing. */
+  allIdeas: ContentIdea[]
   batchSize: number
 }
 
@@ -65,7 +67,7 @@ function formatDay(date: string) {
  * DndContext so pipeline cards can be dragged either between columns
  * (reorder / status change) or onto a calendar day (schedule a post).
  */
-export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas, batchSize }: Props) {
+export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas, allIdeas, batchSize }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -91,6 +93,13 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
   )
 
   const activeIdea = activeId ? localIdeas.find(i => i.id === activeId) ?? null : null
+
+  /** Open the edit dialog for the idea behind a scheduled post. */
+  function handleEditPost(post: { content_idea_id: string | null }) {
+    if (!post.content_idea_id) return
+    const idea = allIdeas.find(i => i.id === post.content_idea_id)
+    if (idea) setEditingIdea(idea)
+  }
 
   function handleStatusChange(ideaId: string, status: ProductionStatus) {
     setLocalIdeas(prev => prev.map(i => (i.id === ideaId ? { ...i, production_status: status } : i)))
@@ -204,13 +213,13 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
           {/* Calendar + plan form */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2">
-              <ScheduleCalendar scheduledPosts={localPosts} droppable dragActive={activeId !== null} />
+              <ScheduleCalendar scheduledPosts={localPosts} droppable dragActive={activeId !== null} onEditPost={handleEditPost} />
             </div>
             <PlanPostForm ideas={availableIdeas} />
           </div>
 
           {/* Planned posts list */}
-          <ScheduledPostsList posts={localPosts} />
+          <ScheduledPostsList posts={localPosts} onEdit={handleEditPost} />
 
           {/* Production pipeline */}
           <ProductionPipeline

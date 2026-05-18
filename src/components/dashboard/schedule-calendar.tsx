@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarDays, Pencil, X } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import type { ScheduledPost } from '@/lib/types'
 
@@ -18,6 +18,8 @@ interface Props {
   droppable?: boolean
   /** Whether a drag is currently in progress (highlights drop targets). */
   dragActive?: boolean
+  /** When provided, posts become clickable to edit their idea. */
+  onEditPost?: (post: PostWithIdea) => void
 }
 
 function toDateKey(d: Date) {
@@ -50,17 +52,19 @@ const VIEW_LABELS: { key: CalendarView; label: string }[] = [
 ]
 
 /* ─── Droppable day wrapper ─── */
-function DroppableDay({ dateKey, disabled, dragActive, className, children }: {
+function DroppableDay({ dateKey, disabled, dragActive, className, onClick, children }: {
   dateKey: string
   disabled?: boolean
   dragActive?: boolean
   className: string
+  onClick?: () => void
   children: React.ReactNode
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `cal:${dateKey}`, disabled })
   return (
     <div
       ref={setNodeRef}
+      onClick={onClick}
       className={`${className} ${
         !disabled && dragActive
           ? isOver
@@ -74,10 +78,62 @@ function DroppableDay({ dateKey, disabled, dragActive, className, children }: {
   )
 }
 
-export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive = false }: Props) {
+/* ─── Day detail panel — posts scheduled on the selected day ─── */
+function DayDetailPanel({ dateKey, posts, onEditPost, onClose }: {
+  dateKey: string
+  posts: PostWithIdea[]
+  onEditPost?: (post: PostWithIdea) => void
+  onClose: () => void
+}) {
+  const label = new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+  })
+  return (
+    <div className="rounded-xl border border-border dark:border-white/10 bg-muted/40 dark:bg-white/[0.03] p-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-foreground">{label}</p>
+        <button
+          onClick={onClose}
+          className="p-0.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 dark:hover:bg-white/5 transition-colors"
+          aria-label="Close"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      {posts.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground py-2">No posts scheduled for this day.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {posts.map(post => (
+            <button
+              key={post.id}
+              type="button"
+              onClick={() => onEditPost?.(post)}
+              disabled={!onEditPost}
+              className="group/post w-full flex items-center gap-2 px-2.5 py-2 rounded-lg bg-card dark:bg-white/[0.03] border border-border/70 dark:border-white/[0.06] text-left transition-all enabled:hover:border-purple-500/40 enabled:hover:bg-purple-500/[0.04] disabled:cursor-default"
+            >
+              {post.platform && (
+                <div className={`w-2 h-2 rounded-full shrink-0 ${PLATFORM_COLORS[post.platform] ?? 'bg-purple-500'}`} />
+              )}
+              <span className="text-[11px] font-medium text-foreground truncate flex-1">
+                {post.title || post.content_idea?.idea || 'Untitled'}
+              </span>
+              {onEditPost && (
+                <Pencil size={12} className="text-purple-500 opacity-0 group-hover/post:opacity-100 transition-opacity shrink-0" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive = false, onEditPost }: Props) {
   const today = new Date()
   const [currentDate, setCurrentDate] = useState(today)
   const [view, setView] = useState<CalendarView>('month')
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -94,7 +150,13 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
     return map
   }, [scheduledPosts])
 
+  function changeView(v: CalendarView) {
+    setView(v)
+    setSelectedDay(null)
+  }
+
   function prev() {
+    setSelectedDay(null)
     if (view === 'month') {
       setCurrentDate(new Date(year, month - 1, 1))
     } else if (view === 'week') {
@@ -105,6 +167,7 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
   }
 
   function next() {
+    setSelectedDay(null)
     if (view === 'month') {
       setCurrentDate(new Date(year, month + 1, 1))
     } else if (view === 'week') {
@@ -115,6 +178,7 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
   }
 
   function goToToday() {
+    setSelectedDay(null)
     setCurrentDate(new Date())
   }
 
@@ -133,14 +197,17 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
   }, [view, year, month, currentDate])
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold text-foreground">Calendar</p>
-        <div className="flex items-center gap-1 bg-muted/50 dark:bg-white/[0.04] rounded-lg p-0.5">
+        <p className="text-sm font-bold text-foreground flex items-center gap-2">
+          <CalendarDays size={15} className="text-purple-500" />
+          Calendar
+        </p>
+        <div className="flex items-center gap-1 bg-muted/60 dark:bg-white/[0.05] rounded-lg p-0.5">
           {VIEW_LABELS.map(v => (
             <button
               key={v.key}
-              onClick={() => setView(v.key)}
+              onClick={() => changeView(v.key)}
               className={`px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all ${
                 view === v.key
                   ? 'bg-purple-600 text-white shadow-sm'
@@ -175,9 +242,25 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
         </p>
       )}
 
-      {view === 'month' && <MonthView year={year} month={month} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
-      {view === 'week' && <WeekView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
-      {view === 'day' && <DayView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
+      {view === 'month' && (
+        <MonthView
+          year={year} month={month} todayKey={todayKey} postsByDate={postsByDate}
+          droppable={droppable} dragActive={dragActive}
+          selectedDay={selectedDay}
+          onSelectDay={(k) => setSelectedDay(prev => prev === k ? null : k)}
+        />
+      )}
+      {view === 'week' && <WeekView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} onEditPost={onEditPost} />}
+      {view === 'day' && <DayView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} onEditPost={onEditPost} />}
+
+      {view === 'month' && selectedDay && (
+        <DayDetailPanel
+          dateKey={selectedDay}
+          posts={postsByDate[selectedDay] ?? []}
+          onEditPost={onEditPost}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
@@ -193,15 +276,20 @@ export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive
           <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
           <span>Instagram</span>
         </div>
+        {onEditPost && (
+          <span className="ml-auto text-muted-foreground/70">Click a day to view &amp; edit its posts</span>
+        )}
       </div>
     </div>
   )
 }
 
 /* ─── Month View ─── */
-function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }: {
+function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive, selectedDay, onSelectDay }: {
   year: number; month: number; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
   droppable: boolean; dragActive: boolean
+  selectedDay: string | null
+  onSelectDay: (key: string) => void
 }) {
   const daysInMonth = getDaysInMonth(year, month)
   const firstDay = getFirstDayOfWeek(year, month)
@@ -218,7 +306,7 @@ function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }
   }
 
   return (
-    <div className="grid grid-cols-7 gap-px">
+    <div className="grid grid-cols-7 gap-1.5">
       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
         <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider py-1">
           {d}
@@ -228,15 +316,22 @@ function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }
         if (day === null) return <div key={`empty-${i}`} className="h-16" />
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         const isToday = dateKey === todayKey
+        const isSelected = dateKey === selectedDay
         const posts = postsByDate[dateKey] ?? []
-        const cellClass = `h-16 flex flex-col items-center rounded-lg text-xs transition-all relative pt-1 ${
-          isToday ? 'ring-2 ring-purple-500 font-bold text-foreground' : 'text-muted-foreground'
-        } ${posts.length > 0 ? 'bg-purple-500/5' : ''}`
+        const hasPosts = posts.length > 0
+
+        const cellClass = `h-16 flex flex-col items-center pt-1.5 rounded-lg text-xs border transition-all relative cursor-pointer ${
+          isToday
+            ? 'bg-purple-500/10 border-purple-500/40 text-foreground font-bold'
+            : hasPosts
+              ? 'bg-purple-500/[0.07] dark:bg-purple-500/[0.09] border-purple-500/20 text-foreground hover:border-purple-500/45'
+              : 'bg-muted/40 dark:bg-white/[0.02] border-border/60 dark:border-white/[0.05] text-muted-foreground hover:bg-muted/70 dark:hover:bg-white/[0.05] hover:border-border'
+        } ${isSelected ? 'ring-2 ring-purple-500 ring-offset-1 ring-offset-card' : ''}`
 
         const content = (
           <>
             <span>{day}</span>
-            {posts.length > 0 && (
+            {hasPosts && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
                 <div className="flex gap-0.5">
                   {posts.slice(0, 3).map((p, pi) => (
@@ -252,11 +347,11 @@ function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }
         )
 
         return droppable ? (
-          <DroppableDay key={dateKey} dateKey={dateKey} disabled={dateKey < todayKey} dragActive={dragActive} className={cellClass}>
+          <DroppableDay key={dateKey} dateKey={dateKey} disabled={dateKey < todayKey} dragActive={dragActive} className={cellClass} onClick={() => onSelectDay(dateKey)}>
             {content}
           </DroppableDay>
         ) : (
-          <div key={dateKey} className={cellClass}>{content}</div>
+          <div key={dateKey} className={cellClass} onClick={() => onSelectDay(dateKey)}>{content}</div>
         )
       })}
     </div>
@@ -264,9 +359,10 @@ function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }
 }
 
 /* ─── Week View ─── */
-function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }: {
+function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive, onEditPost }: {
   currentDate: Date; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
   droppable: boolean; dragActive: boolean
+  onEditPost?: (post: PostWithIdea) => void
 }) {
   const weekStart = getWeekStart(currentDate)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -284,7 +380,7 @@ function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }:
         const cellClass = `rounded-xl p-2 min-h-[120px] border transition-all ${
           isToday
             ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5'
-            : 'border-border/50 dark:border-white/5'
+            : 'border-border/60 dark:border-white/[0.05] bg-muted/30 dark:bg-white/[0.02]'
         }`
 
         const content = (
@@ -294,10 +390,13 @@ function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }:
               <div className={`text-sm font-bold ${isToday ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>{dayNum}</div>
             </div>
             <div className="space-y-1">
-              {posts.map((post, pi) => (
-                <div
-                  key={pi}
-                  className="px-1.5 py-1 rounded-md bg-muted/40 dark:bg-white/[0.04] border border-border/30 dark:border-white/5"
+              {posts.map(post => (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => onEditPost?.(post)}
+                  disabled={!onEditPost}
+                  className="w-full text-left px-1.5 py-1 rounded-md bg-card dark:bg-white/[0.05] border border-border/60 dark:border-white/5 transition-all enabled:hover:border-purple-500/40 disabled:cursor-default"
                 >
                   {post.platform && (
                     <div className={`w-1.5 h-1.5 rounded-full ${PLATFORM_COLORS[post.platform] ?? 'bg-purple-500'} mb-0.5 inline-block mr-1`} />
@@ -305,7 +404,7 @@ function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }:
                   <span className="text-[10px] font-medium text-foreground line-clamp-2">
                     {post.title || post.content_idea?.idea || 'Untitled'}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </>
@@ -324,15 +423,16 @@ function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }:
 }
 
 /* ─── Day View ─── */
-function DayView({ currentDate, todayKey, postsByDate, droppable, dragActive }: {
+function DayView({ currentDate, todayKey, postsByDate, droppable, dragActive, onEditPost }: {
   currentDate: Date; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
   droppable: boolean; dragActive: boolean
+  onEditPost?: (post: PostWithIdea) => void
 }) {
   const key = toDateKey(currentDate)
   const isToday = key === todayKey
   const posts = postsByDate[key] ?? []
   const cellClass = `rounded-xl p-4 min-h-[200px] border transition-all ${
-    isToday ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5' : 'border-border/50 dark:border-white/5'
+    isToday ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5' : 'border-border/60 dark:border-white/[0.05] bg-muted/30 dark:bg-white/[0.02]'
   }`
 
   const content = (
@@ -348,15 +448,18 @@ function DayView({ currentDate, todayKey, postsByDate, droppable, dragActive }: 
         <p className="text-sm text-muted-foreground text-center py-8">No posts scheduled for this day</p>
       ) : (
         <div className="space-y-2">
-          {posts.map((post, pi) => (
-            <div
-              key={pi}
-              className="flex items-start gap-3 px-3 py-2.5 rounded-lg bg-muted/30 dark:bg-white/[0.03] border border-border/50 dark:border-white/5"
+          {posts.map(post => (
+            <button
+              key={post.id}
+              type="button"
+              onClick={() => onEditPost?.(post)}
+              disabled={!onEditPost}
+              className="group/post w-full flex items-start gap-3 px-3 py-2.5 rounded-lg bg-card dark:bg-white/[0.04] border border-border/60 dark:border-white/5 text-left transition-all enabled:hover:border-purple-500/40 disabled:cursor-default"
             >
               {post.platform && (
                 <div className={`w-2 h-2 rounded-full ${PLATFORM_COLORS[post.platform] ?? 'bg-purple-500'} mt-1 shrink-0`} />
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-foreground">
                   {post.title || post.content_idea?.idea || 'Untitled'}
                 </p>
@@ -364,7 +467,10 @@ function DayView({ currentDate, todayKey, postsByDate, droppable, dragActive }: 
                   <span className="text-[10px] text-muted-foreground capitalize">{post.platform}</span>
                 )}
               </div>
-            </div>
+              {onEditPost && (
+                <Pencil size={13} className="text-purple-500 opacity-0 group-hover/post:opacity-100 transition-opacity shrink-0 mt-0.5" />
+              )}
+            </button>
           ))}
         </div>
       )}

@@ -84,7 +84,7 @@ export function PlanPostForm({ ideas }: Props) {
 
   if (ideas.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2">
+      <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center text-center space-y-2 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
         <CalendarPlus size={24} className="text-muted-foreground" />
         <p className="text-sm font-bold text-foreground">Schedule a Post</p>
         <p className="text-xs text-muted-foreground">
@@ -95,8 +95,11 @@ export function PlanPostForm({ ideas }: Props) {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-      <p className="text-sm font-bold text-foreground">Schedule a Post</p>
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.7)]">
+      <p className="text-sm font-bold text-foreground flex items-center gap-2">
+        <CalendarPlus size={15} className="text-purple-500" />
+        Schedule a Post
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Custom idea selector */}

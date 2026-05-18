@@ -50,6 +50,7 @@ export default async function SchedulePage() {
         scheduledPosts={scheduledPosts ?? []}
         pipelineIdeas={pipelineIdeas}
         availableIdeas={availableIdeas}
+        allIdeas={ideas}
         batchSize={batchSize}
       />
     </div>
