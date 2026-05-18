@@ -27,20 +27,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
   const PLATFORMS = activePlatforms?.length
     ? ALL_PLATFORMS.filter(p => p.key === 'all' || activePlatforms.includes(p.key as Platform))
     : ALL_PLATFORMS
-  const [active, setActive] = useState<Set<Platform | 'all'>>(new Set(['all']))
-
-  const toggle = (key: Platform | 'all') => {
-    setActive(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) {
-        next.delete(key)
-        if (next.size === 0) next.add('all')
-      } else {
-        next.add(key)
-      }
-      return next
-    })
-  }
+  const [active, setActive] = useState<Platform | 'all'>('all')
 
   // Group by date
   const byDate: Record<string, Record<string, number>> = {}
@@ -71,7 +58,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
   const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
 
   // Zoom Y-axis to fit only the currently-visible lines so variation looks bigger.
-  const visibleKeys = PLATFORMS.filter(p => active.has(p.key)).map(p => p.key)
+  const visibleKeys = PLATFORMS.filter(p => p.key === active).map(p => p.key)
   const visibleValues = data.flatMap(d =>
     visibleKeys.map(k => d[k as keyof typeof d]).filter((v): v is number => typeof v === 'number')
   )
@@ -92,13 +79,13 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
           {PLATFORMS.map(p => (
             <button
               key={p.key}
-              onClick={() => toggle(p.key)}
+              onClick={() => setActive(p.key)}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all duration-150 ${
-                active.has(p.key)
+                active === p.key
                   ? 'text-white shadow-sm'
                   : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:text-foreground'
               }`}
-              style={active.has(p.key) ? { backgroundColor: (isDark && p.darkColor) ? p.darkColor : p.color, color: (isDark && p.darkColor) ? '#000' : '#fff' } : undefined}
+              style={active === p.key ? { backgroundColor: (isDark && p.darkColor) ? p.darkColor : p.color, color: (isDark && p.darkColor) ? '#000' : '#fff' } : undefined}
             >
               {p.label}
             </button>
@@ -127,7 +114,7 @@ export function FollowerChart({ snapshots, activePlatforms }: Props) {
               formatter={(v: number | undefined) => v != null ? v.toLocaleString() : ''}
               contentStyle={{ borderRadius: '12px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', fontSize: '13px' }}
             />
-            {PLATFORMS.filter(p => active.has(p.key)).map(p => (
+            {PLATFORMS.filter(p => p.key === active).map(p => (
               <Line
                 key={p.key}
                 type="monotone"
