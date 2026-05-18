@@ -72,6 +72,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [addPrefill, setAddPrefill] = useState<AddPrefill>({})
+  const [addStatus, setAddStatus] = useState<ProductionStatus | undefined>(undefined)
   const [flash, setFlash] = useState<string | null>(null)
 
   function showFlash(msg: string) {
@@ -217,6 +218,11 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
             batchSize={batchSize}
             onEdit={setEditingIdea}
             onStatusChange={handleStatusChange}
+            onAdd={(status) => {
+              setAddPrefill({})
+              setAddStatus(status)
+              setAddOpen(true)
+            }}
           />
         </div>
 
@@ -246,11 +252,13 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
         onScheduled={() => refreshKeepScroll(router)}
         onAddAnother={(url, source) => {
           setEditingIdea(null)
+          setAddStatus(undefined)
           setAddPrefill({ inspirationUrl: url, source })
           setAddOpen(true)
         }}
         onDuplicate={(form) => {
           setEditingIdea(null)
+          setAddStatus(undefined)
           setAddPrefill(form)
           setAddOpen(true)
         }}
@@ -259,7 +267,8 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
       <AddIdeaDialog
         open={addOpen}
         prefill={addPrefill}
-        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
+        productionStatus={addStatus}
+        onClose={() => { setAddOpen(false); setAddPrefill({}); setAddStatus(undefined) }}
         onSaved={() => refreshKeepScroll(router)}
       />
     </>

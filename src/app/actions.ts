@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Platform } from '@/lib/types'
+import type { Platform, ProductionStatus } from '@/lib/types'
 
 export async function deletePost(id: string) {
   const supabase = await createClient()
@@ -73,6 +73,7 @@ export async function addIdea(
     caption?: string
     thumbnail_url?: string
     tags?: string[]
+    production_status?: ProductionStatus
   }
 ) {
   const supabase = await createClient()
@@ -89,8 +90,10 @@ export async function addIdea(
     cta: extra?.cta || null,
     caption: extra?.caption || null,
     tags: extra?.tags || [],
+    ...(extra?.production_status ? { production_status: extra.production_status } : {}),
   })
   revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard/schedule')
 }
 
 export async function addSwipePost(fields: {

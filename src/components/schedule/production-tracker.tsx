@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, GripVertical, ExternalLink, CalendarClock } from 'lucide-react'
+import { Pencil, GripVertical, ExternalLink, CalendarClock, Plus } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -281,6 +281,7 @@ function DroppableColumn({
   onToggleExpand,
   onEdit,
   onStatusChange,
+  onAdd,
 }: {
   stage: typeof STAGES[number]
   ideas: ContentIdea[]
@@ -289,6 +290,7 @@ function DroppableColumn({
   onToggleExpand: () => void
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
+  onAdd: (status: ProductionStatus) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.status })
   const isWipColumn = stage.status === 'recording' || stage.status === 'editing'
@@ -301,7 +303,7 @@ function DroppableColumn({
       {/* Column header */}
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${stage.bg}`}>
         <span className={`text-xs font-semibold ${stage.color}`}>{stage.label}</span>
-        <span className="ml-auto">
+        <div className="ml-auto flex items-center gap-1.5">
           {isWipColumn ? (
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums border ${
               overLimit
@@ -315,7 +317,15 @@ function DroppableColumn({
               {ideas.length}
             </span>
           )}
-        </span>
+          <button
+            type="button"
+            onClick={() => onAdd(stage.status)}
+            title={`Add a video to ${stage.label}`}
+            className={`flex items-center justify-center w-5 h-5 rounded-full border border-current/20 transition-all hover:bg-current/10 ${stage.color}`}
+          >
+            <Plus size={13} strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
 
       {/* Column drop zone */}
@@ -374,11 +384,12 @@ export const customCollisionDetection: CollisionDetection = (args) => {
 }
 
 /* ─── Production Pipeline (presentational — DndContext is provided by the parent) ─── */
-export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange }: {
+export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange, onAdd }: {
   ideas: ContentIdea[]
   batchSize: number
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
+  onAdd: (status: ProductionStatus) => void
 }) {
   const [expandedColumns, setExpandedColumns] = useState<Set<ProductionStatus>>(new Set())
 
@@ -391,16 +402,27 @@ export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange }:
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-bold text-foreground">Production Pipeline</p>
-        <p className="text-[10px] text-muted-foreground">Drag between columns to update status — or onto a calendar day to schedule</p>
+        <div className="flex items-center gap-3">
+          <p className="hidden sm:block text-[10px] text-muted-foreground">Drag between columns to update status — or onto a calendar day to schedule</p>
+          <button
+            type="button"
+            onClick={() => onAdd('recording')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-all shrink-0"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            Add video
+          </button>
+        </div>
       </div>
 
       {ideas.length === 0 ? (
         <EmptyState
           icon={CalendarClock}
-          title="No ideas in the pipeline"
-          description="Create ideas and update their production status to track progress from concept to posted."
+          title="No videos in the pipeline"
+          description="Add a video or update an idea's production status to track progress from concept to posted."
+          action={{ label: 'Add a video', onClick: () => onAdd('recording') }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -419,6 +441,7 @@ export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange }:
               })}
               onEdit={onEdit}
               onStatusChange={onStatusChange}
+              onAdd={onAdd}
             />
           ))}
         </div>

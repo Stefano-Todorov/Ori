@@ -454,6 +454,8 @@ interface AddIdeaDialogProps {
   open: boolean
   prefill?: Partial<IdeaFormState>
   allTags?: string[]
+  /** When set, the new video is created directly in this pipeline stage. */
+  productionStatus?: ProductionStatus
   onClose: () => void
   onSaved?: () => void
 }
@@ -462,6 +464,7 @@ export function AddIdeaDialog({
   open,
   prefill,
   allTags = [],
+  productionStatus,
   onClose,
   onSaved,
 }: AddIdeaDialogProps) {
@@ -506,6 +509,7 @@ export function AddIdeaDialog({
         cta: form.cta.trim() || undefined,
         caption: form.caption.trim() || undefined,
         tags: savedTags.length > 0 ? savedTags : undefined,
+        production_status: productionStatus,
       })
       onSaved?.()
       if (keepOpen) {
@@ -534,7 +538,13 @@ export function AddIdeaDialog({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, form]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const title = prefill?.idea ? 'Duplicate idea' : prefill?.inspirationUrl ? 'Add another idea' : 'New idea'
+  const title = prefill?.idea
+    ? 'Duplicate idea'
+    : prefill?.inspirationUrl
+      ? 'Add another idea'
+      : productionStatus
+        ? `New video — ${STATUS_LABEL[productionStatus]}`
+        : 'New idea'
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
@@ -716,6 +726,7 @@ export function AddIdeaDialog({
                         cta: form.cta.trim() || undefined,
                         caption: form.caption.trim() || undefined,
                         tags: form.tags.length > 0 ? form.tags : undefined,
+                        production_status: productionStatus,
                       })
                       onSaved?.()
                       // Reset with all fields pre-filled (duplicate)
