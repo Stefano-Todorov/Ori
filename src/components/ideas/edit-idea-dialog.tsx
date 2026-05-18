@@ -76,6 +76,10 @@ function formFromIdea(item: ContentIdea): IdeaFormState {
 
 const fieldInputClass = 'bg-muted dark:bg-[#1e1e2e] border-border text-foreground placeholder:text-muted-foreground/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
 
+function formatScheduleLabel(date: string) {
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function EditIdeaDialog({
@@ -96,8 +100,7 @@ export function EditIdeaDialog({
     scriptSnippet: '', cta: '', caption: '', tags: [],
   })
   const [captionExpanded, setCaptionExpanded] = useState(false)
-  const [scheduleDate, setScheduleDate] = useState('')
-  const [justScheduled, setJustScheduled] = useState(false)
+  const [scheduledFor, setScheduledFor] = useState<string | null>(null)
 
   // Sync form state when idea changes
   useEffect(() => {
@@ -105,8 +108,7 @@ export function EditIdeaDialog({
       const f = formFromIdea(idea)
       setForm(f)
       setCaptionExpanded(!!f.caption)
-      setScheduleDate('')
-      setJustScheduled(false)
+      setScheduledFor(null)
     }
   }, [idea?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -175,16 +177,14 @@ export function EditIdeaDialog({
 
   const handleSchedule = useCallback((date: string) => {
     if (!idea || !date) return
-    setScheduleDate(date)
+    setScheduledFor(date)
     startTransition(async () => {
       await schedulePost({
         content_idea_id: idea.id,
         title: form.idea.trim() || idea.idea,
         scheduled_date: date,
       })
-      setJustScheduled(true)
       onScheduled?.()
-      setTimeout(() => { setJustScheduled(false); setScheduleDate('') }, 1800)
     })
   }, [idea, form.idea, onScheduled])
 
@@ -229,12 +229,19 @@ export function EditIdeaDialog({
                 ))}
               </SelectContent>
             </Select>
-            {justScheduled ? (
-              <span className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[11px] font-semibold bg-green-400/15 text-green-500 border border-green-400/30">
-                <Check size={12} /> Scheduled
+            {scheduledFor ? (
+              <span className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[11px] font-semibold bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/30">
+                <Check size={13} className="shrink-0" />
+                Scheduled for {formatScheduleLabel(scheduledFor)}
               </span>
             ) : (
-              <DatePicker value={scheduleDate} onChange={handleSchedule} compact placeholder="Schedule" />
+              <DatePicker
+                value=""
+                onChange={handleSchedule}
+                compact
+                placeholder="Schedule"
+                triggerClassName="bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-600/25 hover:bg-purple-700 hover:border-purple-700"
+              />
             )}
           </div>
         </DialogHeader>

@@ -8,8 +8,10 @@ interface DatePickerProps {
   onChange: (date: string) => void
   className?: string
   placeholder?: string
-  /** Renders a smaller pill-sized trigger (for inline use next to other controls). */
+  /** Renders a pill-sized trigger (for inline use next to other controls). */
   compact?: boolean
+  /** Overrides the trigger's color styling when compact (e.g. a solid accent button). */
+  triggerClassName?: string
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -24,7 +26,7 @@ function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function DatePicker({ value, onChange, className = '', placeholder = 'Select date', compact = false }: DatePickerProps) {
+export function DatePicker({ value, onChange, className = '', placeholder = 'Select date', compact = false, triggerClassName }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -100,14 +102,16 @@ export function DatePicker({ value, onChange, className = '', placeholder = 'Sel
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center text-left bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all rounded-lg ${
+        className={
           compact
-            ? 'gap-1.5 h-7 px-2.5 text-[11px] font-medium'
-            : 'gap-2 w-full h-9 px-3 text-sm'
-        }`}
+            ? `flex items-center gap-1.5 h-9 px-3 text-[11px] font-semibold rounded-lg border text-left transition-all ${
+                triggerClassName || 'bg-muted dark:bg-[#1e1e2e] border-border text-foreground hover:bg-muted/70'
+              }`
+            : 'flex items-center gap-2 w-full h-9 px-3 text-sm text-left rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all'
+        }
       >
-        <Calendar size={compact ? 12 : 14} className="text-muted-foreground shrink-0" />
-        <span className={displayValue ? 'text-foreground' : 'text-muted-foreground'}>
+        <Calendar size={compact ? 13 : 14} className={compact ? 'shrink-0' : 'text-muted-foreground shrink-0'} />
+        <span className={compact ? '' : (displayValue ? 'text-foreground' : 'text-muted-foreground')}>
           {displayValue || placeholder}
         </span>
       </button>
