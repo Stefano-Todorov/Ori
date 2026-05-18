@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Eye, Heart, MessageCircle, ExternalLink,
-  Loader2, Check, Plus, Bookmark, Send,
+  Loader2, Check, Plus, Bookmark, Send, Copy,
 } from 'lucide-react'
 import { addIdea, scheduleIdea } from '@/app/actions'
 import type { Post, ProductionStatus } from '@/lib/types'
@@ -183,6 +183,17 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
     setForm(prev => emptyForm(prev.inspirationUrl, prev.tags))
     setCaptionExpanded(false)
     setScheduledDate('')
+    setJustSaved(true)
+    setTimeout(() => setJustSaved(false), 2500)
+  }, [form.idea, saving, persist])
+
+  const handleSaveAndDuplicate = useCallback(async () => {
+    if (!form.idea.trim() || saving) return
+    setSaving(true)
+    await persist()
+    setSaving(false)
+    setSavedCount(c => c + 1)
+    // Keep every field filled so the user can tweak it into a variation
     setJustSaved(true)
     setTimeout(() => setJustSaved(false), 2500)
   }, [form.idea, saving, persist])
@@ -475,20 +486,28 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
             <button
               onClick={handleSaveAndNew}
               disabled={!form.idea.trim() || saving}
-              className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 h-10 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus size={14} />
+              <Plus size={13} />
               Save &amp; add new
             </button>
             <button
-              onClick={handleSave}
+              onClick={handleSaveAndDuplicate}
               disabled={!form.idea.trim() || saving}
-              className="flex-1 h-11 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 h-10 rounded-xl border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-              Save idea
+              <Copy size={13} />
+              Save &amp; duplicate
             </button>
           </div>
+          <button
+            onClick={handleSave}
+            disabled={!form.idea.trim() || saving}
+            className="w-full h-11 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            Save idea
+          </button>
         </div>
       </div>
     </div>
