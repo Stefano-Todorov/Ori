@@ -609,6 +609,14 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 {timeAgo(post.created_at)}
               </span>
               <span className="flex-1" />
+              <button
+                onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
+                className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
+                title="Create idea from this inspo"
+              >
+                <Plus size={10} />
+                Create idea
+              </button>
               {post.url && (
                 <a
                   href={post.url}
@@ -732,13 +740,6 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
-              <button
-                onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
-                className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-              >
-                <Plus size={12} />
-                Create idea
-              </button>
               {post.url && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDownload() }}
