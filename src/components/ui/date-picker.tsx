@@ -8,6 +8,8 @@ interface DatePickerProps {
   onChange: (date: string) => void
   className?: string
   placeholder?: string
+  /** Renders a smaller pill-sized trigger (for inline use next to other controls). */
+  compact?: boolean
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -22,7 +24,7 @@ function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function DatePicker({ value, onChange, className = '', placeholder = 'Select date' }: DatePickerProps) {
+export function DatePicker({ value, onChange, className = '', placeholder = 'Select date', compact = false }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -98,9 +100,13 @@ export function DatePicker({ value, onChange, className = '', placeholder = 'Sel
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 w-full h-9 px-3 text-sm rounded-lg bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all text-left"
+        className={`flex items-center text-left bg-muted dark:bg-[#1e1e2e] border border-border focus:border-purple-500 focus:ring-[3px] focus:ring-purple-500/20 transition-all rounded-lg ${
+          compact
+            ? 'gap-1.5 h-7 px-2.5 text-[11px] font-medium'
+            : 'gap-2 w-full h-9 px-3 text-sm'
+        }`}
       >
-        <Calendar size={14} className="text-muted-foreground shrink-0" />
+        <Calendar size={compact ? 12 : 14} className="text-muted-foreground shrink-0" />
         <span className={displayValue ? 'text-foreground' : 'text-muted-foreground'}>
           {displayValue || placeholder}
         </span>
