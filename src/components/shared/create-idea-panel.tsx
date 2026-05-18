@@ -85,7 +85,7 @@ function PostThumbnail({ post }: { post: Post }) {
 
   if (!post.thumbnail_url || hidden) {
     return (
-      <div className="w-36 h-48 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold uppercase bg-muted text-muted-foreground border border-border dark:border-white/6">
+      <div className="w-44 h-60 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold uppercase bg-muted text-muted-foreground border border-border dark:border-white/6">
         {post.platform?.[0] ?? '?'}
       </div>
     )
@@ -96,7 +96,7 @@ function PostThumbnail({ post }: { post: Post }) {
       alt=""
       referrerPolicy="no-referrer"
       onError={() => setHidden(true)}
-      className="w-36 h-48 rounded-xl object-cover shrink-0 bg-muted border border-border dark:border-white/6"
+      className="w-44 h-60 rounded-xl object-cover shrink-0 bg-muted border border-border dark:border-white/6"
     />
   )
 }

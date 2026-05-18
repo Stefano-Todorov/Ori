@@ -44,21 +44,21 @@ function Thumbnail({ post }: { post: Post }) {
       instagram: 'bg-gradient-to-br from-pink-500/20 to-purple-500/20 text-pink-500',
     }
     return (
-      <div className={`w-20 h-26 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
+      <div className={`w-24 h-32 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold uppercase ${colors[post.platform] ?? 'bg-muted text-muted-foreground'}`}>
         {post.platform?.[0] ?? '?'}
       </div>
     )
   }
 
   if (!src) {
-    return <div className="w-20 h-26 rounded-lg shrink-0 bg-muted animate-pulse" />
+    return <div className="w-24 h-32 rounded-lg shrink-0 bg-muted animate-pulse" />
   }
 
   return (
     <img
       src={src}
       alt=""
-      className="w-20 h-26 rounded-lg object-cover shrink-0 bg-muted"
+      className="w-24 h-32 rounded-lg object-cover shrink-0 bg-muted"
       onError={() => { setSrc(null); setFailed(!triedApi) }}
     />
   )
