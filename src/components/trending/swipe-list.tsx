@@ -618,6 +618,20 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
                 Create idea
               </button>
               {post.url && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
+                  disabled={downloading}
+                  className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
+                  title="Download video"
+                >
+                  {downloading ? <Loader2 size={10} className="animate-spin" /> : <Download size={10} />}
+                  {downloading ? 'Downloading...' : 'Download'}
+                </button>
+              )}
+              {downloadError && (
+                <span className="shrink-0 text-[10px] text-red-500">{downloadError}</span>
+              )}
+              {post.url && (
                 <a
                   href={post.url}
                   target="_blank"
@@ -739,21 +753,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-border dark:border-white/6 flex-wrap">
-              {post.url && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDownload() }}
-                  disabled={downloading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all disabled:opacity-50"
-                >
-                  {downloading ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
-                  {downloading ? 'Downloading...' : 'Download'}
-                </button>
-              )}
-              {downloadError && (
-                <span className="text-[10px] text-red-500">{downloadError}</span>
-              )}
-              <div className="ml-auto" />
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border dark:border-white/6">
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete() }}
                 disabled={deleting}

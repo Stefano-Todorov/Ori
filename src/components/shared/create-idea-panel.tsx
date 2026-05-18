@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Eye, Heart, MessageCircle, ExternalLink,
   Loader2, Check, Plus, Bookmark, Send,
 } from 'lucide-react'
 import { addIdea } from '@/app/actions'
 import type { Post } from '@/lib/types'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 
 // ─── Helpers ──────────────────────────────────────────
@@ -25,10 +27,10 @@ function engagementRate(post: Post): number | null {
 function cleanCaption(raw: string | null): string {
   if (!raw) return ''
   let text = raw.trim()
-  const metaMatch = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)[""\u201d]\s*\.?\s*$/)
+  const metaMatch = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""“]([\s\S]+)[""”]\s*\.?\s*$/)
   if (metaMatch) return metaMatch[1].trim()
-  const metaMatch2 = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""\u201c]([\s\S]+)/)
-  if (metaMatch2) return metaMatch2[1].replace(/[""\u201d]\s*\.?\s*$/, '').trim()
+  const metaMatch2 = text.match(/^\d[\d,.KMB]+\s*likes?[\s\S]*?:\s*[""“]([\s\S]+)/)
+  if (metaMatch2) return metaMatch2[1].replace(/[""”]\s*\.?\s*$/, '').trim()
   return text
 }
 
@@ -56,10 +58,32 @@ function postTitle(post: Post): string {
   return (lastSpace > 20 ? truncated.slice(0, lastSpace) : truncated).trim() + '...'
 }
 
+// ─── Thumbnail ────────────────────────────────────────
+
+function PostThumbnail({ post }: { post: Post }) {
+  const [hidden, setHidden] = useState(false)
+
+  if (!post.thumbnail_url || hidden) {
+    return (
+      <div className="w-24 h-32 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold uppercase bg-muted text-muted-foreground border border-border dark:border-white/6">
+        {post.platform?.[0] ?? '?'}
+      </div>
+    )
+  }
+  return (
+    <img
+      src={post.thumbnail_url}
+      alt=""
+      referrerPolicy="no-referrer"
+      onError={() => setHidden(true)}
+      className="w-24 h-32 rounded-xl object-cover shrink-0 bg-muted border border-border dark:border-white/6"
+    />
+  )
+}
+
 // ─── Types ────────────────────────────────────────────
 
-interface IdeaForm {
-  id: string
+interface IdeaFormState {
   idea: string
   inspirationUrl: string
   hookIdea: string
@@ -67,18 +91,18 @@ interface IdeaForm {
   cta: string
   caption: string
   tags: string[]
-  saving: boolean
-  saved: boolean
 }
 
-function emptyIdeaForm(url: string, tags: string[] = []): IdeaForm {
+function emptyForm(url: string, tags: string[]): IdeaFormState {
   return {
-    id: crypto.randomUUID(),
     idea: '', inspirationUrl: url, hookIdea: '',
-    scriptSnippet: '', cta: '', caption: '',
-    tags: [...tags], saving: false, saved: false,
+    scriptSnippet: '', cta: '', caption: '', tags: [...tags],
   }
 }
+
+// ─── Styling (matches Add/Edit Idea dialogs) ──────────
+
+const fieldInputClass = 'bg-muted dark:bg-[#1e1e2e] border-border text-foreground placeholder:text-muted-foreground/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
 
 // ─── Create Idea Panel (side-by-side) ─────────────────
 
@@ -90,26 +114,19 @@ interface CreateIdeaPanelProps {
 
 export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps) {
   const postTags = post.tags ?? []
-  const [forms, setForms] = useState<IdeaForm[]>([emptyIdeaForm(post.url || '', postTags)])
+  const [form, setForm] = useState<IdeaFormState>(() => emptyForm(post.url || '', postTags))
+  const [captionExpanded, setCaptionExpanded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+  const [justSaved, setJustSaved] = useState(false)
 
-  const formTags = forms.flatMap(f => f.tags)
-  const combinedTags = [...new Set([...allTags, ...formTags])].sort()
+  const combinedTags = [...new Set([...allTags, ...form.tags])].sort()
 
-  function updateForm(id: string, updates: Partial<IdeaForm>) {
-    setForms(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f))
+  function set<K extends keyof IdeaFormState>(key: K, val: IdeaFormState[K]) {
+    setForm(prev => ({ ...prev, [key]: val }))
   }
 
-  function addForm() {
-    setForms(prev => [...prev, emptyIdeaForm(post.url || '', postTags)])
-  }
-
-  function removeForm(id: string) {
-    setForms(prev => prev.length > 1 ? prev.filter(f => f.id !== id) : prev)
-  }
-
-  async function saveForm(form: IdeaForm) {
-    if (!form.idea.trim()) return
-    updateForm(form.id, { saving: true })
+  const persist = useCallback(async () => {
     const source = post.is_competitor
       ? `competitor: @${post.competitor_handle || 'unknown'} (${post.platform})`
       : `inspiration: @${post.competitor_handle || 'unknown'} (${post.platform})`
@@ -121,15 +138,40 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
       caption: form.caption.trim() || undefined,
       tags: form.tags.length > 0 ? form.tags : undefined,
     })
-    updateForm(form.id, { saving: false, saved: true })
-  }
+  }, [post, form])
 
-  async function saveAll() {
-    const unsaved = forms.filter(f => !f.saved && f.idea.trim())
-    for (const form of unsaved) {
-      await saveForm(form)
+  const handleSave = useCallback(async () => {
+    if (!form.idea.trim() || saving) return
+    setSaving(true)
+    await persist()
+    setSaving(false)
+    onClose()
+  }, [form.idea, saving, persist, onClose])
+
+  const handleSaveAndNew = useCallback(async () => {
+    if (!form.idea.trim() || saving) return
+    setSaving(true)
+    await persist()
+    setSaving(false)
+    setSavedCount(c => c + 1)
+    setForm(prev => emptyForm(prev.inspirationUrl, prev.tags))
+    setCaptionExpanded(false)
+    setJustSaved(true)
+    setTimeout(() => setJustSaved(false), 2500)
+  }, [form.idea, saving, persist])
+
+  // Keyboard: Cmd/Ctrl+Enter to save, Cmd/Ctrl+Shift+Enter to save & new
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (e.shiftKey) handleSaveAndNew()
+        else handleSave()
+      }
     }
-  }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleSave, handleSaveAndNew])
 
   const er = engagementRate(post)
 
@@ -139,20 +181,25 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
       <div className="w-[45%] border-r border-border dark:border-white/6 overflow-y-auto min-h-0 p-6 space-y-4">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Original Post</p>
-          <h3 className="text-base font-bold text-foreground leading-snug">{post.title || postTitle(post)}</h3>
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            {post.competitor_handle && (
-              <span className="text-xs text-muted-foreground">@{post.competitor_handle}</span>
-            )}
-            {post.platform && (
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${
-                post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
-                  : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
-                  : 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-              }`}>
-                {post.platform}
-              </span>
-            )}
+          <div className="flex gap-3">
+            <PostThumbnail post={post} />
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-foreground leading-snug">{post.title || postTitle(post)}</h3>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {post.competitor_handle && (
+                  <span className="text-xs text-muted-foreground">@{post.competitor_handle}</span>
+                )}
+                {post.platform && (
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize ${
+                    post.platform === 'tiktok' ? 'bg-black/80 dark:bg-white/10 text-white border-transparent'
+                      : post.platform === 'instagram' ? 'bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-pink-500/30 text-pink-600 dark:text-pink-400'
+                      : 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
+                  }`}>
+                    {post.platform}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -226,174 +273,176 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
         )}
       </div>
 
-      {/* Right — Idea Forms */}
+      {/* Right — Idea Form (matches the Add/Edit idea box) */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-border dark:border-white/6">
           <div>
-            <h2 className="text-lg font-bold text-foreground">New ideas</h2>
+            <h2 className="text-lg font-bold text-foreground">
+              New idea{savedCount > 0 ? <span className="text-muted-foreground font-medium"> · {savedCount} saved</span> : null}
+            </h2>
             <div className="h-0.5 w-12 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={addForm}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border dark:border-white/10 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-            >
-              <Plus size={12} /> Add another
-            </button>
-            <button
-              onClick={onClose}
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-            >
-              <span className="text-lg leading-none">&times;</span>
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+          >
+            <span className="text-lg leading-none">&times;</span>
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-          {forms.map((form, idx) => (
-            <div key={form.id} className={`space-y-3 ${idx > 0 ? 'pt-6 border-t border-border dark:border-white/6' : ''}`}>
-              {forms.length > 1 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Idea {idx + 1}</span>
-                  {!form.saved && (
-                    <button onClick={() => removeForm(form.id)} className="text-xs text-muted-foreground hover:text-red-500 transition-colors">Remove</button>
-                  )}
-                </div>
-              )}
-
-              {form.saved ? (
-                <div className="flex items-center gap-2 py-3 px-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <Check size={14} className="text-green-600 dark:text-green-400" />
-                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Idea saved!</span>
-                </div>
-              ) : (
-                <IdeaFormInline
-                  form={form}
-                  allTags={combinedTags}
-                  urlLocked={!!post.url}
-                  onChange={(updates) => updateForm(form.id, updates)}
-                  onSave={() => saveForm(form)}
-                />
-              )}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* ─── Section: Idea ─── */}
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                Video idea <span className="text-purple-400">*</span>
+              </label>
+              <Textarea
+                placeholder="What's the video about? Topic, angle..."
+                value={form.idea}
+                onChange={(e) => set('idea', e.target.value)}
+                rows={2}
+                autoFocus
+                className={fieldInputClass}
+              />
             </div>
-          ))}
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                Inspiration URL
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="https://..."
+                  value={form.inspirationUrl}
+                  onChange={(e) => set('inspirationUrl', e.target.value)}
+                  className={`${fieldInputClass} flex-1`}
+                />
+                {form.inspirationUrl && (
+                  <a
+                    href={form.inspirationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all shrink-0"
+                  >
+                    <ExternalLink size={12} />
+                    View
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ─── Section: The Script ─── */}
+          <div className="rounded-xl border border-border/60 dark:border-white/[0.08] bg-muted/30 dark:bg-white/[0.02] p-4 space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+              The Script
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                Hook
+              </label>
+              <Textarea
+                placeholder="Opening line — what makes someone stop scrolling?"
+                value={form.hookIdea}
+                onChange={(e) => set('hookIdea', e.target.value)}
+                rows={2}
+                className={fieldInputClass}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                Body
+              </label>
+              <Textarea
+                placeholder="The main content, points, or full script..."
+                value={form.scriptSnippet}
+                onChange={(e) => set('scriptSnippet', e.target.value)}
+                rows={4}
+                className={fieldInputClass}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                CTA
+              </label>
+              <Input
+                placeholder="e.g. Follow for more, Comment below..."
+                value={form.cta}
+                onChange={(e) => set('cta', e.target.value)}
+                className={fieldInputClass}
+              />
+            </div>
+          </div>
+
+          {/* ─── Caption (progressive disclosure) ─── */}
+          {captionExpanded ? (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                Caption
+              </label>
+              <Textarea
+                placeholder="Post caption with hashtags..."
+                value={form.caption}
+                onChange={(e) => set('caption', e.target.value)}
+                rows={3}
+                className={fieldInputClass}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCaptionExpanded(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              <Plus size={12} />
+              Add caption
+            </button>
+          )}
+
+          {/* ─── Tags ─── */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+              Tags
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <TagPills tags={form.tags} />
+              <TagEditor tags={form.tags} allTags={combinedTags} onChange={(tags) => set('tags', tags)} />
+            </div>
+          </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="px-6 py-4 border-t border-border dark:border-white/6">
-          <button
-            onClick={saveAll}
-            disabled={!forms.some(f => !f.saved && f.idea.trim())}
-            className="w-full h-11 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {forms.some(f => f.saving) ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-            {forms.filter(f => !f.saved && f.idea.trim()).length > 1 ? `Save ${forms.filter(f => !f.saved && f.idea.trim()).length} ideas` : 'Save idea'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Inline Idea Form ─────────────────────────────────
-
-const fieldInputClass = 'bg-muted border-border text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-200 rounded-lg'
-
-function IdeaFormInline({ form, allTags, urlLocked, onChange, onSave }: {
-  form: IdeaForm
-  allTags: string[]
-  urlLocked: boolean
-  onChange: (updates: Partial<IdeaForm>) => void
-  onSave: () => void
-}) {
-  return (
-    <div className="space-y-3">
-      {/* Content header with tags */}
-      <div className="border-t border-border pt-3 mt-1">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[9px] uppercase tracking-[0.08em] text-[#555570] font-semibold">Content</p>
-          <div className="flex items-center gap-1.5">
-            <TagPills tags={form.tags} />
-            <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => onChange({ tags })} />
+        <div className="px-6 py-4 border-t border-border dark:border-white/6 space-y-2">
+          {justSaved && (
+            <div className="flex items-center gap-2 py-2 px-3 rounded-lg bg-green-500/10 border border-green-500/20">
+              <Check size={13} className="text-green-600 dark:text-green-400" />
+              <span className="text-xs font-medium text-green-600 dark:text-green-400">Idea saved — add another below.</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveAndNew}
+              disabled={!form.idea.trim() || saving}
+              className="flex-1 h-11 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={14} />
+              Save &amp; add new
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!form.idea.trim() || saving}
+              className="flex-1 h-11 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              Save idea
+            </button>
           </div>
         </div>
       </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">
-          Video idea <span className="text-purple-400">*</span>
-        </label>
-        <textarea
-          placeholder="What's the video about? Topic, angle..."
-          value={form.idea}
-          onChange={(e) => onChange({ idea: e.target.value })}
-          rows={2}
-          autoFocus
-          className={`w-full text-sm px-3 py-2 ${fieldInputClass}`}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Inspiration URL</label>
-        <input
-          value={form.inspirationUrl}
-          onChange={(e) => onChange({ inspirationUrl: e.target.value })}
-          className={`w-full text-sm px-3 py-2 h-9 ${fieldInputClass} ${urlLocked ? 'opacity-60' : ''}`}
-          readOnly={urlLocked}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Hook</label>
-        <textarea
-          placeholder="Opening line — what makes someone stop scrolling?"
-          value={form.hookIdea}
-          onChange={(e) => onChange({ hookIdea: e.target.value })}
-          rows={2}
-          className={`w-full text-sm px-3 py-2 ${fieldInputClass}`}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Body / Script</label>
-        <textarea
-          placeholder="The main content, points, or full script..."
-          value={form.scriptSnippet}
-          onChange={(e) => onChange({ scriptSnippet: e.target.value })}
-          rows={4}
-          className={`w-full text-sm px-3 py-2 ${fieldInputClass}`}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">CTA</label>
-        <input
-          placeholder="e.g. Follow for more, Comment below..."
-          value={form.cta}
-          onChange={(e) => onChange({ cta: e.target.value })}
-          className={`w-full text-sm px-3 py-2 h-9 ${fieldInputClass}`}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-[10px] uppercase tracking-[0.05em] text-[#a0a0b8] font-medium">Caption</label>
-        <textarea
-          placeholder="Post caption with hashtags..."
-          value={form.caption}
-          onChange={(e) => onChange({ caption: e.target.value })}
-          rows={2}
-          className={`w-full text-sm px-3 py-2 ${fieldInputClass}`}
-        />
-      </div>
-
-      <button
-        onClick={onSave}
-        disabled={!form.idea.trim() || form.saving}
-        className="w-full mt-1 h-10 rounded-xl bg-purple-600 text-white text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {form.saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-        Save idea
-      </button>
     </div>
   )
 }
