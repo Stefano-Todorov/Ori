@@ -1,41 +1,24 @@
 'use client'
 
-import { useState, useTransition, useEffect, useCallback } from 'react'
-import { updateProductionStatus, reorderIdeas } from '@/app/actions'
-import { useRouter } from 'next/navigation'
-import { refreshKeepScroll } from '@/lib/router-utils'
+import { useState } from 'react'
 import { Pencil, GripVertical, ExternalLink, CalendarClock } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 import {
-  DndContext,
-  DragOverlay,
   pointerWithin,
   rectIntersection,
   type CollisionDetection,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
   verticalListSortingStrategy,
   useSortable,
-  arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 
-interface Props {
-  ideas: ContentIdea[]
-  batchSize: number
-}
-
-const STAGES: { status: ProductionStatus; label: string; color: string; bg: string; border: string }[] = [
+export const STAGES: { status: ProductionStatus; label: string; color: string; bg: string; border: string }[] = [
   { status: 'recording', label: 'Recording', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   { status: 'editing', label: 'Editing', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
   { status: 'ready', label: 'Ready to Post', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
@@ -72,6 +55,11 @@ const STATUS_LABEL: Record<ProductionStatus, string> = {
   editing: 'Editing',
   ready: 'Ready to Post',
   posted: 'Posted',
+}
+
+/** Ideas with status 'new' are shown in the Recording column. */
+export function getDisplayStatus(idea: ContentIdea): ProductionStatus {
+  return idea.production_status === 'new' ? 'recording' : idea.production_status
 }
 
 function parseSource(source: string | null): { prefix: string; handle: string; platform: string } | null {
@@ -129,7 +117,7 @@ function SortableIdeaCard({ idea, rank, rankOverLimit, onEdit, onStatusChange }:
 }
 
 /* ─── Idea Card Content (shared between sortable and overlay) ─── */
-function IdeaCardContent({
+export function IdeaCardContent({
   idea,
   rank,
   rankOverLimit,
@@ -369,12 +357,11 @@ function DroppableColumn({
   )
 }
 
-
 /* ─── Custom collision detection: prefer sortable items over column droppables ─── */
-const COLUMN_IDS = new Set(['recording', 'editing', 'ready', 'posted'])
+export const COLUMN_IDS = new Set(['recording', 'editing', 'ready', 'posted'])
 
-const customCollisionDetection: CollisionDetection = (args) => {
-  // First try pointer-within for precise card targeting
+export const customCollisionDetection: CollisionDetection = (args) => {
+  // First try pointer-within for precise card / calendar-day targeting
   const pointerCollisions = pointerWithin(args)
   const cardCollisions = pointerCollisions.filter(c => !COLUMN_IDS.has(c.id as string))
   if (cardCollisions.length > 0) return cardCollisions
@@ -386,186 +373,56 @@ const customCollisionDetection: CollisionDetection = (args) => {
   return pointerCollisions
 }
 
-/* ─── Main Component ─── */
-export function ProductionTracker({ ideas: propIdeas, batchSize }: Props) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
+/* ─── Production Pipeline (presentational — DndContext is provided by the parent) ─── */
+export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange }: {
+  ideas: ContentIdea[]
+  batchSize: number
+  onEdit: (idea: ContentIdea) => void
+  onStatusChange: (ideaId: string, status: ProductionStatus) => void
+}) {
   const [expandedColumns, setExpandedColumns] = useState<Set<ProductionStatus>>(new Set())
-
-  // Add-another dialog state
-  const [addOpen, setAddOpen] = useState(false)
-  const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string; tags?: string[] }>({})
-
-  // Local state for real-time drag reordering
-  const [localIdeas, setLocalIdeas] = useState(propIdeas)
-  useEffect(() => { setLocalIdeas(propIdeas) }, [propIdeas])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  )
-
-  const getDisplayStatus = useCallback((idea: ContentIdea) => {
-    return idea.production_status === 'new' ? 'recording' : idea.production_status
-  }, [])
 
   const grouped = STAGES.map(stage => ({
     ...stage,
-    items: localIdeas
+    items: ideas
       .filter(idea => getDisplayStatus(idea) === stage.status)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
   }))
 
-  const activeIdea = activeId ? localIdeas.find(i => i.id === activeId) ?? null : null
-
-  function handleStatusChange(ideaId: string, status: ProductionStatus) {
-    startTransition(async () => {
-      await updateProductionStatus(ideaId, status)
-      refreshKeepScroll(router)
-    })
-  }
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string)
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event
-    setActiveId(null)
-    if (!over || active.id === over.id) return
-
-    const ideaId = active.id as string
-    const idea = localIdeas.find(i => i.id === ideaId)
-    if (!idea) return
-
-    let targetStatus: ProductionStatus | null = null
-
-    if (COLUMN_IDS.has(over.id as string)) {
-      targetStatus = over.id as ProductionStatus
-    } else {
-      const targetIdea = localIdeas.find(i => i.id === over.id)
-      if (targetIdea) {
-        targetStatus = getDisplayStatus(targetIdea)
-      }
-    }
-
-    if (!targetStatus) return
-
-    const currentStatus = getDisplayStatus(idea)
-
-    if (currentStatus === targetStatus) {
-      // Same column — reorder
-      const columnItems = localIdeas
-        .filter(i => getDisplayStatus(i) === currentStatus)
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      const oldIndex = columnItems.findIndex(i => i.id === active.id)
-      const newIndex = columnItems.findIndex(i => i.id === over.id)
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
-
-      // Update local state immediately for visual feedback
-      const reordered = arrayMove(columnItems, oldIndex, newIndex)
-      setLocalIdeas(prev => {
-        const otherIdeas = prev.filter(i => getDisplayStatus(i) !== currentStatus)
-        const updated = reordered.map((item, i) => ({ ...item, sort_order: i }))
-        return [...otherIdeas, ...updated]
-      })
-
-      // Persist to server
-      startTransition(async () => {
-        await reorderIdeas(reordered.map(i => i.id))
-        refreshKeepScroll(router)
-      })
-    } else {
-      // Cross-column — change status
-      // Update local state immediately
-      setLocalIdeas(prev => prev.map(i =>
-        i.id === ideaId ? { ...i, production_status: targetStatus! } : i
-      ))
-
-      startTransition(async () => {
-        await updateProductionStatus(ideaId, targetStatus!)
-        refreshKeepScroll(router)
-      })
-    }
-  }
-
   return (
-    <>
-      <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-foreground">Production Pipeline</p>
-          <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
-        </div>
-
-        {localIdeas.length === 0 ? (
-          <EmptyState
-            icon={CalendarClock}
-            title="No ideas in the pipeline"
-            description="Create ideas and update their production status to track progress from concept to posted."
-          />
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={customCollisionDetection}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {grouped.map(stage => (
-                <DroppableColumn
-                  key={stage.status}
-                  stage={stage}
-                  ideas={stage.items}
-                  batchSize={batchSize}
-                  isExpanded={expandedColumns.has(stage.status)}
-                  onToggleExpand={() => setExpandedColumns(prev => {
-                    const next = new Set(prev)
-                    if (next.has(stage.status)) next.delete(stage.status)
-                    else next.add(stage.status)
-                    return next
-                  })}
-                  onEdit={setEditingIdea}
-                  onStatusChange={handleStatusChange}
-                />
-              ))}
-            </div>
-
-            <DragOverlay>
-              {activeIdea ? (
-                <div className="w-[300px]">
-                  <IdeaCardContent idea={activeIdea} isOverlay />
-                </div>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        )}
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-bold text-foreground">Production Pipeline</p>
+        <p className="text-[10px] text-muted-foreground">Drag between columns to update status — or onto a calendar day to schedule</p>
       </div>
 
-      <EditIdeaDialog
-        key={editingIdea?.id}
-        idea={editingIdea}
-        onClose={() => setEditingIdea(null)}
-        onStatusChange={handleStatusChange}
-        onSaved={() => refreshKeepScroll(router)}
-        onAddAnother={(url, source) => {
-          setEditingIdea(null)
-          setAddPrefill({ inspirationUrl: url, source })
-          setAddOpen(true)
-        }}
-        onDuplicate={(form) => {
-          setEditingIdea(null)
-          setAddPrefill(form)
-          setAddOpen(true)
-        }}
-      />
-
-      <AddIdeaDialog
-        open={addOpen}
-        prefill={addPrefill}
-        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
-        onSaved={() => refreshKeepScroll(router)}
-      />
-    </>
+      {ideas.length === 0 ? (
+        <EmptyState
+          icon={CalendarClock}
+          title="No ideas in the pipeline"
+          description="Create ideas and update their production status to track progress from concept to posted."
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {grouped.map(stage => (
+            <DroppableColumn
+              key={stage.status}
+              stage={stage}
+              ideas={stage.items}
+              batchSize={batchSize}
+              isExpanded={expandedColumns.has(stage.status)}
+              onToggleExpand={() => setExpandedColumns(prev => {
+                const next = new Set(prev)
+                if (next.has(stage.status)) next.delete(stage.status)
+                else next.add(stage.status)
+                return next
+              })}
+              onEdit={onEdit}
+              onStatusChange={onStatusChange}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

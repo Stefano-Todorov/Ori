@@ -1,10 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar'
-import { PlanPostForm } from '@/components/schedule/plan-post-form'
-import { ProductionTracker } from '@/components/schedule/production-tracker'
-import { ScheduledPostsList } from '@/components/schedule/scheduled-posts-list'
+import { SchedulePlanner } from '@/components/schedule/schedule-planner'
 
 export default async function SchedulePage() {
   const supabase = await createClient()
@@ -44,24 +41,17 @@ export default async function SchedulePage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           Schedule
-          <InfoTooltip text="Plan your posting calendar and track ideas through production — from recording to editing to posted." />
+          <InfoTooltip text="Plan your posting calendar and track ideas through production. Drag a pipeline card onto a calendar day to schedule it." />
         </h1>
         <p className="text-muted-foreground mt-1">Plan your posts and track production</p>
       </div>
 
-      {/* Calendar + Plan form side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <ScheduleCalendar scheduledPosts={scheduledPosts ?? []} />
-        </div>
-        <PlanPostForm ideas={availableIdeas} />
-      </div>
-
-      {/* Scheduled posts list */}
-      <ScheduledPostsList posts={scheduledPosts ?? []} />
-
-      {/* Production pipeline */}
-      <ProductionTracker ideas={pipelineIdeas} batchSize={batchSize} />
+      <SchedulePlanner
+        scheduledPosts={scheduledPosts ?? []}
+        pipelineIdeas={pipelineIdeas}
+        availableIdeas={availableIdeas}
+        batchSize={batchSize}
+      />
     </div>
   )
 }

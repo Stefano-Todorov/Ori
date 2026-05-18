@@ -5,11 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { ExternalLink, Plus, Copy, ChevronDown } from 'lucide-react'
+import { DatePicker } from '@/components/ui/date-picker'
+import { ExternalLink, Plus, Copy, ChevronDown, CalendarPlus, Check } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { updateIdea, addIdea } from '@/app/actions'
-import type { ContentIdea, ProductionStatus } from '@/lib/types'
+import { updateIdea, addIdea, schedulePost } from '@/app/actions'
+import type { ContentIdea, ProductionStatus, Platform } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
 
@@ -29,6 +30,11 @@ const STATUS_LABEL: Record<ProductionStatus, string> = {
   posted: 'Posted',
 }
 
+const PLATFORMS: { key: Platform; label: string }[] = [
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'instagram', label: 'Instagram' },
+]
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface EditIdeaDialogProps {
@@ -43,6 +49,8 @@ interface EditIdeaDialogProps {
   onAddAnother?: (inspirationUrl: string, source: string, tags: string[]) => void
   /** Called when user wants to duplicate & edit */
   onDuplicate?: (form: IdeaFormState) => void
+  /** Called after the idea is added to the posting calendar */
+  onScheduled?: () => void
 }
 
 interface IdeaFormState {
@@ -84,6 +92,7 @@ export function EditIdeaDialog({
   onSaved,
   onAddAnother,
   onDuplicate,
+  onScheduled,
 }: EditIdeaDialogProps) {
   const isOpen = openProp !== undefined ? openProp : !!idea
   const [isPending, startTransition] = useTransition()
@@ -92,6 +101,9 @@ export function EditIdeaDialog({
     scriptSnippet: '', cta: '', caption: '', tags: [],
   })
   const [captionExpanded, setCaptionExpanded] = useState(false)
+  const [scheduleDate, setScheduleDate] = useState('')
+  const [schedulePlatform, setSchedulePlatform] = useState<Platform | ''>('')
+  const [justScheduled, setJustScheduled] = useState(false)
 
   // Sync form state when idea changes
   useEffect(() => {
@@ -99,6 +111,9 @@ export function EditIdeaDialog({
       const f = formFromIdea(idea)
       setForm(f)
       setCaptionExpanded(!!f.caption)
+      setScheduleDate('')
+      setSchedulePlatform('')
+      setJustScheduled(false)
     }
   }, [idea?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -165,6 +180,21 @@ export function EditIdeaDialog({
     })
   }, [idea, form, onSaved, onClose, onDuplicate])
 
+  const handleSchedule = useCallback(() => {
+    if (!idea || !scheduleDate) return
+    startTransition(async () => {
+      await schedulePost({
+        content_idea_id: idea.id,
+        title: form.idea.trim() || idea.idea,
+        scheduled_date: scheduleDate,
+        platform: schedulePlatform || undefined,
+      })
+      setJustScheduled(true)
+      onScheduled?.()
+      setTimeout(() => { setJustScheduled(false); setScheduleDate(''); setSchedulePlatform('') }, 1800)
+    })
+  }, [idea, scheduleDate, schedulePlatform, form.idea, onScheduled])
+
   // Keyboard: Cmd/Ctrl+Enter to save, Cmd/Ctrl+Shift+Enter to save & new
   useEffect(() => {
     if (!isOpen) return
@@ -210,6 +240,48 @@ export function EditIdeaDialog({
         </DialogHeader>
 
         <div className="px-6 pb-6 space-y-5 mt-4">
+          {/* ─── Section: Schedule ─── */}
+          <div className="rounded-xl border border-purple-500/20 bg-purple-500/[0.04] p-4 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <CalendarPlus size={14} className="text-purple-500 shrink-0" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-purple-600 dark:text-purple-400">
+                Schedule this post
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Pick a date to add this idea to your posting calendar.
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <DatePicker value={scheduleDate} onChange={setScheduleDate} placeholder="Pick a date" />
+              </div>
+              <button
+                type="button"
+                onClick={handleSchedule}
+                disabled={!scheduleDate || isPending || justScheduled}
+                className="h-9 px-4 rounded-lg bg-purple-600 text-white text-xs font-bold disabled:opacity-50 hover:bg-purple-700 transition-all flex items-center gap-1.5 shrink-0"
+              >
+                {justScheduled ? <><Check size={13} /> Added</> : 'Add to calendar'}
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              {PLATFORMS.map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => setSchedulePlatform(prev => prev === p.key ? '' : p.key)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all duration-150 ${
+                    schedulePlatform === p.key
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-muted/50 dark:bg-white/[0.04] border border-border dark:border-white/10 text-muted-foreground hover:border-purple-500 hover:text-foreground'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* ─── Section: Idea ─── */}
           <div className="space-y-3">
             <div className="space-y-1.5">

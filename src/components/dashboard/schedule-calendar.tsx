@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useDroppable } from '@dnd-kit/core'
 import type { ScheduledPost } from '@/lib/types'
 
 type CalendarView = 'month' | 'week' | 'day'
@@ -13,6 +14,10 @@ interface PostWithIdea extends ScheduledPost {
 interface Props {
   scheduledPosts: PostWithIdea[]
   recordingDays?: { id: string; recording_date: string }[]
+  /** Enable dropping pipeline ideas onto day cells. Must be inside a DndContext. */
+  droppable?: boolean
+  /** Whether a drag is currently in progress (highlights drop targets). */
+  dragActive?: boolean
 }
 
 function toDateKey(d: Date) {
@@ -44,7 +49,32 @@ const VIEW_LABELS: { key: CalendarView; label: string }[] = [
   { key: 'day', label: 'Day' },
 ]
 
-export function ScheduleCalendar({ scheduledPosts }: Props) {
+/* ─── Droppable day wrapper ─── */
+function DroppableDay({ dateKey, disabled, dragActive, className, children }: {
+  dateKey: string
+  disabled?: boolean
+  dragActive?: boolean
+  className: string
+  children: React.ReactNode
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `cal:${dateKey}`, disabled })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className} ${
+        !disabled && dragActive
+          ? isOver
+            ? 'ring-2 ring-purple-500 bg-purple-500/20 scale-[1.04]'
+            : 'ring-1 ring-purple-500/25'
+          : ''
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function ScheduleCalendar({ scheduledPosts, droppable = false, dragActive = false }: Props) {
   const today = new Date()
   const [currentDate, setCurrentDate] = useState(today)
   const [view, setView] = useState<CalendarView>('month')
@@ -139,9 +169,15 @@ export function ScheduleCalendar({ scheduledPosts }: Props) {
         <div className="w-10" />
       </div>
 
-      {view === 'month' && <MonthView year={year} month={month} todayKey={todayKey} postsByDate={postsByDate} />}
-      {view === 'week' && <WeekView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} />}
-      {view === 'day' && <DayView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} />}
+      {droppable && dragActive && (
+        <p className="text-[11px] text-purple-600 dark:text-purple-400 font-medium text-center">
+          Drop on a day to schedule it
+        </p>
+      )}
+
+      {view === 'month' && <MonthView year={year} month={month} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
+      {view === 'week' && <WeekView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
+      {view === 'day' && <DayView currentDate={currentDate} todayKey={todayKey} postsByDate={postsByDate} droppable={droppable} dragActive={dragActive} />}
 
       {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-muted-foreground">
@@ -163,8 +199,9 @@ export function ScheduleCalendar({ scheduledPosts }: Props) {
 }
 
 /* ─── Month View ─── */
-function MonthView({ year, month, todayKey, postsByDate }: {
+function MonthView({ year, month, todayKey, postsByDate, droppable, dragActive }: {
   year: number; month: number; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
+  droppable: boolean; dragActive: boolean
 }) {
   const daysInMonth = getDaysInMonth(year, month)
   const firstDay = getFirstDayOfWeek(year, month)
@@ -192,14 +229,12 @@ function MonthView({ year, month, todayKey, postsByDate }: {
         const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         const isToday = dateKey === todayKey
         const posts = postsByDate[dateKey] ?? []
+        const cellClass = `h-16 flex flex-col items-center rounded-lg text-xs transition-all relative pt-1 ${
+          isToday ? 'ring-2 ring-purple-500 font-bold text-foreground' : 'text-muted-foreground'
+        } ${posts.length > 0 ? 'bg-purple-500/5' : ''}`
 
-        return (
-          <div
-            key={dateKey}
-            className={`h-16 flex flex-col items-center rounded-lg text-xs transition-all relative pt-1 ${
-              isToday ? 'ring-2 ring-purple-500 font-bold text-foreground' : 'text-muted-foreground'
-            } ${posts.length > 0 ? 'bg-purple-500/5' : ''}`}
-          >
+        const content = (
+          <>
             <span>{day}</span>
             {posts.length > 0 && (
               <div className="flex flex-col items-center gap-0.5 mt-1">
@@ -208,14 +243,20 @@ function MonthView({ year, month, todayKey, postsByDate }: {
                     <div key={pi} className={`w-1.5 h-1.5 rounded-full ${PLATFORM_COLORS[p.platform ?? ''] ?? 'bg-purple-500'}`} />
                   ))}
                 </div>
-                {posts.length > 0 && (
-                  <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400">
-                    {posts.length} post{posts.length > 1 ? 's' : ''}
-                  </span>
-                )}
+                <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400">
+                  {posts.length} post{posts.length > 1 ? 's' : ''}
+                </span>
               </div>
             )}
-          </div>
+          </>
+        )
+
+        return droppable ? (
+          <DroppableDay key={dateKey} dateKey={dateKey} disabled={dateKey < todayKey} dragActive={dragActive} className={cellClass}>
+            {content}
+          </DroppableDay>
+        ) : (
+          <div key={dateKey} className={cellClass}>{content}</div>
         )
       })}
     </div>
@@ -223,8 +264,9 @@ function MonthView({ year, month, todayKey, postsByDate }: {
 }
 
 /* ─── Week View ─── */
-function WeekView({ currentDate, todayKey, postsByDate }: {
+function WeekView({ currentDate, todayKey, postsByDate, droppable, dragActive }: {
   currentDate: Date; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
+  droppable: boolean; dragActive: boolean
 }) {
   const weekStart = getWeekStart(currentDate)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -239,16 +281,14 @@ function WeekView({ currentDate, todayKey, postsByDate }: {
         const posts = postsByDate[key] ?? []
         const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' })
         const dayNum = date.getDate()
+        const cellClass = `rounded-xl p-2 min-h-[120px] border transition-all ${
+          isToday
+            ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5'
+            : 'border-border/50 dark:border-white/5'
+        }`
 
-        return (
-          <div
-            key={key}
-            className={`rounded-xl p-2 min-h-[120px] border transition-all ${
-              isToday
-                ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5'
-                : 'border-border/50 dark:border-white/5'
-            }`}
-          >
+        const content = (
+          <>
             <div className="text-center mb-2">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase">{dayLabel}</div>
               <div className={`text-sm font-bold ${isToday ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>{dayNum}</div>
@@ -268,7 +308,15 @@ function WeekView({ currentDate, todayKey, postsByDate }: {
                 </div>
               ))}
             </div>
-          </div>
+          </>
+        )
+
+        return droppable ? (
+          <DroppableDay key={key} dateKey={key} disabled={key < todayKey} dragActive={dragActive} className={cellClass}>
+            {content}
+          </DroppableDay>
+        ) : (
+          <div key={key} className={cellClass}>{content}</div>
         )
       })}
     </div>
@@ -276,17 +324,19 @@ function WeekView({ currentDate, todayKey, postsByDate }: {
 }
 
 /* ─── Day View ─── */
-function DayView({ currentDate, todayKey, postsByDate }: {
+function DayView({ currentDate, todayKey, postsByDate, droppable, dragActive }: {
   currentDate: Date; todayKey: string; postsByDate: Record<string, PostWithIdea[]>
+  droppable: boolean; dragActive: boolean
 }) {
   const key = toDateKey(currentDate)
   const isToday = key === todayKey
   const posts = postsByDate[key] ?? []
+  const cellClass = `rounded-xl p-4 min-h-[200px] border transition-all ${
+    isToday ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5' : 'border-border/50 dark:border-white/5'
+  }`
 
-  return (
-    <div className={`rounded-xl p-4 min-h-[200px] border transition-all ${
-      isToday ? 'ring-2 ring-purple-500 border-purple-500/30 bg-purple-500/5' : 'border-border/50 dark:border-white/5'
-    }`}>
+  const content = (
+    <>
       <div className="text-center mb-4">
         <div className={`text-lg font-bold ${isToday ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>
           {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -318,6 +368,14 @@ function DayView({ currentDate, todayKey, postsByDate }: {
           ))}
         </div>
       )}
-    </div>
+    </>
+  )
+
+  return droppable ? (
+    <DroppableDay dateKey={key} disabled={key < todayKey} dragActive={dragActive} className={cellClass}>
+      {content}
+    </DroppableDay>
+  ) : (
+    <div className={cellClass}>{content}</div>
   )
 }
