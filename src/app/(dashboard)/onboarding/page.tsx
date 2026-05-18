@@ -18,13 +18,11 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="text-center pt-8 pb-4 px-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-400 bg-clip-text text-transparent">
-          Orianna
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Let&apos;s get to know you
+    <div className="flex flex-col h-full bg-background">
+      <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-border">
+        <h1 className="text-2xl font-bold text-foreground">Welcome to Orianna</h1>
+        <p className="text-muted-foreground text-[15px] mt-1">
+          Let&apos;s get to know you. You can skip this and come back any time from the sidebar.
         </p>
       </div>
       <OnboardingChat />

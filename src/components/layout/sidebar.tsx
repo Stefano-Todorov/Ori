@@ -17,6 +17,7 @@ import {
   CalendarClock,
   Play,
   GripVertical,
+  Sparkles,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -73,7 +74,7 @@ function saveOrder(items: NavItem[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(i => i.href)))
 }
 
-function SidebarContent({ onNavClick, unreadCoachCount = 0 }: { onNavClick?: () => void; unreadCoachCount?: number }) {
+function SidebarContent({ onNavClick, unreadCoachCount = 0, onboardingPending = false }: { onNavClick?: () => void; unreadCoachCount?: number; onboardingPending?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
   const [items, setItems] = useState(DEFAULT_NAV_ITEMS)
@@ -136,6 +137,21 @@ function SidebarContent({ onNavClick, unreadCoachCount = 0 }: { onNavClick?: () 
       </div>
 
       <nav className="flex-1 p-3 space-y-1">
+        {onboardingPending && (
+          <Link
+            href="/onboarding"
+            onClick={onNavClick}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-1',
+              pathname === '/onboarding'
+                ? 'bg-purple-600 text-white'
+                : 'bg-purple-600/10 text-purple-600 dark:text-purple-400 hover:bg-purple-600/20'
+            )}
+          >
+            <Sparkles size={16} />
+            Finish onboarding
+          </Link>
+        )}
         {items.map((item, idx) => {
           const Icon = item.icon
           const isActive = pathname === item.href ||
@@ -202,7 +218,7 @@ function SidebarContent({ onNavClick, unreadCoachCount = 0 }: { onNavClick?: () 
   )
 }
 
-export function Sidebar({ unreadCoachCount = 0 }: { unreadCoachCount?: number }) {
+export function Sidebar({ unreadCoachCount = 0, onboardingPending = false }: { unreadCoachCount?: number; onboardingPending?: boolean }) {
   const pathname = usePathname()
   const { isOpen, close } = useMobileSidebar()
 
@@ -215,7 +231,7 @@ export function Sidebar({ unreadCoachCount = 0 }: { unreadCoachCount?: number })
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border bg-sidebar flex-col h-full">
-        <SidebarContent unreadCoachCount={unreadCoachCount} />
+        <SidebarContent unreadCoachCount={unreadCoachCount} onboardingPending={onboardingPending} />
       </aside>
 
       {/* Mobile drawer overlay */}
@@ -233,7 +249,7 @@ export function Sidebar({ unreadCoachCount = 0 }: { unreadCoachCount?: number })
             >
               <X size={18} className="text-muted-foreground" />
             </button>
-            <SidebarContent onNavClick={close} unreadCoachCount={unreadCoachCount} />
+            <SidebarContent onNavClick={close} unreadCoachCount={unreadCoachCount} onboardingPending={onboardingPending} />
           </aside>
         </div>
       )}

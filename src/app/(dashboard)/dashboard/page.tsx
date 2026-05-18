@@ -18,10 +18,6 @@ export default async function DashboardPage() {
     .eq('user_id', user.id)
     .single()
 
-  if (profile && !profile.onboarding_completed) {
-    redirect('/onboarding')
-  }
-
   const [
     { data: followerSnapshots },
     { data: productionIdeas },
