@@ -474,6 +474,8 @@ export function AddIdeaDialog({
     scriptSnippet: '', cta: '', caption: '', tags: [],
   })
   const [captionExpanded, setCaptionExpanded] = useState(false)
+  const [status, setStatus] = useState<ProductionStatus>(productionStatus ?? 'new')
+  const [scheduledDate, setScheduledDate] = useState('')
 
   // Reset form when dialog opens with new prefill
   useEffect(() => {
@@ -489,6 +491,8 @@ export function AddIdeaDialog({
         tags: prefill?.tags ?? [],
       })
       setCaptionExpanded(!!(prefill?.caption))
+      setStatus(productionStatus ?? 'new')
+      setScheduledDate('')
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -502,15 +506,18 @@ export function AddIdeaDialog({
     const savedSource = form.source.trim()
     const savedTags = form.tags
     startTransition(async () => {
-      await addIdea(form.idea.trim(), savedSource || undefined, {
+      const newId = await addIdea(form.idea.trim(), savedSource || undefined, {
         inspiration_url: savedUrl || undefined,
         hook_idea: form.hookIdea.trim() || undefined,
         script_snippet: form.scriptSnippet.trim() || undefined,
         cta: form.cta.trim() || undefined,
         caption: form.caption.trim() || undefined,
         tags: savedTags.length > 0 ? savedTags : undefined,
-        production_status: productionStatus,
+        production_status: status,
       })
+      if (newId && scheduledDate) {
+        await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+      }
       onSaved?.()
       if (keepOpen) {
         setForm({
@@ -519,6 +526,7 @@ export function AddIdeaDialog({
           tags: savedTags,
         })
         setCaptionExpanded(false)
+        setScheduledDate('')
       } else {
         onClose()
       }
@@ -550,7 +558,28 @@ export function AddIdeaDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose() }}>
       <DialogContent className="sm:max-w-[560px] bg-card border-border dark:border-white/10 max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="text-foreground">{title}</DialogTitle>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <DialogTitle className="text-foreground">{title}</DialogTitle>
+            <Select value={status} onValueChange={(v) => setStatus(v as ProductionStatus)}>
+              <SelectTrigger className={`h-7 w-auto text-[11px] font-semibold rounded-lg px-2.5 gap-1 border ${STATUS_PILL[status]}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DatePicker
+              value={scheduledDate}
+              onChange={setScheduledDate}
+              compact
+              placeholder="Schedule"
+              triggerClassName={scheduledDate
+                ? 'bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30 hover:bg-green-500/25'
+                : 'bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-600/25 hover:bg-purple-700 hover:border-purple-700'}
+            />
+          </div>
         </DialogHeader>
 
         <div className="px-6 pb-6 space-y-5 mt-4">
@@ -719,15 +748,18 @@ export function AddIdeaDialog({
                     if (!form.idea.trim()) return
                     const savedForm = { ...form }
                     startTransition(async () => {
-                      await addIdea(form.idea.trim(), form.source.trim() || undefined, {
+                      const newId = await addIdea(form.idea.trim(), form.source.trim() || undefined, {
                         inspiration_url: form.inspirationUrl.trim() || undefined,
                         hook_idea: form.hookIdea.trim() || undefined,
                         script_snippet: form.scriptSnippet.trim() || undefined,
                         cta: form.cta.trim() || undefined,
                         caption: form.caption.trim() || undefined,
                         tags: form.tags.length > 0 ? form.tags : undefined,
-                        production_status: productionStatus,
+                        production_status: status,
                       })
+                      if (newId && scheduledDate) {
+                        await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+                      }
                       onSaved?.()
                       // Reset with all fields pre-filled (duplicate)
                       setForm({ ...savedForm, idea: savedForm.idea })

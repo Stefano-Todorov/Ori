@@ -5,11 +5,31 @@ import {
   Eye, Heart, MessageCircle, ExternalLink,
   Loader2, Check, Plus, Bookmark, Send,
 } from 'lucide-react'
-import { addIdea } from '@/app/actions'
-import type { Post } from '@/lib/types'
+import { addIdea, scheduleIdea } from '@/app/actions'
+import type { Post, ProductionStatus } from '@/lib/types'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DatePicker } from '@/components/ui/date-picker'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+
+// ─── Production status ────────────────────────────────
+
+const STATUS_PILL: Record<ProductionStatus, string> = {
+  new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+  editing: 'bg-cyan-400/15 text-cyan-400 border-cyan-400/30',
+  ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
+  posted: 'bg-green-400/15 text-green-400 border-green-400/30',
+}
+
+const STATUS_LABEL: Record<ProductionStatus, string> = {
+  new: 'New',
+  recording: 'Recording',
+  editing: 'Editing',
+  ready: 'Ready to Post',
+  posted: 'Posted',
+}
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -65,7 +85,7 @@ function PostThumbnail({ post }: { post: Post }) {
 
   if (!post.thumbnail_url || hidden) {
     return (
-      <div className="w-24 h-32 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold uppercase bg-muted text-muted-foreground border border-border dark:border-white/6">
+      <div className="w-36 h-48 rounded-xl shrink-0 flex items-center justify-center text-[11px] font-bold uppercase bg-muted text-muted-foreground border border-border dark:border-white/6">
         {post.platform?.[0] ?? '?'}
       </div>
     )
@@ -76,7 +96,7 @@ function PostThumbnail({ post }: { post: Post }) {
       alt=""
       referrerPolicy="no-referrer"
       onError={() => setHidden(true)}
-      className="w-24 h-32 rounded-xl object-cover shrink-0 bg-muted border border-border dark:border-white/6"
+      className="w-36 h-48 rounded-xl object-cover shrink-0 bg-muted border border-border dark:border-white/6"
     />
   )
 }
@@ -116,6 +136,8 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
   const postTags = post.tags ?? []
   const [form, setForm] = useState<IdeaFormState>(() => emptyForm(post.url || '', postTags))
   const [captionExpanded, setCaptionExpanded] = useState(false)
+  const [status, setStatus] = useState<ProductionStatus>('new')
+  const [scheduledDate, setScheduledDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [justSaved, setJustSaved] = useState(false)
@@ -130,15 +152,19 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
     const source = post.is_competitor
       ? `competitor: @${post.competitor_handle || 'unknown'} (${post.platform})`
       : `inspiration: @${post.competitor_handle || 'unknown'} (${post.platform})`
-    await addIdea(form.idea.trim(), source, {
+    const newId = await addIdea(form.idea.trim(), source, {
       inspiration_url: form.inspirationUrl.trim() || undefined,
       hook_idea: form.hookIdea.trim() || undefined,
       script_snippet: form.scriptSnippet.trim() || undefined,
       cta: form.cta.trim() || undefined,
       caption: form.caption.trim() || undefined,
       tags: form.tags.length > 0 ? form.tags : undefined,
+      production_status: status,
     })
-  }, [post, form])
+    if (newId && scheduledDate) {
+      await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+    }
+  }, [post, form, status, scheduledDate])
 
   const handleSave = useCallback(async () => {
     if (!form.idea.trim() || saving) return
@@ -156,6 +182,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
     setSavedCount(c => c + 1)
     setForm(prev => emptyForm(prev.inspirationUrl, prev.tags))
     setCaptionExpanded(false)
+    setScheduledDate('')
     setJustSaved(true)
     setTimeout(() => setJustSaved(false), 2500)
   }, [form.idea, saving, persist])
@@ -275,16 +302,37 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
 
       {/* Right — Idea Form (matches the Add/Edit idea box) */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border dark:border-white/6">
-          <div>
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-border dark:border-white/6">
+          <div className="shrink-0">
             <h2 className="text-lg font-bold text-foreground">
               New idea{savedCount > 0 ? <span className="text-muted-foreground font-medium"> · {savedCount} saved</span> : null}
             </h2>
             <div className="h-0.5 w-12 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full mt-1" />
           </div>
+          <div className="flex items-center gap-2 flex-wrap ml-auto">
+            <Select value={status} onValueChange={(v) => setStatus(v as ProductionStatus)}>
+              <SelectTrigger className={`h-9 w-auto text-[11px] font-semibold rounded-lg px-2.5 gap-1 border ${STATUS_PILL[status]}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['new', 'recording', 'editing', 'ready', 'posted'] as const).map((s) => (
+                  <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <DatePicker
+              value={scheduledDate}
+              onChange={setScheduledDate}
+              compact
+              placeholder="Schedule"
+              triggerClassName={scheduledDate
+                ? 'bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30 hover:bg-green-500/25'
+                : 'bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-600/25 hover:bg-purple-700 hover:border-purple-700'}
+            />
+          </div>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
             <span className="text-lg leading-none">&times;</span>
           </button>

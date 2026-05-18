@@ -79,7 +79,7 @@ export async function addIdea(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
-  await supabase.from('content_ideas').insert({
+  const { data: inserted } = await supabase.from('content_ideas').insert({
     user_id: user.id,
     idea,
     source: source || null,
@@ -91,9 +91,10 @@ export async function addIdea(
     caption: extra?.caption || null,
     tags: extra?.tags || [],
     ...(extra?.production_status ? { production_status: extra.production_status } : {}),
-  })
+  }).select('id').single()
   revalidatePath('/dashboard/ideas')
   revalidatePath('/dashboard/schedule')
+  return inserted?.id as string | undefined
 }
 
 export async function addSwipePost(fields: {
