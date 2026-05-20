@@ -694,7 +694,10 @@ function findIgStats(obj, depth) {
 
 function extractInstagram() {
   const url = window.location.href
-  const isReel = url.includes('/reel/') || url.includes('/p/')
+  // /reel/<sc>/ and /p/<sc>/ are the classic single-post URLs.
+  // /reels/<sc>/ (plural) is Instagram's newer in-feed reel viewer — clicking a reel
+  // in the reels feed swaps the URL to this form instead of pausing the video.
+  const isReel = url.includes('/reel/') || url.includes('/p/') || /\/reels\/[A-Za-z0-9_-]+/.test(url)
   if (!isReel) return null
 
   // Try DOM selectors first, then embedded JSON, then meta tags for caption
@@ -874,7 +877,8 @@ function extractInstagram() {
   const videoSrc = videoEl?.src || videoEl?.querySelector('source')?.src || null
 
   // Extract shortcode for API-based video URL fetch
-  const shortcodeMatch = url.match(/\/(reel|p)\/([^/?]+)/)
+  // `reels?` matches both /reel/<sc>/ (legacy) and /reels/<sc>/ (in-feed viewer).
+  const shortcodeMatch = url.match(/\/(reels?|p)\/([^/?]+)/)
   const shortcode = shortcodeMatch?.[2] ?? null
 
   console.log('[Orianna] IG extraction:', { viewsRaw, likesRaw, commentsRaw, handle, caption: caption?.slice(0, 50) })
@@ -1089,6 +1093,10 @@ function extractInstagramProfile() {
   const pathMatch = url.match(/instagram\.com\/([a-zA-Z0-9._]+)(?:\/reels)?\/?/)
   if (!pathMatch) return null
   const handle = pathMatch[1]
+  // First-path segments that look like usernames but are actually IG features.
+  // e.g. /reels/<sc>/ (in-feed reel viewer) would otherwise be misread as @reels.
+  const RESERVED_HANDLES = new Set(['reels', 'reel', 'p', 'explore', 'direct', 'accounts', 'stories', 'tv', 'tags', 'locations', 'notifications', 'inbox'])
+  if (RESERVED_HANDLES.has(handle.toLowerCase())) return null
 
   // Scrape post/reel links from the grid
   const videos = []
