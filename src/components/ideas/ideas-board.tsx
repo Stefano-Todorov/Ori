@@ -17,6 +17,8 @@ interface Props {
   allTags: string[]
   /** Earliest scheduled date per content idea id (YYYY-MM-DD). */
   scheduledDates?: Record<string, string>
+  /** User's primary platform for AI script generation. */
+  platform?: string
 }
 
 type IdeaStatus = ProductionStatus
@@ -484,7 +486,7 @@ function saveFilters(filters: SavedFilters) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(filters)) } catch {}
 }
 
-export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, scheduledDates = {} }: Props) {
+export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, scheduledDates = {}, platform = 'tiktok' }: Props) {
   const [ideas, setIdeas] = useState(initialIdeas)
   const [hydrated, setHydrated] = useState(false)
   const [filter, setFilter] = useState<ProductionStatus | 'all'>('all')
@@ -884,6 +886,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
         open={addOpen}
         prefill={addPrefill}
         allTags={allTags}
+        platform={platform}
         onClose={() => { setAddOpen(false); setAddPrefill({}) }}
         onSaved={() => {
           // Optimistic: page will revalidate from server action
@@ -896,6 +899,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
         key={editingIdea?.id}
         idea={editingIdea}
         allTags={allTags}
+        platform={platform}
         scheduledDate={editingIdea ? (scheduledDates[editingIdea.id] ?? null) : null}
         onClose={() => setEditingIdea(null)}
         onStatusChange={(id, status) => {

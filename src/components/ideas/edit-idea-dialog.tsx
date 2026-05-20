@@ -10,6 +10,7 @@ import { ExternalLink, Plus, Copy, Check, Pencil, Trash2 } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { updateIdea, addIdea, scheduleIdea, deleteIdea } from '@/app/actions'
+import { AIScriptSection } from '@/components/ideas/ai-script-section'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
@@ -36,6 +37,8 @@ interface EditIdeaDialogProps {
   idea: ContentIdea | null
   open?: boolean
   allTags?: string[]
+  /** Platform for AI script generation (e.g. 'tiktok', 'instagram'). */
+  platform?: string
   /** Date this idea is already scheduled for, if any (YYYY-MM-DD). */
   scheduledDate?: string | null
   onClose: () => void
@@ -90,6 +93,7 @@ export function EditIdeaDialog({
   idea,
   open: openProp,
   allTags = [],
+  platform = 'tiktok',
   scheduledDate = null,
   onClose,
   onStatusChange,
@@ -325,6 +329,17 @@ export function EditIdeaDialog({
               The Script
             </p>
 
+            <AIScriptSection
+              topic={form.idea}
+              platform={platform}
+              onResult={({ hook, body, cta }) => {
+                set('hookIdea', hook)
+                set('scriptSnippet', body)
+                set('cta', cta)
+              }}
+              onHookSwap={(hook) => set('hookIdea', hook)}
+            />
+
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
                 Hook
@@ -488,6 +503,8 @@ interface AddIdeaDialogProps {
   open: boolean
   prefill?: Partial<IdeaFormState>
   allTags?: string[]
+  /** Platform for AI script generation (e.g. 'tiktok', 'instagram'). */
+  platform?: string
   /** When set, the new video is created directly in this pipeline stage. */
   productionStatus?: ProductionStatus
   onClose: () => void
@@ -498,6 +515,7 @@ export function AddIdeaDialog({
   open,
   prefill,
   allTags = [],
+  platform = 'tiktok',
   productionStatus,
   onClose,
   onSaved,
@@ -664,6 +682,17 @@ export function AddIdeaDialog({
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground">
               The Script
             </p>
+
+            <AIScriptSection
+              topic={form.idea}
+              platform={platform}
+              onResult={({ hook, body, cta }) => {
+                set('hookIdea', hook)
+                set('scriptSnippet', body)
+                set('cta', cta)
+              }}
+              onHookSwap={(hook) => set('hookIdea', hook)}
+            />
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">

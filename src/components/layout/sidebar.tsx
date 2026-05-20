@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   Home,
-  FileText,
   Users,
   Bookmark,
   Lightbulb,
@@ -44,7 +43,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'Create',
     items: [
       { href: '/dashboard/ideas', label: 'Ideas', icon: Lightbulb },
-      { href: '/dashboard/scripts', label: 'Scripts', icon: FileText },
       { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarClock },
     ],
   },
