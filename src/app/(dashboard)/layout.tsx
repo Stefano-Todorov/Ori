@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { MobileSidebarProvider } from '@/components/layout/mobile-sidebar-context'
 import { MobileHeader } from '@/components/layout/mobile-header'
+import { FloatingCoach } from '@/components/coach/floating-coach'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   let unreadCoachCount = 0
@@ -31,19 +32,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
       unreadCoachCount = count ?? 0
     }
   } catch {
-    // Silently fail — sidebar just won't show a badge
+    // Silently fail
   }
 
   return (
     <MobileSidebarProvider>
       <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar unreadCoachCount={unreadCoachCount} onboardingPending={onboardingPending} />
+        <Sidebar onboardingPending={onboardingPending} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <MobileHeader />
           <main className="flex-1 overflow-y-auto">
             {children}
           </main>
         </div>
+        <FloatingCoach unreadCount={unreadCoachCount} />
       </div>
     </MobileSidebarProvider>
   )

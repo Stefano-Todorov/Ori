@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
-  LayoutDashboard,
-  MessageSquare,
+  Home,
   FileText,
   Users,
   Bookmark,
@@ -16,7 +15,6 @@ import {
   LogOut,
   CalendarClock,
   Play,
-  GripVertical,
   Sparkles,
   X,
 } from 'lucide-react'
@@ -32,95 +30,41 @@ interface NavItem {
   icon: LucideIcon
 }
 
-const DEFAULT_NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/coach', label: 'AI Coach', icon: MessageSquare },
-  { href: '/dashboard/scripts', label: 'Scripts', icon: FileText },
-  { href: '/dashboard/competitors', label: 'Competitors', icon: Users },
-  { href: '/dashboard/inspo', label: 'Inspo', icon: Bookmark },
-  { href: '/dashboard/my-videos', label: 'My Videos', icon: Play },
-  { href: '/dashboard/ideas', label: 'Ideas', icon: Lightbulb },
-  { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarClock },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+interface NavSection {
+  label: string | null
+  items: NavItem[]
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    label: null,
+    items: [{ href: '/dashboard', label: 'Home', icon: Home }],
+  },
+  {
+    label: 'Create',
+    items: [
+      { href: '/dashboard/ideas', label: 'Ideas', icon: Lightbulb },
+      { href: '/dashboard/scripts', label: 'Scripts', icon: FileText },
+      { href: '/dashboard/schedule', label: 'Schedule', icon: CalendarClock },
+    ],
+  },
+  {
+    label: 'Research',
+    items: [
+      { href: '/dashboard/inspo', label: 'Inspo', icon: Bookmark },
+      { href: '/dashboard/competitors', label: 'Competitors', icon: Users },
+      { href: '/dashboard/my-videos', label: 'My Videos', icon: Play },
+    ],
+  },
+  {
+    label: null,
+    items: [{ href: '/dashboard/settings', label: 'Settings', icon: Settings }],
+  },
 ]
 
-const STORAGE_KEY = 'orianna-nav-order'
-
-function getOrderedItems(): NavItem[] {
-  if (typeof window === 'undefined') return DEFAULT_NAV_ITEMS
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (!saved) return DEFAULT_NAV_ITEMS
-    const order: string[] = JSON.parse(saved)
-    const itemMap = new Map(DEFAULT_NAV_ITEMS.map(item => [item.href, item]))
-    const ordered: NavItem[] = []
-    for (const href of order) {
-      const item = itemMap.get(href)
-      if (item) {
-        ordered.push(item)
-        itemMap.delete(href)
-      }
-    }
-    for (const item of itemMap.values()) {
-      ordered.push(item)
-    }
-    return ordered
-  } catch {
-    return DEFAULT_NAV_ITEMS
-  }
-}
-
-function saveOrder(items: NavItem[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items.map(i => i.href)))
-}
-
-function SidebarContent({ onNavClick, unreadCoachCount = 0, onboardingPending = false }: { onNavClick?: () => void; unreadCoachCount?: number; onboardingPending?: boolean }) {
+function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?: () => void; onboardingPending?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [items, setItems] = useState(DEFAULT_NAV_ITEMS)
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
-  const [overIdx, setOverIdx] = useState<number | null>(null)
-  const dragRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    setItems(getOrderedItems())
-  }, [])
-
-  function handleDragStart(e: React.DragEvent, idx: number) {
-    dragRef.current = idx
-    setDragIdx(idx)
-    e.dataTransfer.effectAllowed = 'move'
-    e.dataTransfer.setData('text/plain', String(idx))
-  }
-
-  function handleDragOver(e: React.DragEvent, idx: number) {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (overIdx !== idx) setOverIdx(idx)
-  }
-
-  function handleDrop(e: React.DragEvent, dropIdx: number) {
-    e.preventDefault()
-    const fromIdx = dragRef.current
-    if (fromIdx === null || fromIdx === dropIdx) {
-      setDragIdx(null)
-      setOverIdx(null)
-      return
-    }
-    const next = [...items]
-    const [moved] = next.splice(fromIdx, 1)
-    next.splice(dropIdx, 0, moved)
-    setItems(next)
-    saveOrder(next)
-    setDragIdx(null)
-    setOverIdx(null)
-  }
-
-  function handleDragEnd() {
-    setDragIdx(null)
-    setOverIdx(null)
-    dragRef.current = null
-  }
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -136,13 +80,13 @@ function SidebarContent({ onNavClick, unreadCoachCount = 0, onboardingPending = 
         <h1 className="text-lg font-semibold text-foreground leading-tight tracking-tight">Orianna</h1>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 overflow-y-auto">
         {onboardingPending && (
           <Link
             href="/onboarding"
             onClick={onNavClick}
             className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-1',
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 mb-3',
               pathname === '/onboarding'
                 ? 'bg-purple-600 text-white'
                 : 'bg-purple-600/10 text-purple-600 dark:text-purple-400 hover:bg-purple-600/20'
@@ -152,53 +96,40 @@ function SidebarContent({ onNavClick, unreadCoachCount = 0, onboardingPending = 
             Finish onboarding
           </Link>
         )}
-        {items.map((item, idx) => {
-          const Icon = item.icon
-          const isActive = pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href))
-          const isDragging = dragIdx === idx
-          const isOver = overIdx === idx && dragIdx !== idx
 
-          return (
-            <div
-              key={item.href}
-              draggable
-              onDragStart={e => handleDragStart(e, idx)}
-              onDragOver={e => handleDragOver(e, idx)}
-              onDrop={e => handleDrop(e, idx)}
-              onDragEnd={handleDragEnd}
-              className={cn(
-                'group relative transition-all duration-150',
-                isDragging && 'opacity-30',
-                isOver && 'before:absolute before:inset-x-0 before:-top-0.5 before:h-0.5 before:bg-purple-500 before:rounded-full'
-              )}
-            >
-              <Link
-                href={item.href}
-                onClick={onNavClick}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                  isActive
-                    ? 'bg-purple-600 text-white'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <GripVertical
-                  size={12}
-                  className={cn(
-                    'shrink-0 cursor-grab active:cursor-grabbing transition-opacity',
-                    isActive ? 'text-white/50' : 'text-muted-foreground/30 group-hover:text-muted-foreground/60'
-                  )}
-                />
-                <Icon size={16} />
-                {item.label}
-                {item.href === '/dashboard/coach' && unreadCoachCount > 0 && !isActive && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                )}
-              </Link>
+        {NAV_SECTIONS.map((section, sIdx) => (
+          <div key={sIdx} className={cn(sIdx > 0 && 'mt-5')}>
+            {section.label && (
+              <div className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                {section.label}
+              </div>
+            )}
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href ||
+                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavClick}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                      isActive
+                        ? 'bg-purple-600 text-white'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    <Icon size={16} />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </div>
-          )
-        })}
+          </div>
+        ))}
       </nav>
 
       <UsageBar />
@@ -218,11 +149,10 @@ function SidebarContent({ onNavClick, unreadCoachCount = 0, onboardingPending = 
   )
 }
 
-export function Sidebar({ unreadCoachCount = 0, onboardingPending = false }: { unreadCoachCount?: number; onboardingPending?: boolean }) {
+export function Sidebar({ onboardingPending = false }: { onboardingPending?: boolean }) {
   const pathname = usePathname()
   const { isOpen, close } = useMobileSidebar()
 
-  // Close drawer on route change
   useEffect(() => {
     close()
   }, [pathname, close])
@@ -231,7 +161,7 @@ export function Sidebar({ unreadCoachCount = 0, onboardingPending = false }: { u
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 border-r border-border bg-sidebar flex-col h-full">
-        <SidebarContent unreadCoachCount={unreadCoachCount} onboardingPending={onboardingPending} />
+        <SidebarContent onboardingPending={onboardingPending} />
       </aside>
 
       {/* Mobile drawer overlay */}
@@ -249,7 +179,7 @@ export function Sidebar({ unreadCoachCount = 0, onboardingPending = false }: { u
             >
               <X size={18} className="text-muted-foreground" />
             </button>
-            <SidebarContent onNavClick={close} unreadCoachCount={unreadCoachCount} onboardingPending={onboardingPending} />
+            <SidebarContent onNavClick={close} onboardingPending={onboardingPending} />
           </aside>
         </div>
       )}
