@@ -204,6 +204,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
         onClose={() => setEditingIdea(null)}
         onStatusChange={handleStatusChange}
         onSaved={() => refreshKeepScroll(router)}
+        onDeleted={() => refreshKeepScroll(router)}
         onAddAnother={(url, source) => {
           setEditingIdea(null)
           setAddPrefill({ inspirationUrl: url, source })

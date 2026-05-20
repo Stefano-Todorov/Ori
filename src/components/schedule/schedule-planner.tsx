@@ -17,7 +17,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable'
 import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar'
 import { PlanPostForm } from './plan-post-form'
-import { ScheduledPostsList } from './scheduled-posts-list'
 import {
   ProductionPipeline,
   IdeaCardContent,
@@ -218,9 +217,6 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
             <PlanPostForm ideas={availableIdeas} />
           </div>
 
-          {/* Planned posts list */}
-          <ScheduledPostsList posts={localPosts} onEdit={handleEditPost} />
-
           {/* Production pipeline */}
           <ProductionPipeline
             ideas={localIdeas}
@@ -259,6 +255,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
         onStatusChange={handleStatusChange}
         onSaved={() => refreshKeepScroll(router)}
         onScheduled={() => refreshKeepScroll(router)}
+        onDeleted={() => refreshKeepScroll(router)}
         onAddAnother={(url, source) => {
           setEditingIdea(null)
           setAddStatus(undefined)

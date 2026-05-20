@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/ui/date-picker'
-import { ExternalLink, Plus, Copy, Check, Pencil } from 'lucide-react'
+import { ExternalLink, Plus, Copy, Check, Pencil, Trash2 } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { updateIdea, addIdea, scheduleIdea } from '@/app/actions'
+import { updateIdea, addIdea, scheduleIdea, deleteIdea } from '@/app/actions'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
@@ -48,6 +48,8 @@ interface EditIdeaDialogProps {
   onDuplicate?: (form: IdeaFormState) => void
   /** Called after the idea is added to the posting calendar */
   onScheduled?: () => void
+  /** Called after the idea is deleted. If omitted, the delete button is hidden. */
+  onDeleted?: (id: string) => void
 }
 
 interface IdeaFormState {
@@ -95,6 +97,7 @@ export function EditIdeaDialog({
   onAddAnother,
   onDuplicate,
   onScheduled,
+  onDeleted,
 }: EditIdeaDialogProps) {
   const isOpen = openProp !== undefined ? openProp : !!idea
   const [isPending, startTransition] = useTransition()
@@ -105,6 +108,7 @@ export function EditIdeaDialog({
   const [captionExpanded, setCaptionExpanded] = useState(false)
   const [scheduledFor, setScheduledFor] = useState<string | null>(scheduledDate)
   const [rescheduling, setRescheduling] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Sync form state when idea changes
   useEffect(() => {
@@ -114,6 +118,7 @@ export function EditIdeaDialog({
       setCaptionExpanded(!!f.caption)
       setScheduledFor(scheduledDate)
       setRescheduling(false)
+      setConfirmDelete(false)
     }
   }, [idea?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -179,6 +184,19 @@ export function EditIdeaDialog({
       onDuplicate?.(form)
     })
   }, [idea, form, onSaved, onClose, onDuplicate])
+
+  const handleDelete = useCallback(() => {
+    if (!idea) return
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      return
+    }
+    startTransition(async () => {
+      await deleteIdea(idea.id)
+      onDeleted?.(idea.id)
+      onClose()
+    })
+  }, [idea, confirmDelete, onDeleted, onClose])
 
   const handleSchedule = useCallback((date: string) => {
     if (!idea || !date) return
@@ -387,13 +405,29 @@ export function EditIdeaDialog({
           {/* ─── Actions ─── */}
           <div className="pt-2 space-y-2">
             {/* Primary row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-muted-foreground/60 hidden sm:inline">
-                  {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to save
-                </span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {onDeleted && (
+                  <button
+                    onClick={handleDelete}
+                    onBlur={() => setConfirmDelete(false)}
+                    disabled={isPending}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-50 ${
+                      confirmDelete
+                        ? 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 hover:bg-red-500/25'
+                        : 'text-muted-foreground hover:text-red-600 dark:hover:text-red-400'
+                    }`}
+                    title={confirmDelete ? 'Click again to confirm' : 'Delete idea'}
+                  >
+                    <Trash2 size={13} />
+                    {confirmDelete ? 'Confirm delete' : 'Delete'}
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground/60 hidden sm:inline mr-1">
+                  {typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to save
+                </span>
                 <button
                   onClick={onClose}
                   className="px-4 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"

@@ -905,6 +905,12 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
         onSaved={(id, fields) => {
           setIdeas(prev => prev.map(i => i.id === id ? { ...i, ...fields } : i))
         }}
+        onDeleted={(id) => {
+          const item = ideas.find((i) => i.id === id)
+          if (item) setRecentlyDeleted((prev) => [item, ...prev])
+          setIdeas((prev) => prev.filter((i) => i.id !== id))
+          setSelected((prev) => { const next = new Set(prev); next.delete(id); return next })
+        }}
         onAddAnother={(url, source, tags) => {
           setAddPrefill({ inspirationUrl: url, source, tags })
           setAddOpen(true)
