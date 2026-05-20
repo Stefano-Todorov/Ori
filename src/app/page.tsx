@@ -18,15 +18,15 @@ const features = [
   },
   {
     icon: '💡',
-    title: 'Ideas Board',
-    description: 'A visual kanban for every video idea. Track concepts from "just an idea" through recording, editing, and posting.',
-    details: ['Drag & drop organization', 'Rich idea cards with hooks & CTAs', 'Never lose an idea again'],
+    title: 'Ideas Board & Production Pipeline',
+    description: 'A visual board for every video idea, with a production pipeline that tracks each one from concept all the way to posted.',
+    details: ['Rich cards with hook, CTA, caption & difficulty', 'Pipeline stages: recording → editing → ready → posted', 'Never lose an idea again'],
   },
   {
     icon: '🔍',
     title: 'Competitor Research',
-    description: 'Track any creator. Import their top posts, see engagement metrics, and generate ideas adapted to your style — not theirs.',
-    details: ['Import posts from any creator', 'Sort by views, likes, comments', 'Turn competitor hits into your ideas'],
+    description: 'Track any creator. Auto-extract their top posts and engagement metrics, then generate ideas adapted to your style — not theirs.',
+    details: ['Auto-extract posts from any creator', 'Sort by views, likes, comments', 'Turn competitor hits into your ideas'],
   },
   {
     icon: '🔥',
@@ -36,9 +36,21 @@ const features = [
   },
   {
     icon: '📅',
-    title: 'Content Calendar',
-    description: 'Plan recording days, assign ideas to dates, and see your entire pipeline from idea to published — on one screen.',
-    details: ['Weekly & monthly views', 'Drag ideas onto dates', 'Track your posting consistency'],
+    title: 'Schedule & Recording Days',
+    description: 'Drag ideas from your pipeline onto a calendar, plan recording days, and see your entire posting schedule on one screen.',
+    details: ['Drag pipeline cards onto dates', 'Plan dedicated recording days', 'Track posting consistency'],
+  },
+  {
+    icon: '⬇️',
+    title: 'Video Downloads',
+    description: 'Download competitor and inspo videos straight to your device for reference, B-roll, or remixing — no screen recording required.',
+    details: ['One-click download from saved posts', 'Works on TikTok & Instagram', 'Included on Plus, Pro & Max'],
+  },
+  {
+    icon: '📊',
+    title: 'My Videos Sync',
+    description: 'Pull your own posted videos back into Orianna. Link them to the ideas and scripts you created them from, and see what actually worked.',
+    details: ['Sync your TikTok & Instagram posts', 'Link posts back to ideas & scripts', 'Spot your best-performing hooks'],
   },
 ]
 
