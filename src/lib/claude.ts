@@ -43,8 +43,9 @@ export function buildSystemPrompt(ctx: CoachContext): string {
       ? (posts.reduce((s, p) => s + (p.engagement_rate ?? 0), 0) / posts.length).toFixed(1)
       : 'N/A'
 
-    const top3 = posts.slice(0, 3)
-    const bottom3 = [...posts].sort((a, b) => a.views - b.views).slice(0, 3)
+    const byViews = [...posts].sort((a, b) => b.views - a.views)
+    const top5 = byViews.slice(0, 5)
+    const bottom3 = [...byViews].reverse().slice(0, 3)
 
     const byPlatform: Record<string, number[]> = {}
     for (const p of posts) {
@@ -55,18 +56,36 @@ export function buildSystemPrompt(ctx: CoachContext): string {
       .map(([pl, views]) => `${pl}: avg ${Math.round(views.reduce((a, b) => a + b, 0) / views.length).toLocaleString()} views (${views.length} posts)`)
       .join(', ')
 
+    // Compact table of every sampled post so the coach can spot patterns
+    // across the full set, not just the 5 highlighted at the top.
+    const cap = (s: string | null, n: number) => (s ?? '').replace(/\s+/g, ' ').slice(0, n)
+    const fullTable = byViews
+      .map(p => {
+        const eng = p.engagement_rate != null ? `${p.engagement_rate.toFixed(1)}%` : '—'
+        const date = p.posted_at ? p.posted_at.slice(0, 10) : '—'
+        const hook = p.hook_text ? ` hook="${cap(p.hook_text, 60)}"` : ''
+        const cap60 = cap(p.caption, 60) || 'no caption'
+        return `- [${p.platform}|${date}] ${p.views.toLocaleString()}v ${p.likes.toLocaleString()}l ${p.shares.toLocaleString()}s ${p.saves.toLocaleString()}sv ${eng}eng — "${cap60}"${hook}`
+      })
+      .join('\n')
+
     analyticsSection = `
 
-USER ANALYTICS SUMMARY (${posts.length} posts total):
+USER ANALYTICS SUMMARY (${posts.length} posts sampled):
 - Average views: ${avgViews.toLocaleString()}
 - Average engagement rate: ${avgEngagement}%
 - By platform: ${platformStats}
 
-TOP 3 POSTS (by views):
-${top3.map((p, i) => `${i + 1}. [${p.platform}] "${p.caption?.slice(0, 80) ?? 'no caption'}" — ${p.views.toLocaleString()} views, ${p.engagement_rate?.toFixed(1) ?? '?'}% engagement${p.hook_text ? `, hook: "${p.hook_text.slice(0, 60)}"` : ''}`).join('\n')}
+TOP 5 POSTS (full detail — study these for what works):
+${top5.map((p, i) => `${i + 1}. [${p.platform}] ${p.views.toLocaleString()} views, ${p.engagement_rate?.toFixed(1) ?? '?'}% engagement, ${p.likes.toLocaleString()} likes, ${p.shares.toLocaleString()} shares, ${p.saves.toLocaleString()} saves${p.posted_at ? `, posted ${p.posted_at.slice(0, 10)}` : ''}
+   Hook: ${p.hook_text ?? '(none recorded)'}
+   Caption: ${p.caption ?? '(none)'}`).join('\n')}
 
-LOWEST 3 POSTS (for learning):
-${bottom3.map((p, i) => `${i + 1}. [${p.platform}] "${p.caption?.slice(0, 80) ?? 'no caption'}" — ${p.views.toLocaleString()} views`).join('\n')}`
+LOWEST 3 POSTS (for contrast):
+${bottom3.map((p, i) => `${i + 1}. [${p.platform}] "${cap(p.caption, 80) || 'no caption'}" — ${p.views.toLocaleString()} views`).join('\n')}
+
+ALL SAMPLED POSTS (compact — use to spot patterns):
+${fullTable}`
   }
 
   let competitorSection = ''
