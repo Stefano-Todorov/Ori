@@ -54,11 +54,9 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/dashboard/my-videos', label: 'My Videos', icon: Play },
     ],
   },
-  {
-    label: null,
-    items: [{ href: '/dashboard/settings', label: 'Settings', icon: Settings }],
-  },
 ]
+
+const SETTINGS_ITEM: NavItem = { href: '/dashboard/settings', label: 'Settings', icon: Settings }
 
 function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?: () => void; onboardingPending?: boolean }) {
   const pathname = usePathname()
@@ -129,6 +127,22 @@ function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?
           </div>
         ))}
       </nav>
+
+      <div className="px-3 pb-2">
+        <Link
+          href={SETTINGS_ITEM.href}
+          onClick={onNavClick}
+          className={cn(
+            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+            pathname === SETTINGS_ITEM.href || pathname.startsWith(SETTINGS_ITEM.href)
+              ? 'bg-purple-600 text-white'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}
+        >
+          <Settings size={16} />
+          {SETTINGS_ITEM.label}
+        </Link>
+      </div>
 
       <UsageBar />
 
