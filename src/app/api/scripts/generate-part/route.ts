@@ -16,6 +16,26 @@ const RequestSchema = z.object({
   style: z.string().optional(),
 })
 
+const HOOK_ANGLE_GUIDES: Record<string, string> = {
+  Negative: 'Start with what NOT to do, a mistake, or a warning. Creates instant curiosity.',
+  List: 'Open with a numbered list promise (e.g. "3 things...", "5 reasons..."). Sets clear expectations.',
+  POV: 'First-person perspective hook. Put the viewer in your shoes immediately.',
+  Question: 'Open with a direct question the viewer instantly relates to.',
+  Storytime: 'Start mid-story with the most dramatic or surprising moment first.',
+  Controversial: 'Open with a bold, polarizing statement that challenges common beliefs.',
+  Statistic: 'Lead with a shocking, specific number or data point.',
+  Direct: 'Straight to the point — state the value proposition immediately.',
+}
+
+const CTA_ANGLE_GUIDES: Record<string, string> = {
+  'Watch again': 'Tell them the video is better the second time / they missed something. Drives replays.',
+  'Follow for more': 'Promise more value like this if they follow.',
+  'Comment below': 'Ask a specific question to drive comments.',
+  'Share this': 'Tell them who specifically needs to see this.',
+  'Save for later': 'Position as reference content they will want to come back to.',
+  'Link in bio': 'Direct them to take a next step via link.',
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,12 +79,15 @@ export async function POST(request: NextRequest) {
 
   if (target === 'hook') {
     const hookFormulas = loadKnowledge('hook-formulas')
-    prompt = `You are an elite short-form video scriptwriter. Write a primary opening hook AND 3 alternative hooks for the video below.
+    const styleGuide = style && HOOK_ANGLE_GUIDES[style]
+      ? `- Hook style: ${style} — ${HOOK_ANGLE_GUIDES[style]}`
+      : ''
+    prompt = `You are an elite short-form video scriptwriter. Write ONE killer opening hook for the video below.
 
 ${creatorContext}
-${style ? `- Hook style: ${style}` : ''}
-${bodyContext ? `\nExisting body / main content (hooks must lead into this):\n${bodyContext}` : ''}
-${ctaContext ? `\nExisting CTA (hooks should set up payoff for this):\n${ctaContext}` : ''}
+${styleGuide}
+${bodyContext ? `\nExisting body / main content (the hook must lead into this):\n${bodyContext}` : ''}
+${ctaContext ? `\nExisting CTA (the hook should set up payoff for this):\n${ctaContext}` : ''}
 
 HOOK FORMULA REFERENCE:
 ${hookFormulas}
@@ -72,32 +95,23 @@ ${hookFormulas}
 PLATFORM NOTES (${platform}):
 ${platformKnowledge}
 
-Return ONLY valid JSON, no markdown:
-{
-  "hook": "the strongest opening hook — first 1-3 seconds, impossible to scroll past",
-  "variants": [
-    {"hook": "a meaningfully different angle", "angle": "name of the hook style / why it's different"},
-    {"hook": "another distinct angle", "angle": "name of the hook style / why it's different"},
-    {"hook": "a third distinct angle", "angle": "name of the hook style / why it's different"}
-  ]
-}
-
-The 3 variants should each use a DIFFERENT hook style than the primary — give the user real alternatives, not subtle rewordings.`
+Return ONLY valid JSON, no markdown, in this exact shape:
+{"hook": "the hook line — first 1-3 seconds of the video, impossible to scroll past"}`
   } else if (target === 'body') {
     const scriptFrameworks = loadKnowledge('script-frameworks')
-    prompt = `You are an elite short-form video scriptwriter. Write a primary script body AND 2 alternative body structures for the video below.
+    prompt = `You are an elite short-form video scriptwriter. Write the BODY of the script below.
 
 ${creatorContext}
 ${hookContext ? `\nOpening hook (the body must follow naturally from this):\n${hookContext}` : ''}
 ${ctaContext ? `\nClosing CTA (the body must build up to this):\n${ctaContext}` : ''}
 
-SCRIPT FRAMEWORK REFERENCE — pick a different framework for each version:
+SCRIPT FRAMEWORK REFERENCE — use one of these structures:
 ${scriptFrameworks}
 
 PLATFORM NOTES (${platform}):
 ${platformKnowledge}
 
-Structure each body with clearly labeled sections separated by newlines:
+Structure the body with clearly labeled sections separated by newlines:
 [INTRO] - the setup after the hook
 [MAIN POINT 1] - first key point with dialogue
 [MAIN POINT 2] - second key point (if needed)
@@ -106,21 +120,16 @@ Structure each body with clearly labeled sections separated by newlines:
 [OUTRO] - lead into the CTA
 
 Write actual spoken dialogue. Return ONLY valid JSON, no markdown:
-{
-  "body": "the primary structured body script with section labels",
-  "variants": [
-    {"body": "alternative body using a different framework", "angle": "name of the framework / approach"},
-    {"body": "another alternative body using yet another framework", "angle": "name of the framework / approach"}
-  ]
-}
-
-Each variant must use a DIFFERENT script framework than the primary — give the user real structural alternatives.`
+{"body": "the structured body script with section labels"}`
   } else {
     const ctaPsychology = loadKnowledge('cta-psychology')
-    prompt = `You are an elite short-form video scriptwriter. Write a primary closing CTA AND 3 alternative CTAs for the video below.
+    const styleGuide = style && CTA_ANGLE_GUIDES[style]
+      ? `- CTA style: ${style} — ${CTA_ANGLE_GUIDES[style]}`
+      : ''
+    prompt = `You are an elite short-form video scriptwriter. Write ONE closing CTA for the video below.
 
 ${creatorContext}
-${style ? `- CTA style: ${style}` : ''}
+${styleGuide}
 ${hookContext ? `\nOpening hook (the CTA should pay off the hook's promise):\n${hookContext}` : ''}
 ${bodyContext ? `\nBody content (the CTA must follow naturally from this):\n${bodyContext}` : ''}
 
@@ -130,22 +139,13 @@ ${ctaPsychology}
 PLATFORM NOTES (${platform}):
 ${platformKnowledge}
 
-Return ONLY valid JSON, no markdown:
-{
-  "cta": "the strongest closing CTA — one line, specific, drives the action",
-  "variants": [
-    {"cta": "a different CTA approach", "angle": "name of the CTA style / why it's different"},
-    {"cta": "another distinct CTA approach", "angle": "name of the CTA style / why it's different"},
-    {"cta": "a third distinct CTA approach", "angle": "name of the CTA style / why it's different"}
-  ]
-}
-
-Each variant should use a DIFFERENT CTA style than the primary — share, save, follow, comment, link-in-bio, watch-again, etc.`
+Return ONLY valid JSON, no markdown, in this exact shape:
+{"cta": "the closing call to action — one line, specific, drives the action"}`
   }
 
   const message = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 2500,
+    max_tokens: 1200,
     messages: [{ role: 'user', content: prompt }],
   })
 
@@ -165,17 +165,5 @@ Each variant should use a DIFFERENT CTA style than the primary — share, save, 
 
   await incrementUsage(user.id, 'script_generations')
 
-  // Normalize variants to {value, angle} so the client doesn't need to switch on target
-  const rawVariants = (parsedResult.variants as Array<Record<string, unknown>> | undefined) ?? []
-  const variants = rawVariants
-    .map((v) => ({
-      value: typeof v[target] === 'string' ? (v[target] as string) : '',
-      angle: typeof v.angle === 'string' ? (v.angle as string) : undefined,
-    }))
-    .filter((v) => v.value.trim().length > 0)
-
-  return NextResponse.json({
-    [target]: parsedResult[target],
-    variants,
-  })
+  return NextResponse.json({ [target]: parsedResult[target] })
 }

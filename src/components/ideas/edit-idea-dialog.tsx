@@ -11,7 +11,7 @@ import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { updateIdea, addIdea, scheduleIdea, deleteIdea } from '@/app/actions'
 import { AIScriptSection } from '@/components/ideas/ai-script-section'
-import { GeneratePartButton, VariantList, type Variant } from '@/components/ideas/generate-part-button'
+import { GeneratePartButton, HOOK_STYLES, CTA_STYLES } from '@/components/ideas/generate-part-button'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
@@ -114,9 +114,6 @@ export function EditIdeaDialog({
   const [scheduledFor, setScheduledFor] = useState<string | null>(scheduledDate)
   const [rescheduling, setRescheduling] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [hookVariants, setHookVariants] = useState<Variant[]>([])
-  const [bodyVariants, setBodyVariants] = useState<Variant[]>([])
-  const [ctaVariants, setCtaVariants] = useState<Variant[]>([])
 
   // Sync form state when idea changes
   useEffect(() => {
@@ -127,9 +124,6 @@ export function EditIdeaDialog({
       setScheduledFor(scheduledDate)
       setRescheduling(false)
       setConfirmDelete(false)
-      setHookVariants([])
-      setBodyVariants([])
-      setCtaVariants([])
     }
   }, [idea?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -344,7 +338,6 @@ export function EditIdeaDialog({
                 set('scriptSnippet', body)
                 set('cta', cta)
               }}
-              onHookSwap={(hook) => set('hookIdea', hook)}
             />
 
             <div className="space-y-1.5">
@@ -358,7 +351,8 @@ export function EditIdeaDialog({
                   platform={platform}
                   bodyContext={form.scriptSnippet}
                   ctaContext={form.cta}
-                  onResult={(v, variants) => { set('hookIdea', v); setHookVariants(variants) }}
+                  styles={[...HOOK_STYLES]}
+                  onResult={(v) => set('hookIdea', v)}
                 />
               </div>
               <Textarea
@@ -367,12 +361,6 @@ export function EditIdeaDialog({
                 onChange={(e) => set('hookIdea', e.target.value)}
                 rows={2}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={hookVariants}
-                label="Alternative hooks"
-                onPick={(v) => set('hookIdea', v)}
-                onDismiss={() => setHookVariants([])}
               />
             </div>
 
@@ -387,7 +375,7 @@ export function EditIdeaDialog({
                   platform={platform}
                   hookContext={form.hookIdea}
                   ctaContext={form.cta}
-                  onResult={(v, variants) => { set('scriptSnippet', v); setBodyVariants(variants) }}
+                  onResult={(v) => set('scriptSnippet', v)}
                 />
               </div>
               <Textarea
@@ -396,13 +384,6 @@ export function EditIdeaDialog({
                 onChange={(e) => set('scriptSnippet', e.target.value)}
                 rows={4}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={bodyVariants}
-                label="Alternative bodies"
-                truncateAt={120}
-                onPick={(v) => set('scriptSnippet', v)}
-                onDismiss={() => setBodyVariants([])}
               />
             </div>
 
@@ -417,20 +398,16 @@ export function EditIdeaDialog({
                   platform={platform}
                   hookContext={form.hookIdea}
                   bodyContext={form.scriptSnippet}
-                  onResult={(v, variants) => { set('cta', v); setCtaVariants(variants) }}
+                  styles={[...CTA_STYLES]}
+                  onResult={(v) => set('cta', v)}
                 />
               </div>
-              <Input
+              <Textarea
                 placeholder="e.g. Follow for more, Comment below..."
                 value={form.cta}
                 onChange={(e) => set('cta', e.target.value)}
+                rows={2}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={ctaVariants}
-                label="Alternative CTAs"
-                onPick={(v) => set('cta', v)}
-                onDismiss={() => setCtaVariants([])}
               />
             </div>
           </div>
@@ -584,9 +561,6 @@ export function AddIdeaDialog({
   const [captionExpanded, setCaptionExpanded] = useState(false)
   const [status, setStatus] = useState<ProductionStatus>(productionStatus ?? 'new')
   const [scheduledDate, setScheduledDate] = useState('')
-  const [hookVariants, setHookVariants] = useState<Variant[]>([])
-  const [bodyVariants, setBodyVariants] = useState<Variant[]>([])
-  const [ctaVariants, setCtaVariants] = useState<Variant[]>([])
 
   // Reset form when dialog opens with new prefill
   useEffect(() => {
@@ -602,9 +576,6 @@ export function AddIdeaDialog({
         tags: prefill?.tags ?? [],
       })
       setCaptionExpanded(!!(prefill?.caption))
-      setHookVariants([])
-      setBodyVariants([])
-      setCtaVariants([])
       setStatus(productionStatus ?? 'new')
       setScheduledDate('')
     }
@@ -753,7 +724,6 @@ export function AddIdeaDialog({
                 set('scriptSnippet', body)
                 set('cta', cta)
               }}
-              onHookSwap={(hook) => set('hookIdea', hook)}
             />
 
             <div className="space-y-1.5">
@@ -767,7 +737,8 @@ export function AddIdeaDialog({
                   platform={platform}
                   bodyContext={form.scriptSnippet}
                   ctaContext={form.cta}
-                  onResult={(v, variants) => { set('hookIdea', v); setHookVariants(variants) }}
+                  styles={[...HOOK_STYLES]}
+                  onResult={(v) => set('hookIdea', v)}
                 />
               </div>
               <Textarea
@@ -776,12 +747,6 @@ export function AddIdeaDialog({
                 onChange={(e) => set('hookIdea', e.target.value)}
                 rows={2}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={hookVariants}
-                label="Alternative hooks"
-                onPick={(v) => set('hookIdea', v)}
-                onDismiss={() => setHookVariants([])}
               />
             </div>
 
@@ -796,7 +761,7 @@ export function AddIdeaDialog({
                   platform={platform}
                   hookContext={form.hookIdea}
                   ctaContext={form.cta}
-                  onResult={(v, variants) => { set('scriptSnippet', v); setBodyVariants(variants) }}
+                  onResult={(v) => set('scriptSnippet', v)}
                 />
               </div>
               <Textarea
@@ -805,13 +770,6 @@ export function AddIdeaDialog({
                 onChange={(e) => set('scriptSnippet', e.target.value)}
                 rows={4}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={bodyVariants}
-                label="Alternative bodies"
-                truncateAt={120}
-                onPick={(v) => set('scriptSnippet', v)}
-                onDismiss={() => setBodyVariants([])}
               />
             </div>
 
@@ -826,20 +784,16 @@ export function AddIdeaDialog({
                   platform={platform}
                   hookContext={form.hookIdea}
                   bodyContext={form.scriptSnippet}
-                  onResult={(v, variants) => { set('cta', v); setCtaVariants(variants) }}
+                  styles={[...CTA_STYLES]}
+                  onResult={(v) => set('cta', v)}
                 />
               </div>
-              <Input
+              <Textarea
                 placeholder="e.g. Follow for more, Comment below..."
                 value={form.cta}
                 onChange={(e) => set('cta', e.target.value)}
+                rows={2}
                 className={fieldInputClass}
-              />
-              <VariantList
-                variants={ctaVariants}
-                label="Alternative CTAs"
-                onPick={(v) => set('cta', v)}
-                onDismiss={() => setCtaVariants([])}
               />
             </div>
           </div>

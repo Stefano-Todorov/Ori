@@ -1,14 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Sparkles, Loader2, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Sparkles, Loader2, ChevronDown, Check } from 'lucide-react'
 
 type Target = 'hook' | 'body' | 'cta'
-
-export interface Variant {
-  value: string
-  angle?: string
-}
 
 interface Props {
   target: Target
@@ -17,7 +12,9 @@ interface Props {
   hookContext?: string
   bodyContext?: string
   ctaContext?: string
-  onResult: (value: string, variants: Variant[]) => void
+  /** Optional list of style angles for this field. When provided, a ▾ split-button appears. */
+  styles?: string[]
+  onResult: (value: string) => void
 }
 
 const LABELS: Record<Target, string> = {
@@ -33,19 +30,34 @@ export function GeneratePartButton({
   hookContext,
   bodyContext,
   ctaContext,
+  styles,
   onResult,
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  async function generate() {
+  useEffect(() => {
+    if (!menuOpen) return
+    function handle(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [menuOpen])
+
+  async function generate(styleOverride?: string | null) {
     if (!topic.trim()) {
       setError('Add a video idea title first.')
       setTimeout(() => setError(null), 2500)
       return
     }
+    const style = styleOverride !== undefined ? styleOverride : selectedStyle
     setLoading(true)
     setError(null)
+    setMenuOpen(false)
     try {
       const res = await fetch('/api/scripts/generate-part', {
         method: 'POST',
@@ -57,6 +69,7 @@ export function GeneratePartButton({
           hookContext: target === 'hook' ? undefined : hookContext,
           bodyContext: target === 'body' ? undefined : bodyContext,
           ctaContext: target === 'cta' ? undefined : ctaContext,
+          style: style ?? undefined,
         }),
       })
       const data = await res.json()
@@ -69,9 +82,8 @@ export function GeneratePartButton({
         return
       }
       const value = data[target]
-      const variants: Variant[] = Array.isArray(data.variants) ? data.variants : []
       if (typeof value === 'string' && value.trim()) {
-        onResult(value, variants)
+        onResult(value)
       } else {
         setError('Empty response. Try again.')
         setTimeout(() => setError(null), 2500)
@@ -84,89 +96,77 @@ export function GeneratePartButton({
     }
   }
 
+  const hasStyles = !!styles && styles.length > 0
+  const buttonLabel = loading
+    ? 'Generating…'
+    : selectedStyle
+      ? `Generate · ${selectedStyle}`
+      : 'Generate'
+
   return (
     <span className="inline-flex items-center gap-2">
       {error && (
         <span className="text-[10px] text-red-500 font-medium">{error}</span>
       )}
-      <button
-        type="button"
-        onClick={generate}
-        disabled={loading}
-        title={LABELS[target]}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-purple-500 shadow-sm shadow-purple-600/30 hover:from-purple-700 hover:to-purple-600 hover:shadow-md hover:shadow-purple-600/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-      >
-        {loading ? (
-          <>
-            <Loader2 size={12} className="animate-spin" />
-            Generating…
-          </>
-        ) : (
-          <>
-            <Sparkles size={12} />
-            Generate
-          </>
+      <div className="relative inline-flex" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => generate()}
+          disabled={loading}
+          title={LABELS[target]}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-purple-500 shadow-sm shadow-purple-600/30 hover:from-purple-700 hover:to-purple-600 hover:shadow-md hover:shadow-purple-600/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all ${
+            hasStyles ? 'rounded-l-md border-r border-purple-700/40' : 'rounded-md'
+          }`}
+        >
+          {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+          {buttonLabel}
+        </button>
+        {hasStyles && (
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            disabled={loading}
+            title="Pick a style angle"
+            aria-label="Pick a style angle"
+            className="inline-flex items-center px-1.5 py-1 rounded-r-md text-white bg-gradient-to-r from-purple-500 to-purple-500 hover:from-purple-600 hover:to-purple-600 shadow-sm shadow-purple-600/30 hover:shadow-md hover:shadow-purple-600/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronDown size={12} className={menuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+          </button>
         )}
-      </button>
+        {menuOpen && hasStyles && (
+          <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-popover border border-border rounded-lg shadow-xl shadow-black/20 py-1 max-h-[280px] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => { setSelectedStyle(null); generate(null) }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-muted transition-colors"
+            >
+              <span className="w-3 inline-flex items-center justify-center">
+                {selectedStyle === null && <Check size={11} className="text-purple-500" />}
+              </span>
+              <span className="font-medium">Any style</span>
+              <span className="text-muted-foreground/60 ml-auto">(default)</span>
+            </button>
+            <div className="border-t border-border my-1" />
+            {styles!.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { setSelectedStyle(opt); generate(opt) }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-muted transition-colors"
+              >
+                <span className="w-3 inline-flex items-center justify-center">
+                  {selectedStyle === opt && <Check size={11} className="text-purple-500" />}
+                </span>
+                <span className="font-medium">{opt}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </span>
   )
 }
 
-// ─── Variant list ──────────────────────────────────────────────────────────
-
-interface VariantListProps {
-  variants: Variant[]
-  /** Truncate long variant text in the preview (default: only for body) */
-  truncateAt?: number
-  /** Called when user clicks a variant to swap it into the field. */
-  onPick: (value: string) => void
-  /** Called when user dismisses the variant list. */
-  onDismiss: () => void
-  label?: string
-}
-
-export function VariantList({ variants, truncateAt, onPick, onDismiss, label = 'Alternatives' }: VariantListProps) {
-  if (variants.length === 0) return null
-
-  function preview(text: string): string {
-    if (!truncateAt) return text
-    const single = text.replace(/\s+/g, ' ').trim()
-    return single.length > truncateAt ? single.slice(0, truncateAt) + '…' : single
-  }
-
-  return (
-    <div className="mt-2 rounded-lg border border-purple-500/25 bg-purple-500/[0.04] dark:bg-purple-500/[0.06] p-2.5 space-y-1.5">
-      <div className="flex items-center justify-between px-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-          <Sparkles size={10} />
-          {label} ({variants.length}) — click to swap
-        </p>
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="text-muted-foreground/60 hover:text-foreground transition-colors"
-          aria-label="Dismiss alternatives"
-        >
-          <X size={12} />
-        </button>
-      </div>
-      <div className="space-y-1">
-        {variants.map((v, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => onPick(v.value)}
-            className="w-full text-left rounded-md px-2 py-1.5 hover:bg-purple-500/15 transition-colors group"
-          >
-            <p className="text-[11.5px] italic text-foreground/85 leading-snug whitespace-pre-wrap">
-              &ldquo;{preview(v.value)}&rdquo;
-            </p>
-            {v.angle && (
-              <p className="text-[10px] text-muted-foreground mt-0.5">{v.angle}</p>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
+// Hook & CTA style angle lists, exported so dialogs can reference them.
+export const HOOK_STYLES = ['Negative', 'List', 'POV', 'Question', 'Storytime', 'Controversial', 'Statistic', 'Direct'] as const
+export const CTA_STYLES = ['Watch again', 'Follow for more', 'Comment below', 'Share this', 'Save for later', 'Link in bio'] as const

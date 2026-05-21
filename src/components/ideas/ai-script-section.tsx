@@ -12,7 +12,6 @@ interface GeneratedResult {
   cta: string
   hashtags: string[]
   estimated_duration: string
-  variants: { hook: string; angle: string }[]
   hook_explanation?: string
   filming_tips?: string
 }
@@ -24,11 +23,9 @@ interface Props {
   platform?: string
   /** Called when generation produces hook/body/cta. */
   onResult: (result: { hook: string; body: string; cta: string }) => void
-  /** Optional: called when user picks an alternative hook. */
-  onHookSwap?: (hook: string) => void
 }
 
-export function AIScriptSection({ topic, platform = 'tiktok', onResult, onHookSwap }: Props) {
+export function AIScriptSection({ topic, platform = 'tiktok', onResult }: Props) {
   const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -53,7 +50,7 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult, onHookSw
           platform,
           hookAngles: hookAngles.length > 0 ? hookAngles : undefined,
           ctaAngles: ctaAngles.length > 0 ? ctaAngles : undefined,
-          generateVariants: true,
+          generateVariants: false,
           randomTopic: random,
         }),
       })
@@ -71,7 +68,6 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult, onHookSw
         cta: data.script.cta,
         hashtags: data.script.hashtags ?? [],
         estimated_duration: data.script.estimated_duration ?? '',
-        variants: data.script.variants ?? [],
         hook_explanation: data.meta?.hook_explanation,
         filming_tips: data.meta?.filming_tips,
       }
@@ -82,11 +78,6 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult, onHookSw
     } finally {
       setLoading(false)
     }
-  }
-
-  function pickHookVariant(hook: string) {
-    if (onHookSwap) onHookSwap(hook)
-    else if (result) onResult({ hook, body: result.body, cta: result.cta })
   }
 
   async function copyHashtags() {
@@ -224,27 +215,6 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult, onHookSw
             <Check size={11} /> Hook, body, and CTA filled in below
             {result.estimated_duration && <span className="text-muted-foreground font-normal">· {result.estimated_duration}</span>}
           </p>
-
-          {result.variants.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
-                Alternative hooks (click to swap)
-              </label>
-              <div className="space-y-1">
-                {result.variants.map((v, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => pickHookVariant(v.hook)}
-                    className="w-full text-left text-[11px] italic text-muted-foreground hover:text-foreground hover:bg-purple-500/10 rounded-md px-2 py-1.5 transition-colors"
-                    title={v.angle}
-                  >
-                    &ldquo;{v.hook}&rdquo;
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {result.hashtags.length > 0 && (
             <div className="space-y-1.5">
