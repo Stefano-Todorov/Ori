@@ -11,6 +11,7 @@ import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { updateIdea, addIdea, scheduleIdea, deleteIdea } from '@/app/actions'
 import { AIScriptSection } from '@/components/ideas/ai-script-section'
+import { GeneratePartButton } from '@/components/ideas/generate-part-button'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
 
 // ─── Shared constants ────────────────────────────────────────────────────────
@@ -341,9 +342,19 @@ export function EditIdeaDialog({
             />
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Hook
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  Hook
+                </label>
+                <GeneratePartButton
+                  target="hook"
+                  topic={form.idea}
+                  platform={platform}
+                  bodyContext={form.scriptSnippet}
+                  ctaContext={form.cta}
+                  onResult={(v) => set('hookIdea', v)}
+                />
+              </div>
               <Textarea
                 placeholder="Opening line — what makes someone stop scrolling?"
                 value={form.hookIdea}
@@ -354,9 +365,19 @@ export function EditIdeaDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Body
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  Body
+                </label>
+                <GeneratePartButton
+                  target="body"
+                  topic={form.idea}
+                  platform={platform}
+                  hookContext={form.hookIdea}
+                  ctaContext={form.cta}
+                  onResult={(v) => set('scriptSnippet', v)}
+                />
+              </div>
               <Textarea
                 placeholder="The main content, points, or full script..."
                 value={form.scriptSnippet}
@@ -367,9 +388,19 @@ export function EditIdeaDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                CTA
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  CTA
+                </label>
+                <GeneratePartButton
+                  target="cta"
+                  topic={form.idea}
+                  platform={platform}
+                  hookContext={form.hookIdea}
+                  bodyContext={form.scriptSnippet}
+                  onResult={(v) => set('cta', v)}
+                />
+              </div>
               <Input
                 placeholder="e.g. Follow for more, Comment below..."
                 value={form.cta}
@@ -695,9 +726,19 @@ export function AddIdeaDialog({
             />
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Hook
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  Hook
+                </label>
+                <GeneratePartButton
+                  target="hook"
+                  topic={form.idea}
+                  platform={platform}
+                  bodyContext={form.scriptSnippet}
+                  ctaContext={form.cta}
+                  onResult={(v) => set('hookIdea', v)}
+                />
+              </div>
               <Textarea
                 placeholder="Opening line — what makes someone stop scrolling?"
                 value={form.hookIdea}
@@ -708,9 +749,19 @@ export function AddIdeaDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Body
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  Body
+                </label>
+                <GeneratePartButton
+                  target="body"
+                  topic={form.idea}
+                  platform={platform}
+                  hookContext={form.hookIdea}
+                  ctaContext={form.cta}
+                  onResult={(v) => set('scriptSnippet', v)}
+                />
+              </div>
               <Textarea
                 placeholder="The main content, points, or full script..."
                 value={form.scriptSnippet}
@@ -721,9 +772,19 @@ export function AddIdeaDialog({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                CTA
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+                  CTA
+                </label>
+                <GeneratePartButton
+                  target="cta"
+                  topic={form.idea}
+                  platform={platform}
+                  hookContext={form.hookIdea}
+                  bodyContext={form.scriptSnippet}
+                  onResult={(v) => set('cta', v)}
+                />
+              </div>
               <Input
                 placeholder="e.g. Follow for more, Comment below..."
                 value={form.cta}
