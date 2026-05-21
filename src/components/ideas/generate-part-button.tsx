@@ -1,9 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { Sparkles, Loader2, X } from 'lucide-react'
 
 type Target = 'hook' | 'body' | 'cta'
+
+export interface Variant {
+  value: string
+  angle?: string
+}
 
 interface Props {
   target: Target
@@ -12,13 +17,13 @@ interface Props {
   hookContext?: string
   bodyContext?: string
   ctaContext?: string
-  onResult: (value: string) => void
+  onResult: (value: string, variants: Variant[]) => void
 }
 
 const LABELS: Record<Target, string> = {
-  hook: 'Generate hook',
-  body: 'Generate body',
-  cta: 'Generate CTA',
+  hook: 'Generate hook with AI',
+  body: 'Generate body with AI',
+  cta: 'Generate CTA with AI',
 }
 
 export function GeneratePartButton({
@@ -64,8 +69,9 @@ export function GeneratePartButton({
         return
       }
       const value = data[target]
+      const variants: Variant[] = Array.isArray(data.variants) ? data.variants : []
       if (typeof value === 'string' && value.trim()) {
-        onResult(value)
+        onResult(value, variants)
       } else {
         setError('Empty response. Try again.')
         setTimeout(() => setError(null), 2500)
@@ -79,24 +85,88 @@ export function GeneratePartButton({
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-2">
+      {error && (
+        <span className="text-[10px] text-red-500 font-medium">{error}</span>
+      )}
       <button
         type="button"
         onClick={generate}
         disabled={loading}
         title={LABELS[target]}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 disabled:opacity-50 transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold text-white bg-gradient-to-r from-purple-600 to-purple-500 shadow-sm shadow-purple-600/30 hover:from-purple-700 hover:to-purple-600 hover:shadow-md hover:shadow-purple-600/40 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
       >
         {loading ? (
-          <Loader2 size={11} className="animate-spin" />
+          <>
+            <Loader2 size={12} className="animate-spin" />
+            Generating…
+          </>
         ) : (
-          <Sparkles size={11} />
+          <>
+            <Sparkles size={12} />
+            Generate
+          </>
         )}
-        {loading ? 'Generating…' : 'AI'}
       </button>
-      {error && (
-        <span className="text-[10px] text-red-500 font-medium">{error}</span>
-      )}
     </span>
+  )
+}
+
+// ─── Variant list ──────────────────────────────────────────────────────────
+
+interface VariantListProps {
+  variants: Variant[]
+  /** Truncate long variant text in the preview (default: only for body) */
+  truncateAt?: number
+  /** Called when user clicks a variant to swap it into the field. */
+  onPick: (value: string) => void
+  /** Called when user dismisses the variant list. */
+  onDismiss: () => void
+  label?: string
+}
+
+export function VariantList({ variants, truncateAt, onPick, onDismiss, label = 'Alternatives' }: VariantListProps) {
+  if (variants.length === 0) return null
+
+  function preview(text: string): string {
+    if (!truncateAt) return text
+    const single = text.replace(/\s+/g, ' ').trim()
+    return single.length > truncateAt ? single.slice(0, truncateAt) + '…' : single
+  }
+
+  return (
+    <div className="mt-2 rounded-lg border border-purple-500/25 bg-purple-500/[0.04] dark:bg-purple-500/[0.06] p-2.5 space-y-1.5">
+      <div className="flex items-center justify-between px-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+          <Sparkles size={10} />
+          {label} ({variants.length}) — click to swap
+        </p>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="text-muted-foreground/60 hover:text-foreground transition-colors"
+          aria-label="Dismiss alternatives"
+        >
+          <X size={12} />
+        </button>
+      </div>
+      <div className="space-y-1">
+        {variants.map((v, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onPick(v.value)}
+            className="w-full text-left rounded-md px-2 py-1.5 hover:bg-purple-500/15 transition-colors group"
+          >
+            <p className="text-[11.5px] italic text-foreground/85 leading-snug whitespace-pre-wrap">
+              &ldquo;{preview(v.value)}&rdquo;
+            </p>
+            {v.angle && (
+              <p className="text-[10px] text-muted-foreground mt-0.5">{v.angle}</p>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
