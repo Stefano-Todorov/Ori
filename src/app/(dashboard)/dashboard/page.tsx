@@ -6,6 +6,7 @@ import { FollowerChart } from '@/components/dashboard/follower-chart'
 import { AddFollowersForm } from '@/components/dashboard/add-followers-form'
 import { KanbanBoard } from '@/components/dashboard/kanban-board'
 import { ScheduleCalendar } from '@/components/dashboard/schedule-calendar'
+import { NextActionHero } from '@/components/dashboard/next-action-hero'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
     { data: productionIdeas },
     { data: scheduledPosts },
     { data: recordingDays },
+    { count: ideaCount },
   ] = await Promise.all([
     supabase
       .from('follower_snapshots')
@@ -46,7 +48,17 @@ export default async function DashboardPage() {
       .select('*')
       .eq('user_id', user.id)
       .order('recording_date', { ascending: true }),
+    supabase
+      .from('content_ideas')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id),
   ])
+
+  // Next-action stage: 'start' (no ideas) → 'plan' (ideas, nothing scheduled) → 'active'
+  const totalIdeas = ideaCount ?? 0
+  const scheduledCount = scheduledPosts?.length ?? 0
+  const stage: 'start' | 'plan' | 'active' =
+    totalIdeas === 0 ? 'start' : scheduledCount === 0 ? 'plan' : 'active'
 
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">
@@ -71,22 +83,30 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ─── Follower Tracking ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <FollowerChart snapshots={followerSnapshots ?? []} activePlatforms={profile?.platforms} />
-        </div>
-        <AddFollowersForm activePlatforms={profile?.platforms} snapshots={followerSnapshots ?? []} />
-      </div>
+      {/* ─── Next-action hero (beginner stages only) ─── */}
+      {stage !== 'active' && <NextActionHero stage={stage} ideaCount={totalIdeas} />}
 
-      {/* ─── Kanban Board ─── */}
-      <KanbanBoard ideas={productionIdeas ?? []} batchSize={profile?.batch_size ?? profile?.posting_target ?? 3} />
+      {/* ─── Widgets — hidden entirely until the user has at least one idea ─── */}
+      {stage !== 'start' && (
+        <>
+          {/* Follower Tracking */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <FollowerChart snapshots={followerSnapshots ?? []} activePlatforms={profile?.platforms} />
+            </div>
+            <AddFollowersForm activePlatforms={profile?.platforms} snapshots={followerSnapshots ?? []} />
+          </div>
 
-      {/* ─── Calendar ─── */}
-      <ScheduleCalendar
-        scheduledPosts={scheduledPosts ?? []}
-        recordingDays={recordingDays ?? []}
-      />
+          {/* Kanban Board */}
+          <KanbanBoard ideas={productionIdeas ?? []} batchSize={profile?.batch_size ?? profile?.posting_target ?? 3} />
+
+          {/* Calendar */}
+          <ScheduleCalendar
+            scheduledPosts={scheduledPosts ?? []}
+            recordingDays={recordingDays ?? []}
+          />
+        </>
+      )}
     </div>
   )
 }
