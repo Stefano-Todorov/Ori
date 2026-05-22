@@ -26,7 +26,7 @@ export function FloatingCoach({ unreadCount = 0 }: Props) {
   // count is computed once and goes stale, so the bubble re-checks for itself.
   useEffect(() => {
     let cancelled = false
-    fetch('/api/coach/unread')
+    fetch('/api/coach/unread', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (d && !cancelled) setUnread(d.count ?? 0) })
       .catch(() => {})
