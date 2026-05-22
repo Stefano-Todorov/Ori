@@ -4,20 +4,16 @@ import { anthropic, MODEL } from '@/lib/claude'
 
 export const maxDuration = 300
 
-// Check if it's currently Monday 6am (6:00-6:59) in the given timezone
-function isMondayMorning(tz: string): boolean {
+// Check if it's currently Monday in the given timezone.
+// The cron runs once daily, so each user's local Monday (a 24h window)
+// is covered by exactly one cron fire — catching every timezone.
+function isMonday(tz: string): boolean {
   try {
-    const now = new Date()
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: tz,
       weekday: 'long',
-      hour: 'numeric',
-      hour12: false,
     })
-    const parts = formatter.formatToParts(now)
-    const weekday = parts.find(p => p.type === 'weekday')?.value
-    const hour = parseInt(parts.find(p => p.type === 'hour')?.value ?? '-1', 10)
-    return weekday === 'Monday' && hour === 6
+    return formatter.format(new Date()) === 'Monday'
   } catch {
     return false
   }
@@ -57,11 +53,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent: 0, message: 'No eligible users' })
   }
 
-  // Filter to only users whose local time is Monday 6am
-  const eligibleUsers = users.filter(u => isMondayMorning(u.timezone ?? 'America/New_York'))
+  // Filter to only users whose local day is currently Monday
+  const eligibleUsers = users.filter(u => isMonday(u.timezone ?? 'America/New_York'))
 
   if (eligibleUsers.length === 0) {
-    return NextResponse.json({ sent: 0, eligible: users.length, message: 'No users in Monday 6am window' })
+    return NextResponse.json({ sent: 0, eligible: users.length, message: 'No users with local Monday' })
   }
 
   let sent = 0
