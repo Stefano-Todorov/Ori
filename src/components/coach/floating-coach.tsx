@@ -17,9 +17,21 @@ export function FloatingCoach({ unreadCount = 0 }: Props) {
   const [open, setOpen] = useState(false)
   const [history, setHistory] = useState<CoachMessage[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [unread, setUnread] = useState(unreadCount)
 
   // Hide on the full coach page and during onboarding
   const hidden = pathname === '/dashboard/coach' || pathname.startsWith('/onboarding')
+
+  // Refresh the unread count on mount and on every navigation. The layout-level
+  // count is computed once and goes stale, so the bubble re-checks for itself.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/coach/unread')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && !cancelled) setUnread(d.count ?? 0) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [pathname])
 
   // Lock body scroll on mobile when open
   useEffect(() => {
@@ -40,6 +52,7 @@ export function FloatingCoach({ unreadCount = 0 }: Props) {
 
   async function handleOpen() {
     setOpen(true)
+    setUnread(0) // opening the coach marks proactive messages as read
     if (history !== null) return
     setLoading(true)
     try {
@@ -68,9 +81,9 @@ export function FloatingCoach({ unreadCount = 0 }: Props) {
           className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
         >
           <MessageSquare size={22} />
-          {unreadCount > 0 && (
+          {unread > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-background animate-pulse">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unread > 9 ? '9+' : unread}
             </span>
           )}
           <span className="absolute right-full mr-3 px-2.5 py-1 rounded-md bg-foreground text-background text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity hidden sm:block">
