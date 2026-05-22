@@ -73,16 +73,30 @@ export function FloatingCoach({ unreadCount = 0 }: Props) {
 
   return (
     <>
+      {/* Pulsing halo when there's an unread message — draws the eye in peripheral vision */}
+      {!open && unread > 0 && (
+        <span
+          aria-hidden
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-30 w-14 h-14 rounded-full bg-red-500/50 animate-ping pointer-events-none"
+        />
+      )}
+
       {/* Bubble */}
       {!open && (
         <button
           onClick={handleOpen}
           aria-label="Open AI Coach"
-          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
+          className={cn(
+            'fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full text-white hover:scale-105 active:scale-95 transition-all flex items-center justify-center group',
+            'bg-gradient-to-br from-purple-600 to-purple-700',
+            unread > 0
+              ? 'shadow-lg shadow-red-500/50 ring-2 ring-red-500/60 hover:shadow-xl hover:shadow-red-500/60'
+              : 'shadow-lg shadow-purple-600/30 hover:shadow-xl hover:shadow-purple-600/40'
+          )}
         >
           <MessageSquare size={22} />
           {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center border-2 border-background animate-pulse">
+            <span className="absolute -top-2 -right-2 min-w-[24px] h-6 px-1.5 rounded-full bg-red-500 text-white text-[12px] font-extrabold flex items-center justify-center border-[3px] border-background shadow-md shadow-red-500/40">
               {unread > 9 ? '9+' : unread}
             </span>
           )}
