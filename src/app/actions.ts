@@ -709,25 +709,6 @@ export async function disconnectAccount(platform: Platform) {
   return { error: null }
 }
 
-export async function cleanupZeroStatsPosts() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { deleted: 0 }
-  // Delete posts with 0 views AND 0 likes (broken saves with no real stats)
-  const { data } = await supabase
-    .from('posts')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('views', 0)
-    .eq('likes', 0)
-  if (!data || data.length === 0) return { deleted: 0 }
-  const ids = data.map(p => p.id)
-  await supabase.from('posts').delete().in('id', ids)
-  revalidatePath('/dashboard/competitors')
-  revalidatePath('/dashboard/inspo')
-  return { deleted: ids.length }
-}
-
 // ─── Follower Tracking ───────────────────────────────────────────────────────
 
 export async function addFollowerSnapshot(platform: Platform, count: number, recorded_at?: string) {
