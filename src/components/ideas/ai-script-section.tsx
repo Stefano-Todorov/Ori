@@ -13,7 +13,6 @@ interface GeneratedResult {
   hashtags: string[]
   estimated_duration: string
   hook_explanation?: string
-  filming_tips?: string
 }
 
 interface Props {
@@ -69,7 +68,6 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult }: Props)
         hashtags: data.script.hashtags ?? [],
         estimated_duration: data.script.estimated_duration ?? '',
         hook_explanation: data.meta?.hook_explanation,
-        filming_tips: data.meta?.filming_tips,
       }
       setResult(generated)
       onResult({ hook: generated.hook, body: generated.body, cta: generated.cta })
@@ -240,17 +238,6 @@ export function AIScriptSection({ topic, platform = 'tiktok', onResult }: Props)
             </div>
           )}
 
-          {result.filming_tips && (
-            <details className="group">
-              <summary className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 cursor-pointer hover:opacity-80 transition-opacity list-none flex items-center gap-1.5">
-                <span className="group-open:rotate-90 transition-transform inline-block">▶</span>
-                Filming tips
-              </summary>
-              <p className="text-[11px] text-muted-foreground mt-1.5 leading-relaxed pl-4">
-                {result.filming_tips}
-              </p>
-            </details>
-          )}
         </div>
       )}
     </div>
