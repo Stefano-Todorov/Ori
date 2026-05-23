@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { Sparkles } from 'lucide-react'
 import { FollowerChart } from '@/components/dashboard/follower-chart'
 import { AddFollowersForm } from '@/components/dashboard/add-followers-form'
 import { KanbanBoard } from '@/components/dashboard/kanban-board'
@@ -63,24 +61,13 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">
       {/* ─── Header ─── */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Welcome back{profile?.name ? `, ${profile.name}` : ''}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {profile?.niche ? `${profile.niche} creator` : 'Your content overview'}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Link
-            href="/dashboard/coach"
-            className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-colors"
-          >
-            <Sparkles size={14} />
-            Ask Orianna
-          </Link>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">
+          Welcome back{profile?.name ? `, ${profile.name}` : ''}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {profile?.niche ? `${profile.niche} creator` : 'Your content overview'}
+        </p>
       </div>
 
       {/* ─── Next-action hero (beginner stages only) ─── */}
