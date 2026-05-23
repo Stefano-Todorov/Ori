@@ -98,17 +98,17 @@ function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?
             onClick={handleCoachClick}
             className={cn(
               'relative w-full flex items-center gap-2.5 h-10 px-3 rounded-lg text-sm font-semibold transition-all',
-              'bg-gradient-to-r from-purple-600 to-purple-500 text-white',
-              'hover:from-purple-700 hover:to-purple-600',
+              'bg-purple-500/10 dark:bg-purple-500/15 border text-purple-700 dark:text-purple-200',
+              'hover:bg-purple-500/20 dark:hover:bg-purple-500/25 hover:text-purple-800 dark:hover:text-purple-100',
               unread > 0
-                ? 'shadow-md shadow-red-500/30 ring-2 ring-red-500/50'
-                : 'shadow-sm shadow-purple-600/30'
+                ? 'border-red-500/50 ring-2 ring-red-500/40 shadow-sm shadow-red-500/20'
+                : 'border-purple-500/40 hover:border-purple-500/60'
             )}
           >
             <MessageSquare size={15} />
             <span className="flex-1 text-left">Talk to coach</span>
             {unread > 0 && (
-              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-purple-700">
+              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-background">
                 {unread > 9 ? '9+' : unread}
               </span>
             )}
