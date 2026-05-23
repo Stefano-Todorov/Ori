@@ -16,11 +16,13 @@ import {
   Play,
   Sparkles,
   X,
+  MessageSquare,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { UsageBar } from '@/components/layout/usage-bar'
 import { useMobileSidebar } from './mobile-sidebar-context'
+import { useCoach } from '@/components/coach/coach-context'
 import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
@@ -61,6 +63,7 @@ const SETTINGS_ITEM: NavItem = { href: '/dashboard/settings', label: 'Settings',
 function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?: () => void; onboardingPending?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
+  const { unread, openCoach } = useCoach()
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -69,11 +72,48 @@ function SidebarContent({ onNavClick, onboardingPending = false }: { onNavClick?
     router.refresh()
   }
 
+  function handleCoachClick() {
+    openCoach()
+    onNavClick?.()
+  }
+
   return (
     <>
       <div className="p-6 border-b border-border flex items-center gap-3">
         <img src="/brand/logo-mark.svg" alt="" className="w-8 h-8 rounded-lg" />
         <h1 className="text-lg font-semibold text-foreground leading-tight tracking-tight">Orianna</h1>
+      </div>
+
+      {/* Talk to coach — primary action, always visible above the nav */}
+      <div className="px-3 pt-3">
+        <div className="relative">
+          {unread > 0 && (
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-lg bg-red-500/30 animate-ping pointer-events-none"
+            />
+          )}
+          <button
+            type="button"
+            onClick={handleCoachClick}
+            className={cn(
+              'relative w-full flex items-center gap-2.5 h-10 px-3 rounded-lg text-sm font-semibold transition-all',
+              'bg-gradient-to-r from-purple-600 to-purple-500 text-white',
+              'hover:from-purple-700 hover:to-purple-600',
+              unread > 0
+                ? 'shadow-md shadow-red-500/30 ring-2 ring-red-500/50'
+                : 'shadow-sm shadow-purple-600/30'
+            )}
+          >
+            <MessageSquare size={15} />
+            <span className="flex-1 text-left">Talk to coach</span>
+            {unread > 0 && (
+              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-extrabold flex items-center justify-center border-2 border-purple-700">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       <nav className="flex-1 p-3 overflow-y-auto">

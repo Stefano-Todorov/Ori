@@ -1,10 +1,13 @@
 'use client'
 
-import { Menu } from 'lucide-react'
+import { Menu, MessageSquare } from 'lucide-react'
 import { useMobileSidebar } from './mobile-sidebar-context'
+import { useCoach } from '@/components/coach/coach-context'
+import { cn } from '@/lib/utils'
 
 export function MobileHeader() {
   const { open } = useMobileSidebar()
+  const { unread, openCoach } = useCoach()
 
   return (
     <header className="md:hidden flex items-center gap-3 h-14 px-4 border-b border-border bg-background shrink-0">
@@ -21,6 +24,25 @@ export function MobileHeader() {
           Orianna
         </span>
       </div>
+      <button
+        type="button"
+        onClick={openCoach}
+        aria-label="Talk to coach"
+        className={cn(
+          'relative ml-auto w-9 h-9 rounded-full flex items-center justify-center text-white transition-all',
+          'bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600',
+          unread > 0
+            ? 'shadow-md shadow-red-500/40 ring-2 ring-red-500/50'
+            : 'shadow-sm shadow-purple-600/25'
+        )}
+      >
+        <MessageSquare size={16} />
+        {unread > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-extrabold flex items-center justify-center border-2 border-background">
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
     </header>
   )
 }
