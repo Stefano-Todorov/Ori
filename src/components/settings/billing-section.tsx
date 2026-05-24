@@ -181,6 +181,12 @@ export function BillingSection() {
                   )
                 })}
                 <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground">Competitor sort</span>
+                  <span className={`font-semibold ${tier.slug === 'starter' ? 'text-muted-foreground' : 'text-purple-500'}`}>
+                    {tier.slug === 'starter' ? 'Likes only' : 'All metrics'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
                   <span className="text-muted-foreground">Manual ideas</span>
                   <span className="font-semibold text-purple-500">Unlimited</span>
                 </div>
