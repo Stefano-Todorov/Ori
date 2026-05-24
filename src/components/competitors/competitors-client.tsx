@@ -204,6 +204,10 @@ function CompetitorCard({ group, allCompetitors, allTags, isPaid }: { group: Com
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 
+  const FREE_POSTS_LIMIT = 20
+  const visiblePosts = isPaid ? sortedPosts : sortedPosts.slice(0, FREE_POSTS_LIMIT)
+  const hiddenCount = isPaid ? 0 : Math.max(0, sortedPosts.length - FREE_POSTS_LIMIT)
+
   const avgViews = posts.length > 0 ? posts.reduce((s, p) => s + p.views, 0) / posts.length : 0
   const avgComments = posts.length > 0 ? posts.reduce((s, p) => s + p.comments, 0) / posts.length : 0
   const avgEng = posts.length > 0
@@ -544,9 +548,18 @@ function CompetitorCard({ group, allCompetitors, allTags, isPaid }: { group: Com
             <EmptyPostsState handle={primaryComp.handle} platform={primaryComp.platform as Platform} />
           ) : (
             <div className="space-y-2">
-              {sortedPosts.map(post => (
+              {visiblePosts.map(post => (
                 <PostCard key={post.id} post={post} handle={post.competitor_handle ?? primaryComp.handle} allTags={allTags} />
               ))}
+              {hiddenCount > 0 && (
+                <button
+                  onClick={() => router.push('/dashboard/settings?tab=billing')}
+                  className="w-full flex items-center justify-center gap-2 py-4 px-4 rounded-xl border border-dashed border-purple-500/40 bg-purple-500/5 text-sm font-semibold text-purple-500 hover:bg-purple-500/10 hover:border-purple-500/60 transition-all"
+                >
+                  <Lock size={14} />
+                  +{hiddenCount} more post{hiddenCount === 1 ? '' : 's'} — upgrade to Plus to unlock
+                </button>
+              )}
             </div>
           )}
         </div>

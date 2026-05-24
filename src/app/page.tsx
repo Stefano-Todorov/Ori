@@ -860,7 +860,7 @@ export default function LandingPage() {
                 {[
                   { text: '3 AI coach messages/mo', ai: true },
                   { text: '1 script generation/mo', ai: true },
-                  { text: '5 competitors (sort by likes only)' },
+                  { text: '5 competitors (top 20 posts each, sort by likes)' },
                   { text: 'Unlimited inspo saves' },
                   { text: 'Unlimited manual ideas' },
                   { text: 'Content calendar' },
@@ -895,7 +895,7 @@ export default function LandingPage() {
                 {[
                   { text: '25 AI coach messages/mo', ai: true },
                   { text: '10 script generations/mo', ai: true },
-                  { text: '10 competitors (sort by views, likes & date)' },
+                  { text: '10 competitors (unlimited posts, full sort)' },
                   { text: '30 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },
                   { text: 'Unlimited manual ideas' },
@@ -934,7 +934,7 @@ export default function LandingPage() {
                 {[
                   { text: '100 AI coach messages/mo', ai: true },
                   { text: '40 script generations/mo', ai: true },
-                  { text: '30 competitors (sort by views, likes & date)' },
+                  { text: '30 competitors (unlimited posts, full sort)' },
                   { text: '75 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },
                   { text: 'Unlimited manual ideas' },
@@ -970,7 +970,7 @@ export default function LandingPage() {
                 {[
                   { text: '300 AI coach messages/mo', ai: true },
                   { text: '125 script generations/mo', ai: true },
-                  { text: '100 competitors (sort by views, likes & date)' },
+                  { text: '100 competitors (unlimited posts, full sort)' },
                   { text: '300 video downloads/mo' },
                   { text: 'Unlimited inspo saves' },
                   { text: 'Unlimited manual ideas' },
