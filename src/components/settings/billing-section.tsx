@@ -187,7 +187,7 @@ export function BillingSection() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Competitor sort</span>
+                  <span className="text-muted-foreground">Sort limit</span>
                   <span className={`font-semibold ${tier.slug === 'starter' ? 'text-muted-foreground' : 'text-purple-500'}`}>
                     {tier.slug === 'starter' ? 'Likes only' : 'All metrics'}
                   </span>
