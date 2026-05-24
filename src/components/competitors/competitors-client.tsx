@@ -6,7 +6,7 @@ import {
   Eye, Heart, MessageCircle, Pencil, Video,
   Users, BarChart3, Trophy, Loader2,
   X, SortAsc, Calendar, Bookmark, Send, Link, Unlink,
-  Download,
+  Download, Lock,
 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
@@ -118,9 +118,10 @@ interface Props {
   orphanedHandles: string[]
   orphanedPostsByHandle: Record<string, Post[]>
   totalPosts: number
+  isPaid: boolean
 }
 
-export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts }: Props) {
+export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orphanedPostsByHandle, totalPosts, isPaid }: Props) {
   const allPosts = groups.flatMap(g => g.posts)
   const allTags = [...new Set(allPosts.flatMap(p => p.tags ?? []))].sort()
 
@@ -153,7 +154,7 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
       <div className="space-y-4">
         {groups.map((group) => (
-          <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} />
+          <CompetitorCard key={group.groupId} group={group} allCompetitors={allCompetitors} allTags={allTags} isPaid={isPaid} />
         ))}
 
         {orphanedHandles.map(handle => (
@@ -178,14 +179,14 @@ export function CompetitorsClient({ groups, allCompetitors, orphanedHandles, orp
 
 type PlatformFilter = 'all' | Platform
 
-function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorGroup; allCompetitors: Competitor[]; allTags: string[] }) {
+function CompetitorCard({ group, allCompetitors, allTags, isPaid }: { group: CompetitorGroup; allCompetitors: Competitor[]; allTags: string[]; isPaid: boolean }) {
   const router = useRouter()
   const { competitors: comps, posts } = group
   const primaryComp = comps[0]
   const [collapsed, setCollapsed] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [sortMode, setSortMode] = useState<SortMode>('views')
+  const [sortMode, setSortMode] = useState<SortMode>(isPaid ? 'views' : 'likes')
   const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all')
   const [linkMenuOpen, setLinkMenuOpen] = useState(false)
   const [linking, setLinking] = useState(false)
@@ -472,19 +473,33 @@ function CompetitorCard({ group, allCompetitors, allTags }: { group: CompetitorG
             <div className="flex items-center gap-3 flex-wrap pb-3 border-b border-border dark:border-white/6">
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold mr-1">Sort by</span>
-                {(['views', 'likes', 'date'] as SortMode[]).map(mode => (
-                  <button
-                    key={mode}
-                    onClick={() => setSortMode(mode)}
-                    className={`text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all capitalize ${
-                      sortMode === mode
-                        ? 'bg-purple-500/15 text-white border border-purple-500/30'
-                        : 'text-muted-foreground hover:text-foreground hover:underline'
-                    }`}
-                  >
-                    {mode === 'date' ? 'Date' : mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  </button>
-                ))}
+                {(['views', 'likes', 'date'] as SortMode[]).map(mode => {
+                  const locked = !isPaid && mode !== 'likes'
+                  const label = mode === 'date' ? 'Date' : mode.charAt(0).toUpperCase() + mode.slice(1)
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        if (locked) {
+                          router.push('/dashboard/settings?tab=billing')
+                          return
+                        }
+                        setSortMode(mode)
+                      }}
+                      title={locked ? 'Upgrade to sort by ' + label.toLowerCase() : undefined}
+                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md transition-all capitalize ${
+                        sortMode === mode
+                          ? 'bg-purple-500/15 text-white border border-purple-500/30'
+                          : locked
+                          ? 'text-muted-foreground/60 hover:text-purple-500'
+                          : 'text-muted-foreground hover:text-foreground hover:underline'
+                      }`}
+                    >
+                      {locked && <Lock size={10} />}
+                      {label}
+                    </button>
+                  )
+                })}
               </div>
               {platformsInPosts.length > 1 && (
                 <>

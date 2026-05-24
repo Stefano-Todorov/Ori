@@ -2,12 +2,16 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AddCompetitorButton } from '@/components/posts/add-competitor-button'
 import { CompetitorsClient } from '@/components/competitors/competitors-client'
+import { getUserTier } from '@/lib/usage'
 import type { Competitor, Post } from '@/lib/types'
 
 export default async function CompetitorsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const tierSlug = await getUserTier(user.id)
+  const isPaid = tierSlug !== 'starter'
 
   const [{ data: competitors }, { data: competitorPosts }] = await Promise.all([
     supabase
@@ -78,6 +82,7 @@ export default async function CompetitorsPage() {
         orphanedHandles={orphanedHandles}
         orphanedPostsByHandle={orphanedPostsByHandle}
         totalPosts={totalPosts}
+        isPaid={isPaid}
       />
     </div>
   )
