@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check } from 'lucide-react'
 import { refreshKeepScroll } from '@/lib/router-utils'
@@ -92,6 +92,32 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
   )
 
   const activeIdea = activeId ? localIdeas.find(i => i.id === activeId) ?? null : null
+
+  // For each idea, the earliest upcoming scheduled date (or latest past date if none upcoming).
+  // Drives the at-a-glance countdown chip on pipeline cards.
+  const scheduledDateByIdeaId = useMemo(() => {
+    const today = new Date()
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const map: Record<string, string> = {}
+    for (const post of localPosts) {
+      if (!post.content_idea_id) continue
+      const existing = map[post.content_idea_id]
+      if (!existing) {
+        map[post.content_idea_id] = post.scheduled_date
+        continue
+      }
+      const existingIsFuture = existing >= todayKey
+      const candidateIsFuture = post.scheduled_date >= todayKey
+      if (candidateIsFuture && !existingIsFuture) {
+        map[post.content_idea_id] = post.scheduled_date
+      } else if (candidateIsFuture && existingIsFuture) {
+        if (post.scheduled_date < existing) map[post.content_idea_id] = post.scheduled_date
+      } else if (!candidateIsFuture && !existingIsFuture) {
+        if (post.scheduled_date > existing) map[post.content_idea_id] = post.scheduled_date
+      }
+    }
+    return map
+  }, [localPosts])
 
   /** Open the edit dialog for the idea behind a scheduled post. */
   function handleEditPost(post: { content_idea_id: string | null }) {
@@ -221,6 +247,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
           <ProductionPipeline
             ideas={localIdeas}
             batchSize={batchSize}
+            scheduledDateByIdeaId={scheduledDateByIdeaId}
             onEdit={setEditingIdea}
             onStatusChange={handleStatusChange}
             onAdd={(status) => {
@@ -234,7 +261,11 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
         <DragOverlay>
           {activeIdea ? (
             <div className="w-[300px]">
-              <IdeaCardContent idea={activeIdea} isOverlay />
+              <IdeaCardContent
+                idea={activeIdea}
+                scheduledDate={scheduledDateByIdeaId[activeIdea.id] ?? null}
+                isOverlay
+              />
             </div>
           ) : null}
         </DragOverlay>

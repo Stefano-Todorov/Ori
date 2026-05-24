@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Pencil, GripVertical, ExternalLink, CalendarClock, Plus } from 'lucide-react'
+import { Pencil, GripVertical, ExternalLink, CalendarClock, Plus, Clock } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -62,6 +62,43 @@ export function getDisplayStatus(idea: ContentIdea): ProductionStatus {
   return idea.production_status === 'new' ? 'recording' : idea.production_status
 }
 
+type CountdownTone = 'overdue' | 'today' | 'tomorrow' | 'soon' | 'later'
+
+const COUNTDOWN_TONE_CLASS: Record<CountdownTone, string> = {
+  overdue: 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse',
+  today: 'bg-pink-500/15 text-pink-500 border-pink-500/30',
+  tomorrow: 'bg-orange-500/15 text-orange-500 border-orange-500/30',
+  soon: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+  later: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
+}
+
+function getCountdown(scheduledDate: string): { text: string; tone: CountdownTone } {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const target = new Date(scheduledDate + 'T00:00:00')
+  const diff = Math.round((target.getTime() - today.getTime()) / 86_400_000)
+
+  if (diff < 0) {
+    const n = -diff
+    return { text: `Overdue · ${n}d`, tone: 'overdue' }
+  }
+  if (diff === 0) return { text: 'Posts today', tone: 'today' }
+  if (diff === 1) return { text: 'Posts tomorrow', tone: 'tomorrow' }
+  if (diff < 14) return { text: `Posts in ${diff} days`, tone: 'soon' }
+  const dateStr = target.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return { text: `Posts ${dateStr}`, tone: 'later' }
+}
+
+function CountdownChip({ scheduledDate }: { scheduledDate: string }) {
+  const { text, tone } = getCountdown(scheduledDate)
+  return (
+    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[11px] font-bold tabular-nums ${COUNTDOWN_TONE_CLASS[tone]}`}>
+      <Clock size={11} strokeWidth={2.5} />
+      {text}
+    </div>
+  )
+}
+
 function parseSource(source: string | null): { prefix: string; handle: string; platform: string } | null {
   if (!source) return null
   const m = source.match(/^(extension|inspiration):\s*@?(\S+)\s*\((\w+)\)$/i)
@@ -79,10 +116,11 @@ function ContentSection({ label, text }: { label: string; text: string }) {
 }
 
 /* ─── Sortable Idea Card ─── */
-function SortableIdeaCard({ idea, rank, rankOverLimit, onEdit, onStatusChange }: {
+function SortableIdeaCard({ idea, rank, rankOverLimit, scheduledDate, onEdit, onStatusChange }: {
   idea: ContentIdea
   rank: number
   rankOverLimit?: boolean
+  scheduledDate?: string | null
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
 }) {
@@ -107,6 +145,7 @@ function SortableIdeaCard({ idea, rank, rankOverLimit, onEdit, onStatusChange }:
         idea={idea}
         rank={rank}
         rankOverLimit={rankOverLimit}
+        scheduledDate={scheduledDate}
         onEdit={onEdit}
         onStatusChange={onStatusChange}
         dragAttributes={attributes}
@@ -121,6 +160,7 @@ export function IdeaCardContent({
   idea,
   rank,
   rankOverLimit,
+  scheduledDate,
   onEdit,
   onStatusChange,
   dragAttributes,
@@ -130,6 +170,7 @@ export function IdeaCardContent({
   idea: ContentIdea
   rank?: number
   rankOverLimit?: boolean
+  scheduledDate?: string | null
   onEdit?: (idea: ContentIdea) => void
   onStatusChange?: (ideaId: string, status: ProductionStatus) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,6 +181,7 @@ export function IdeaCardContent({
 }) {
   const parsed = parseSource(idea.source)
   const hasContent = idea.hook_idea || idea.script_snippet || idea.cta || idea.caption
+  const showCountdown = !!scheduledDate && idea.production_status !== 'posted'
 
   return (
     <div
@@ -177,6 +219,13 @@ export function IdeaCardContent({
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
+          {/* Countdown chip — only when scheduled */}
+          {showCountdown && (
+            <div className="mb-1.5">
+              <CountdownChip scheduledDate={scheduledDate!} />
+            </div>
+          )}
+
           {/* Title */}
           <h3 className="font-bold text-sm text-foreground leading-snug">{idea.idea}</h3>
 
@@ -278,6 +327,7 @@ function DroppableColumn({
   ideas,
   batchSize,
   isExpanded,
+  scheduledDateByIdeaId,
   onToggleExpand,
   onEdit,
   onStatusChange,
@@ -287,6 +337,7 @@ function DroppableColumn({
   ideas: ContentIdea[]
   batchSize: number
   isExpanded: boolean
+  scheduledDateByIdeaId: Record<string, string>
   onToggleExpand: () => void
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
@@ -342,6 +393,7 @@ function DroppableColumn({
               idea={idea}
               rank={i + 1}
               rankOverLimit={i + 1 > batchSize}
+              scheduledDate={scheduledDateByIdeaId[idea.id] ?? null}
               onEdit={onEdit}
               onStatusChange={onStatusChange}
             />
@@ -384,9 +436,10 @@ export const customCollisionDetection: CollisionDetection = (args) => {
 }
 
 /* ─── Production Pipeline (presentational — DndContext is provided by the parent) ─── */
-export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange, onAdd }: {
+export function ProductionPipeline({ ideas, batchSize, scheduledDateByIdeaId, onEdit, onStatusChange, onAdd }: {
   ideas: ContentIdea[]
   batchSize: number
+  scheduledDateByIdeaId: Record<string, string>
   onEdit: (idea: ContentIdea) => void
   onStatusChange: (ideaId: string, status: ProductionStatus) => void
   onAdd: (status: ProductionStatus) => void
@@ -432,6 +485,7 @@ export function ProductionPipeline({ ideas, batchSize, onEdit, onStatusChange, o
               stage={stage}
               ideas={stage.items}
               batchSize={batchSize}
+              scheduledDateByIdeaId={scheduledDateByIdeaId}
               isExpanded={expandedColumns.has(stage.status)}
               onToggleExpand={() => setExpandedColumns(prev => {
                 const next = new Set(prev)
