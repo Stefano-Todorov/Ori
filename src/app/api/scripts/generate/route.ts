@@ -71,29 +71,15 @@ export async function POST(request: NextRequest) {
     'Link in bio': 'Direct them to take a next step via link.',
   }
 
-  // Load knowledge
+  // Load knowledge (static — same for everyone on this platform)
   const hookFormulas = loadKnowledge('hook-formulas')
   const scriptFrameworks = loadKnowledge('script-frameworks')
   const platformKnowledge = loadPlatformKnowledge(platform)
   const ctaPsychology = loadKnowledge('cta-psychology')
 
-  const prompt = `You are an elite short-form video scriptwriter with deep expertise in viral content mechanics, hook psychology, and platform algorithms. Create a complete, ready-to-film script that is engineered to maximize watch time and engagement.
-
-Creator profile:
-- Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
-- Platform: ${platform}
-- Goals: ${profile?.goals ?? 'grow audience'}
-
-
-Video request:
-${randomTopic
-  ? `- Topic: SURPRISE ME — choose a compelling, viral-worthy video topic that would perform well for this creator's niche and platform. Pick something specific, timely, or counterintuitive that audiences love to share.`
-  : `- Topic: ${topic}`}
-${angle ? `- Content angle: ${angle}` : ''}
-${primaryHook ? `- Primary hook style: ${primaryHook} — ${hookAngleGuides[primaryHook] ?? ''}` : ''}
-${extraHookStyles.length > 0 ? `- Also generate variant hooks for these styles: ${extraHookStyles.join(', ')}` : ''}
-${primaryCta ? `- Primary CTA style: ${primaryCta} — ${ctaAngleGuides[primaryCta] ?? ''}` : ''}
-${(ctaAngles?.length ?? 0) > 1 ? `- Alternative CTA styles to consider: ${ctaAngles!.slice(1).join(', ')}` : ''}
+  // Static system block — same content for every user requesting a script on
+  // this platform. Cacheable cross-user (~3-4k tokens of knowledge dumps).
+  const systemPrompt = `You are an elite short-form video scriptwriter with deep expertise in viral content mechanics, hook psychology, and platform algorithms. Create complete, ready-to-film scripts engineered to maximize watch time and engagement.
 
 HOOK FORMULA REFERENCE — use a proven pattern from this list:
 ${hookFormulas}
@@ -107,7 +93,7 @@ ${ctaPsychology}
 PLATFORM KNOWLEDGE (${platform}) — optimize for this platform's algorithm:
 ${platformKnowledge}
 
-IMPORTANT: The body must be structured into clearly labeled sections separated by newlines. Use this format:
+OUTPUT FORMAT — the body must be structured into clearly labeled sections separated by newlines:
 [INTRO] - the setup after the hook
 [MAIN POINT 1] - first key point with dialogue
 [MAIN POINT 2] - second key point (if needed)
@@ -115,12 +101,30 @@ IMPORTANT: The body must be structured into clearly labeled sections separated b
 [TRANSITION] or [B-ROLL: description] or [TEXT OVERLAY: text] markers where appropriate
 [OUTRO] - lead into the CTA
 
-Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
+Always return raw JSON (no markdown fences). Write actual spoken dialogue.`
+
+  // Dynamic user message — varies per request
+  const userPrompt = `Creator profile:
+- Niche: ${profile?.niche ?? 'general'}${profile?.sub_niche ? ` (${profile.sub_niche})` : ''}
+- Platform: ${platform}
+- Goals: ${profile?.goals ?? 'grow audience'}
+
+Video request:
+${randomTopic
+  ? `- Topic: SURPRISE ME — choose a compelling, viral-worthy video topic that would perform well for this creator's niche and platform. Pick something specific, timely, or counterintuitive that audiences love to share.`
+  : `- Topic: ${topic}`}
+${angle ? `- Content angle: ${angle}` : ''}
+${primaryHook ? `- Primary hook style: ${primaryHook} — ${hookAngleGuides[primaryHook] ?? ''}` : ''}
+${extraHookStyles.length > 0 ? `- Also generate variant hooks for these styles: ${extraHookStyles.join(', ')}` : ''}
+${primaryCta ? `- Primary CTA style: ${primaryCta} — ${ctaAngleGuides[primaryCta] ?? ''}` : ''}
+${(ctaAngles?.length ?? 0) > 1 ? `- Alternative CTA styles to consider: ${ctaAngles!.slice(1).join(', ')}` : ''}
+
+Return a JSON object with EXACTLY this structure:
 {${randomTopic ? `
   "generated_topic": "The specific topic you chose for this video",` : ''}
   "hook": "The opening line/action (first 1-3 seconds). Make it IMPOSSIBLE to scroll past.",
   "hook_type": "${primaryHook ?? 'Direct'}",
-  "body": "The full structured script with section labels as described above. Write actual spoken dialogue.",
+  "body": "The full structured script with section labels as described above.",
   "cta": "The closing call to action line",
   "cta_type": "${primaryCta ?? 'Follow for more'}",
   "hashtags": ["relevant", "hashtags", "for", "${platform}"],
@@ -139,7 +143,8 @@ Return a JSON object with EXACTLY this structure (no markdown, just raw JSON):
   const message = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 2500,
-    messages: [{ role: 'user', content: prompt }],
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: userPrompt }],
   })
 
   const content = message.content[0]

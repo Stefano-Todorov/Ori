@@ -75,19 +75,17 @@ export async function POST(request: NextRequest) {
 
   const platformKnowledge = loadPlatformKnowledge(platform)
 
-  let prompt: string
+  // System = static knowledge (varies by target + platform but stable across
+  // users → cacheable). User = dynamic creator + context.
+  let systemPrompt: string
+  let userPrompt: string
 
   if (target === 'hook') {
     const hookFormulas = loadKnowledge('hook-formulas')
     const styleGuide = style && HOOK_ANGLE_GUIDES[style]
       ? `- Hook style: ${style} — ${HOOK_ANGLE_GUIDES[style]}`
       : ''
-    prompt = `You are an elite short-form video scriptwriter. Write ONE killer opening hook for the video below.
-
-${creatorContext}
-${styleGuide}
-${bodyContext ? `\nExisting body / main content (the hook must lead into this):\n${bodyContext}` : ''}
-${ctaContext ? `\nExisting CTA (the hook should set up payoff for this):\n${ctaContext}` : ''}
+    systemPrompt = `You are an elite short-form video scriptwriter. Write ONE killer opening hook tailored to the video provided.
 
 HOOK FORMULA REFERENCE:
 ${hookFormulas}
@@ -95,15 +93,15 @@ ${hookFormulas}
 PLATFORM NOTES (${platform}):
 ${platformKnowledge}
 
-Return ONLY valid JSON, no markdown, in this exact shape:
+Always return ONLY valid JSON, no markdown, in this shape:
 {"hook": "the hook line — first 1-3 seconds of the video, impossible to scroll past"}`
+    userPrompt = `${creatorContext}
+${styleGuide}
+${bodyContext ? `\nExisting body / main content (the hook must lead into this):\n${bodyContext}` : ''}
+${ctaContext ? `\nExisting CTA (the hook should set up payoff for this):\n${ctaContext}` : ''}`
   } else if (target === 'body') {
     const scriptFrameworks = loadKnowledge('script-frameworks')
-    prompt = `You are an elite short-form video scriptwriter. Write the BODY of the script below.
-
-${creatorContext}
-${hookContext ? `\nOpening hook (the body must follow naturally from this):\n${hookContext}` : ''}
-${ctaContext ? `\nClosing CTA (the body must build up to this):\n${ctaContext}` : ''}
+    systemPrompt = `You are an elite short-form video scriptwriter. Write the BODY of the script tailored to the video provided.
 
 SCRIPT FRAMEWORK REFERENCE — use one of these structures:
 ${scriptFrameworks}
@@ -119,19 +117,17 @@ Structure the body with clearly labeled sections separated by newlines:
 [TRANSITION] or [B-ROLL: description] or [TEXT OVERLAY: text] markers where appropriate
 [OUTRO] - lead into the CTA
 
-Write actual spoken dialogue. Return ONLY valid JSON, no markdown:
+Write actual spoken dialogue. Always return ONLY valid JSON, no markdown:
 {"body": "the structured body script with section labels"}`
+    userPrompt = `${creatorContext}
+${hookContext ? `\nOpening hook (the body must follow naturally from this):\n${hookContext}` : ''}
+${ctaContext ? `\nClosing CTA (the body must build up to this):\n${ctaContext}` : ''}`
   } else {
     const ctaPsychology = loadKnowledge('cta-psychology')
     const styleGuide = style && CTA_ANGLE_GUIDES[style]
       ? `- CTA style: ${style} — ${CTA_ANGLE_GUIDES[style]}`
       : ''
-    prompt = `You are an elite short-form video scriptwriter. Write ONE closing CTA for the video below.
-
-${creatorContext}
-${styleGuide}
-${hookContext ? `\nOpening hook (the CTA should pay off the hook's promise):\n${hookContext}` : ''}
-${bodyContext ? `\nBody content (the CTA must follow naturally from this):\n${bodyContext}` : ''}
+    systemPrompt = `You are an elite short-form video scriptwriter. Write ONE closing CTA tailored to the video provided.
 
 CTA PSYCHOLOGY REFERENCE:
 ${ctaPsychology}
@@ -139,14 +135,19 @@ ${ctaPsychology}
 PLATFORM NOTES (${platform}):
 ${platformKnowledge}
 
-Return ONLY valid JSON, no markdown, in this exact shape:
+Always return ONLY valid JSON, no markdown, in this shape:
 {"cta": "the closing call to action — one line, specific, drives the action"}`
+    userPrompt = `${creatorContext}
+${styleGuide}
+${hookContext ? `\nOpening hook (the CTA should pay off the hook's promise):\n${hookContext}` : ''}
+${bodyContext ? `\nBody content (the CTA must follow naturally from this):\n${bodyContext}` : ''}`
   }
 
   const message = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1200,
-    messages: [{ role: 'user', content: prompt }],
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: userPrompt }],
   })
 
   const content = message.content[0]

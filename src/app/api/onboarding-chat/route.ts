@@ -218,7 +218,10 @@ export async function POST(request: NextRequest) {
           {
             model: MODEL,
             max_tokens: 1024,
-            system: systemPrompt,
+            // System prompt is one of 2 variants (paid vs starter), shared across
+            // ALL users — caches cross-user, so every onboarding after the first
+            // hits cache. ~$0.06 saved per new signup.
+            system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
             tools: [SAVE_PROFILE_TOOL],
             messages,
           },

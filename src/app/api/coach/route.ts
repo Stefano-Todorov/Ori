@@ -62,17 +62,31 @@ export async function POST(request: NextRequest) {
   const message = typeof body.message === 'string' ? body.message.slice(0, 10000) : ''
   if (!message) return NextResponse.json({ error: 'Message is required' }, { status: 400 })
 
-  // Sanitize history: only allow valid role/content pairs, cap size
+  // Sanitize history: only allow valid role/content pairs.
+  // Then enforce a TOKEN budget (not just a message count) — without this a
+  // chatty user could send 100 × 10k-char messages = ~250k tokens of history
+  // per call, blowing past sane cost limits.
   const rawHistory = Array.isArray(body.history) ? body.history.slice(-100) : []
-  const history = rawHistory.filter(
+  const sanitized = rawHistory.filter(
     (m: unknown): m is { role: 'user' | 'assistant'; content: string } =>
       !!m && typeof m === 'object' &&
       'role' in m && (m.role === 'user' || m.role === 'assistant') &&
       'content' in m && typeof m.content === 'string'
   ).map((m: { role: 'user' | 'assistant'; content: string }) => ({
     role: m.role,
-    content: m.content.slice(0, 10000),
+    content: m.content.slice(0, 4000),
   }))
+
+  // Trim oldest first until total fits in ~2000 tokens (~8000 chars).
+  const MAX_HISTORY_CHARS = 8000
+  const history: typeof sanitized = []
+  let budget = MAX_HISTORY_CHARS
+  for (let i = sanitized.length - 1; i >= 0; i--) {
+    const len = sanitized[i].content.length
+    if (budget - len < 0) break
+    budget -= len
+    history.unshift(sanitized[i])
+  }
 
   // Load profile, posts, competitors, scripts, and ideas for context.
   // For posts we run two queries (top-by-views + most-recent) so the coach
@@ -166,7 +180,9 @@ export async function POST(request: NextRequest) {
   const stream = await anthropic.messages.stream({
     model: MODEL,
     max_tokens: 3072,
-    system: systemPrompt,
+    // Cache the system prompt — within a 5-min coach session it's byte-identical
+    // (same user, same posts/profile). Cuts input cost ~10x on cache hits.
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     messages,
   })
 
