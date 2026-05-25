@@ -32,7 +32,7 @@ export function MobileHeader() {
           'relative ml-auto w-9 h-9 rounded-full flex items-center justify-center text-white transition-all',
           'bg-gradient-to-br from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600',
           unread > 0
-            ? 'shadow-md shadow-red-500/40 ring-2 ring-red-500/50'
+            ? 'ring-2 ring-red-500'
             : 'shadow-sm shadow-purple-600/25'
         )}
       >
