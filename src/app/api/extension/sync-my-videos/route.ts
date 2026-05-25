@@ -92,8 +92,17 @@ export async function POST(request: NextRequest) {
 
   const { platform, follower_count, posts: rawPosts } = parsed.data
 
+  // Drop posts older than 90 days — stale data doesn't reflect current algorithm behavior
+  const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+  const freshPosts = rawPosts.filter(p => {
+    if (!p.posted_at) return true // keep if date unknown
+    const t = Date.parse(p.posted_at)
+    return isNaN(t) || t >= cutoff
+  })
+  const skippedOld = rawPosts.length - freshPosts.length
+
   // Build upsert records
-  const postRecords = rawPosts
+  const postRecords = freshPosts
     .filter(p => p.url && (p.views > 0 || p.likes > 0 || p.comments > 0 || p.caption || p.thumbnail)) // skip posts without URLs or data
     .map((p) => ({
       user_id: user.id,
@@ -165,13 +174,13 @@ export async function POST(request: NextRequest) {
     // Upload base64 thumbnails to Supabase Storage for permanent URLs
     const serviceClient = createServiceClient()
     const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-    const postsWithB64 = rawPosts.filter(p => {
+    const postsWithB64 = freshPosts.filter(p => {
       if (!p.thumbnail_base64 || !p.url) return false
       const existing = existingMap.get(normalizeUrl(p.url!))
       // Skip if already has a Supabase Storage URL
       return !existing?.thumbnail_url?.includes(supabaseHost)
     })
-    console.log(`[sync] Posts with b64: ${postsWithB64.length} out of ${rawPosts.length} total`)
+    console.log(`[sync] Posts with b64: ${postsWithB64.length} out of ${freshPosts.length} fresh (${skippedOld} skipped as >90d old)`)
     if (postsWithB64.length > 0) {
       let uploaded = 0, failed = 0
       await Promise.all(postsWithB64.map(async (post) => {
@@ -279,6 +288,7 @@ export async function POST(request: NextRequest) {
     synced,
     new: newCount,
     updated: updatedCount,
+    skipped_old: skippedOld,
     suggested_links: suggestedLinks,
   })
 }
