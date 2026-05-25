@@ -142,58 +142,34 @@ console.log(bold('Patch notes (changes since last extension update):\n'))
 // We look for the last commit where manifest.json had the OLD version string
 let patchNotes = ''
 try {
-  // Get all extension/ commits, skip ones from this script run (version bump only)
-  const allExtCommits = execSync(
-    `git log -50 --pretty=format:"%H %s" -- extension/`,
-    { encoding: 'utf-8' }
-  ).trim().split('\n').filter(Boolean)
-
-  // Find the previous ext:publish boundary — a commit whose message contains the version pattern
-  // by checking manifest.json at each commit for the old version
   let sinceArg = '-50'
-  const tagPrefix = `v${oldVersion}`
 
-  // Look for a git tag first
+  // Prefer a git tag for the previous version (created by prior runs of this script)
   try {
-    execSync(`git rev-parse ${tagPrefix} 2>/dev/null`, { encoding: 'utf-8' })
-    sinceArg = `${tagPrefix}..HEAD`
+    execSync(`git rev-parse v${oldVersion}`, { stdio: 'pipe' })
+    sinceArg = `v${oldVersion}..HEAD`
   } catch {
-    // No tag — find last commit that set the version to oldVersion in manifest
-    for (const line of allExtCommits) {
-      const hash = line.split(' ')[0]
-      try {
-        const manifestAtCommit = execSync(
-          `git show ${hash}:extension/manifest.json`,
-          { encoding: 'utf-8' }
-        )
-        const versionAtCommit = JSON.parse(manifestAtCommit).version
-        if (versionAtCommit !== newVersion && versionAtCommit === oldVersion) {
-          // This is the commit that set the old version — the publish boundary
-          sinceArg = `${hash}..HEAD`
-          break
-        }
-      } catch { /* skip */ }
-    }
+    // No tag — look for the "Bump extension to vOLD" commit this script makes
+    try {
+      const bumpCommit = execSync(
+        `git log --grep="Bump extension to v${oldVersion}" --pretty=format:"%H" -n 1`,
+        { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] }
+      ).trim()
+      if (bumpCommit) sinceArg = `${bumpCommit}..HEAD`
+    } catch { /* fall through to -50 default */ }
   }
 
+  // Include extension/ AND src/app/api/extension/ — the latter is the server side the extension calls
   const log = execSync(
-    `git log ${sinceArg} --pretty=format:"• %s" -- extension/`,
+    `git log ${sinceArg} --pretty=format:"• %s" -- extension/ src/app/api/extension/`,
     { encoding: 'utf-8' }
   ).trim()
 
-  // Filter out the version bump commit itself
   patchNotes = log.split('\n')
     .filter(l => l && !l.includes('Bump extension') && !l.includes('ext:publish'))
     .join('\n') || '(no extension commits found)'
 } catch {
-  try {
-    patchNotes = execSync(
-      `git log -20 --pretty=format:"• %s" -- extension/`,
-      { encoding: 'utf-8' }
-    ).trim() || '(no extension commits found)'
-  } catch {
-    patchNotes = '(could not read git log)'
-  }
+  patchNotes = '(could not read git log)'
 }
 
 console.log(`  ${patchNotes.split('\n').join('\n  ')}\n`)
