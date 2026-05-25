@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { buildAnalyticsBlock, type PostForAnalytics } from '@/lib/coach-analytics'
 
 export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -26,6 +27,11 @@ export interface CoachContext {
   postingTarget: number
   creatorContext?: string
   posts?: PostSummary[]
+  // Full deduped post pool (not just the 50-post sample) — used for pattern
+  // analytics where more data = better signal. Includes hashtags + duration
+  // which the prompt-display PostSummary doesn't need.
+  analyticsPosts?: PostForAnalytics[]
+  timezone?: string | null
   competitors?: { handle: string; platform: string; avg_views: number | null }[]
   scripts?: { topic: string; status: string; hook: string }[]
   ideas?: { idea: string; status: string }[]
@@ -127,6 +133,13 @@ CONTENT PIPELINE:
     return ''
   }).filter(Boolean).join('\n')
 
+  // Pre-computed pattern block — uses the full deduped post pool (not just
+  // the 50-sample). Saves the coach from having to derive trends from raw
+  // rows every message; lets it spend reasoning on advice instead of arithmetic.
+  const patternsSection = ctx.analyticsPosts && ctx.analyticsPosts.length >= 5
+    ? buildAnalyticsBlock(ctx.analyticsPosts, ctx.timezone)
+    : ''
+
   let inspirationSection = ''
   if (ctx.inspirationPosts && ctx.inspirationPosts.length > 0) {
     inspirationSection = `
@@ -143,7 +156,7 @@ USER PROFILE:
 - Goals: ${ctx.goals}
 - Active platforms: ${ctx.platforms.join(', ')}
 - Posting target: ${ctx.postingTarget} posts per week
-${ctx.creatorContext ? `\nCREATOR CONTEXT (from onboarding conversation):\n${ctx.creatorContext}\n` : ''}${analyticsSection}${competitorSection}${inspirationSection}${pipelineSection}
+${ctx.creatorContext ? `\nCREATOR CONTEXT (from onboarding conversation):\n${ctx.creatorContext}\n` : ''}${patternsSection}${analyticsSection}${competitorSection}${inspirationSection}${pipelineSection}
 
 YOUR EXPERTISE:
 ${hookSummary}

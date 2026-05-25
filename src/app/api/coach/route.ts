@@ -4,7 +4,17 @@ import { anthropic, MODEL, buildSystemPrompt, type PostSummary } from '@/lib/cla
 import { checkUsage, incrementUsage } from '@/lib/usage'
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
-type RawPost = PostSummary & { id: string }
+type RawPost = PostSummary & {
+  id: string
+  hashtags?: string[] | null
+  duration_seconds?: number | null
+}
+
+function dedupeById(raw: RawPost[]): RawPost[] {
+  const seen = new Map<string, RawPost>()
+  for (const p of raw) if (!seen.has(p.id)) seen.set(p.id, p)
+  return [...seen.values()]
+}
 
 // Pick a balanced sample (~50) from the merged top-by-views + most-recent pool:
 // per-platform top 15 by views, top 10 most recent, plus 3 lowest for contrast.
@@ -92,7 +102,7 @@ export async function POST(request: NextRequest) {
   // For posts we run two queries (top-by-views + most-recent) so the coach
   // sees both proven hits AND what the user is shipping now, instead of only
   // historical winners. Sampled per-platform downstream to balance TT/IG.
-  const POST_FIELDS = 'id, caption, views, likes, shares, saves, engagement_rate, platform, posted_at, hook_text'
+  const POST_FIELDS = 'id, caption, views, likes, shares, saves, engagement_rate, platform, posted_at, hook_text, hashtags, duration_seconds'
   const [
     { data: profile },
     { data: topPosts },
@@ -145,6 +155,9 @@ export async function POST(request: NextRequest) {
       .limit(20),
   ])
 
+  // Full deduped pool feeds analytics (more data = better signal).
+  // `posts` is the curated 50-sample for the prompt's post table.
+  const allPosts = dedupeById([...(topPosts ?? []), ...(recentPosts ?? [])])
   const posts = samplePostsForCoach([...(topPosts ?? []), ...(recentPosts ?? [])])
 
   const systemPrompt = buildSystemPrompt({
@@ -155,6 +168,8 @@ export async function POST(request: NextRequest) {
     postingTarget: profile?.posting_target ?? 3,
     creatorContext: profile?.creator_context ?? undefined,
     posts: posts ?? undefined,
+    analyticsPosts: allPosts,
+    timezone: profile?.timezone ?? null,
     inspirationPosts: inspirationPosts ?? undefined,
     competitors: competitors ?? undefined,
     scripts: scripts ?? undefined,
