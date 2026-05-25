@@ -245,7 +245,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
   }
 
   async function handleBulkDelete() {
-    if (!confirm(`Delete ${selected.size} inspo${selected.size > 1 ? 's' : ''}?`)) return
+    if (!confirm(`Delete ${selected.size} saved video${selected.size > 1 ? 's' : ''}?`)) return
     setBulkDeleting(true)
     await Promise.all([...selected].map(id => deleteSwipePost(id)))
     setPosts(prev => prev.filter(p => !selected.has(p.id)))
@@ -295,7 +295,7 @@ export function InspoList({ posts: initialPosts, archivedPosts: initialArchived 
     return (
       <EmptyState
         icon={Bookmark}
-        title="No inspo saved yet"
+        title="No inspiration saved yet"
         description="Save videos that inspire you — paste a URL above or use the Chrome extension to capture trending content while you browse."
       />
     )
@@ -669,7 +669,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
               <button
                 onClick={(e) => { e.stopPropagation(); setCreateIdeaOpen(true) }}
                 className="shrink-0 h-7 px-3 rounded-md border border-border dark:border-white/10 inline-flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground hover:border-purple-500/40 transition-all"
-                title="Create idea from this inspo"
+                title="Create idea from this video"
               >
                 <Plus size={10} />
                 Create idea
@@ -776,7 +776,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
       {/* Create Idea Panel */}
       <Dialog open={createIdeaOpen} onOpenChange={setCreateIdeaOpen}>
         <DialogContent className="!w-[95vw] sm:!w-[70vw] !max-w-none !h-[80vh] sm:!h-[70vh] !max-h-none overflow-hidden bg-background border-border rounded-2xl p-0 gap-0 shadow-[0_0_40px_rgba(124,58,237,0.1)]" showCloseButton={false}>
-          <DialogTitle className="sr-only">Create idea from inspo</DialogTitle>
+          <DialogTitle className="sr-only">Create idea from saved video</DialogTitle>
           <CreateIdeaPanel post={post} allTags={allTags} onClose={() => setCreateIdeaOpen(false)} />
         </DialogContent>
       </Dialog>

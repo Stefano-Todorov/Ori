@@ -30,7 +30,7 @@ const features = [
   },
   {
     icon: '🔥',
-    title: 'Saved Inspo Videos',
+    title: 'Saved Inspiration Videos',
     description: 'Save trending videos while you scroll with our Chrome extension. Build a personal library of inspiration you can turn into content.',
     details: ['One-click save from TikTok & IG', 'Full metrics captured automatically', 'Generate ideas from any saved post'],
   },
@@ -43,7 +43,7 @@ const features = [
   {
     icon: '⬇️',
     title: 'Video Downloads',
-    description: 'Download competitor and inspo videos straight to your device for reference, B-roll, or remixing — no screen recording required.',
+    description: 'Download competitor and inspiration videos straight to your device for reference, B-roll, or remixing — no screen recording required.',
     details: ['One-click download from saved posts', 'Works on TikTok & Instagram', 'Included on Plus, Pro & Max'],
   },
   {
@@ -673,7 +673,7 @@ export default function LandingPage() {
                   Save inspiration while you scroll
                 </h2>
                 <p style={{ fontSize: 16, color: '#9ca3af', lineHeight: 1.7, margin: '0 0 24px' }}>
-                  See a viral video on TikTok or Instagram? One click saves it to your saved inspo videos with full metrics — views, likes, comments, engagement rate. Then turn it into your own content idea from the dashboard.
+                  See a viral video on TikTok or Instagram? One click saves it to your saved inspiration videos with full metrics — views, likes, comments, engagement rate. Then turn it into your own content idea from the dashboard.
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
                   {['Save any video with one click', 'Full metrics captured automatically', 'Turn saved posts into original ideas', 'Track competitors effortlessly'].map((item, i) => (
@@ -719,7 +719,7 @@ export default function LandingPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <div style={{ flex: 1, background: 'linear-gradient(135deg, #7c3aed, #9333ea)', borderRadius: 8, padding: '10px 0', textAlign: 'center', fontSize: 13, fontWeight: 600 }}>
-                      Save Inspo Video
+                      Save Inspiration Video
                     </div>
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 0', textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#d1d5db' }}>
                       Create Idea
@@ -861,10 +861,10 @@ export default function LandingPage() {
                   { text: '3 AI coach messages/mo', ai: true },
                   { text: '1 script generation/mo', ai: true },
                   { text: '5 competitors (top 20 posts each, sort by likes)' },
-                  { text: 'Unlimited inspo saves' },
-                  { text: 'Unlimited manual ideas' },
+                  { text: 'Unlimited inspiration saves' },
+                  { text: 'Unlimited ideas' },
                   { text: 'Content calendar' },
-                  { text: 'Sync my videos' },
+                  { text: 'Auto-import your posts' },
                   { text: 'Chrome extension' },
                 ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -897,10 +897,10 @@ export default function LandingPage() {
                   { text: '10 script generations/mo', ai: true },
                   { text: '10 competitors (unlimited posts, full sort)' },
                   { text: '30 video downloads/mo' },
-                  { text: 'Unlimited inspo saves' },
-                  { text: 'Unlimited manual ideas' },
+                  { text: 'Unlimited inspiration saves' },
+                  { text: 'Unlimited ideas' },
                   { text: 'Content calendar' },
-                  { text: 'Sync my videos' },
+                  { text: 'Auto-import your posts' },
                   { text: 'Chrome extension' },
                 ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -936,10 +936,10 @@ export default function LandingPage() {
                   { text: '40 script generations/mo', ai: true },
                   { text: '30 competitors (unlimited posts, full sort)' },
                   { text: '75 video downloads/mo' },
-                  { text: 'Unlimited inspo saves' },
-                  { text: 'Unlimited manual ideas' },
+                  { text: 'Unlimited inspiration saves' },
+                  { text: 'Unlimited ideas' },
                   { text: 'Content calendar' },
-                  { text: 'Sync my videos' },
+                  { text: 'Auto-import your posts' },
                   { text: 'Chrome extension' },
                 ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#d1d5db', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -972,10 +972,10 @@ export default function LandingPage() {
                   { text: '125 script generations/mo', ai: true },
                   { text: '100 competitors (unlimited posts, full sort)' },
                   { text: '300 video downloads/mo' },
-                  { text: 'Unlimited inspo saves' },
-                  { text: 'Unlimited manual ideas' },
+                  { text: 'Unlimited inspiration saves' },
+                  { text: 'Unlimited ideas' },
                   { text: 'Content calendar' },
-                  { text: 'Sync my videos' },
+                  { text: 'Auto-import your posts' },
                   { text: 'Chrome extension' },
                 ].map((item, i) => (
                   <li key={i} style={{ fontSize: 13, color: '#9ca3af', padding: '5px 0', display: 'flex', alignItems: 'center', gap: 8 }}>

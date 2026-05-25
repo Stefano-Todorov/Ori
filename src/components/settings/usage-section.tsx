@@ -42,7 +42,7 @@ const SECTIONS: Section[] = [
     label: 'Content',
     rows: [
       { key: 'downloads', label: 'Video downloads' },
-      { key: 'swipe_saves', label: 'Saved inspo videos' },
+      { key: 'swipe_saves', label: 'Saved inspiration videos' },
     ],
   },
 ]

@@ -53,7 +53,7 @@ export function MobileSection() {
           <div>
             <h2 className="font-semibold">Save from your phone</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Share videos directly from TikTok, Instagram, or YouTube into your Inspo file — without leaving the app.
+              Share videos directly from TikTok, Instagram, or YouTube into your Inspiration tab — without leaving the app.
             </p>
           </div>
         </div>
@@ -130,7 +130,7 @@ export function MobileSection() {
           <li className="flex gap-3">
             <span className="flex-none w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">6</span>
             <div>
-              Done. Now in TikTok/Instagram/YouTube: tap <strong>Share</strong> → scroll → <strong>Save to Orianna</strong>. The video lands in your Inspo file instantly.
+              Done. Now in TikTok/Instagram/YouTube: tap <strong>Share</strong> → scroll → <strong>Save to Orianna</strong>. The video lands in your Inspiration tab instantly.
             </div>
           </li>
         </ol>

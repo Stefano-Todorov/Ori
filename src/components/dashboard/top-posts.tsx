@@ -54,7 +54,7 @@ export function TopPosts({ posts }: Props) {
                   <p className={`font-bold ${post.engagement_rate >= 5 ? 'text-green-600 dark:text-green-400' : 'text-foreground'}`}>
                     {post.engagement_rate.toFixed(1)}%
                   </p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">eng.</p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">engagement</p>
                 </div>
               )}
             </div>

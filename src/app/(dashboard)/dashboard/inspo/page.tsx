@@ -37,7 +37,7 @@ export default async function InspoPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            Inspo
+            Inspiration
             <InfoTooltip text="Save trending videos that inspire you, then turn the best ones into your own content ideas." />
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
@@ -47,9 +47,9 @@ export default async function InspoPage() {
         <AddSwipeButton allTags={allTags} />
       </div>
 
-      <DismissibleTip storageKey="inspo-how-it-works" title="How Inspo works">
+      <DismissibleTip storageKey="inspo-how-it-works" title="How Inspiration works">
         Save videos that catch your eye — great hooks, clever angles, high engagement. Add notes on <em>why</em> they work.
-        When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any inspo into your own video concept on the Ideas board.
+        When you&apos;re ready, hit <strong>&ldquo;Create idea&rdquo;</strong> to turn any saved video into your own video concept on the Ideas board.
       </DismissibleTip>
 
       <InspoList posts={posts} archivedPosts={archived} allTags={allTags} />

@@ -51,7 +51,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: 'Research',
     items: [
-      { href: '/dashboard/inspo', label: 'Inspo', icon: Bookmark },
+      { href: '/dashboard/inspo', label: 'Inspiration', icon: Bookmark },
       { href: '/dashboard/competitors', label: 'Competitors', icon: Users },
       { href: '/dashboard/my-videos', label: 'My Videos', icon: Play },
     ],

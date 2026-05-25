@@ -466,7 +466,7 @@ function CompetitorCard({ group, allCompetitors, allTags, isPaid }: { group: Com
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/8 border border-amber-500/20 text-xs" title="Average engagement rate = (likes + comments + shares) / views">
                   <span>⚡</span>
                   <span className="font-bold text-amber-600 dark:text-amber-400">{avgEng.toFixed(1)}%</span>
-                  <span className="text-amber-600/60 dark:text-amber-400/60">avg eng.</span>
+                  <span className="text-amber-600/60 dark:text-amber-400/60">avg engagement</span>
                 </span>
               )}
             </div>

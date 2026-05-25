@@ -16,7 +16,7 @@ const FEATURE_ROWS: { key: string; label: string }[] = [
   { key: 'script_generations', label: 'Script generations' },
   { key: 'competitors', label: 'Competitors tracked' },
   { key: 'downloads', label: 'Video downloads' },
-  { key: 'swipe_saves', label: 'Saved inspo videos' },
+  { key: 'swipe_saves', label: 'Saved inspiration videos' },
 ]
 
 function formatLimit(val: number): string {
@@ -193,7 +193,7 @@ export function BillingSection() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Manual ideas</span>
+                  <span className="text-muted-foreground">Ideas board</span>
                   <span className="font-semibold text-purple-500">Unlimited</span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
@@ -203,7 +203,7 @@ export function BillingSection() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-muted-foreground">Sync my videos</span>
+                  <span className="text-muted-foreground">Auto-import your posts</span>
                   <span className="font-semibold text-green-500">
                     <Check size={12} />
                   </span>
