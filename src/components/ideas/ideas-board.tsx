@@ -888,9 +888,8 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
         allTags={allTags}
         platform={platform}
         onClose={() => { setAddOpen(false); setAddPrefill({}) }}
-        onSaved={() => {
-          // Optimistic: page will revalidate from server action
-          // For instant feedback, we could add optimistic update here
+        onSaved={(newIdea) => {
+          if (newIdea) setIdeas(prev => [newIdea, ...prev])
         }}
       />
 

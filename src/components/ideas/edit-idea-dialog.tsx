@@ -541,7 +541,7 @@ interface AddIdeaDialogProps {
   /** When set, the new video is created directly in this pipeline stage. */
   productionStatus?: ProductionStatus
   onClose: () => void
-  onSaved?: () => void
+  onSaved?: (newIdea?: ContentIdea) => void
 }
 
 export function AddIdeaDialog({
@@ -591,7 +591,7 @@ export function AddIdeaDialog({
     const savedSource = form.source.trim()
     const savedTags = form.tags
     startTransition(async () => {
-      const newId = await addIdea(form.idea.trim(), savedSource || undefined, {
+      const inserted = await addIdea(form.idea.trim(), savedSource || undefined, {
         inspiration_url: savedUrl || undefined,
         hook_idea: form.hookIdea.trim() || undefined,
         script_snippet: form.scriptSnippet.trim() || undefined,
@@ -600,10 +600,10 @@ export function AddIdeaDialog({
         tags: savedTags.length > 0 ? savedTags : undefined,
         production_status: status,
       })
-      if (newId && scheduledDate) {
-        await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+      if (inserted?.id && scheduledDate) {
+        await scheduleIdea({ content_idea_id: inserted.id, title: form.idea.trim(), scheduled_date: scheduledDate })
       }
-      onSaved?.()
+      onSaved?.(inserted)
       if (keepOpen) {
         setForm({
           idea: '', source: savedSource, inspirationUrl: savedUrl,
@@ -876,7 +876,7 @@ export function AddIdeaDialog({
                     if (!form.idea.trim()) return
                     const savedForm = { ...form }
                     startTransition(async () => {
-                      const newId = await addIdea(form.idea.trim(), form.source.trim() || undefined, {
+                      const inserted = await addIdea(form.idea.trim(), form.source.trim() || undefined, {
                         inspiration_url: form.inspirationUrl.trim() || undefined,
                         hook_idea: form.hookIdea.trim() || undefined,
                         script_snippet: form.scriptSnippet.trim() || undefined,
@@ -885,10 +885,10 @@ export function AddIdeaDialog({
                         tags: form.tags.length > 0 ? form.tags : undefined,
                         production_status: status,
                       })
-                      if (newId && scheduledDate) {
-                        await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+                      if (inserted?.id && scheduledDate) {
+                        await scheduleIdea({ content_idea_id: inserted.id, title: form.idea.trim(), scheduled_date: scheduledDate })
                       }
-                      onSaved?.()
+                      onSaved?.(inserted)
                       // Reset with all fields pre-filled (duplicate)
                       setForm({ ...savedForm, idea: savedForm.idea })
                     })

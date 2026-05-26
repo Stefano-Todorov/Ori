@@ -152,7 +152,7 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
     const source = post.is_competitor
       ? `competitor: @${post.competitor_handle || 'unknown'} (${post.platform})`
       : `inspiration: @${post.competitor_handle || 'unknown'} (${post.platform})`
-    const newId = await addIdea(form.idea.trim(), source, {
+    const inserted = await addIdea(form.idea.trim(), source, {
       inspiration_url: form.inspirationUrl.trim() || undefined,
       hook_idea: form.hookIdea.trim() || undefined,
       script_snippet: form.scriptSnippet.trim() || undefined,
@@ -161,8 +161,8 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
       tags: form.tags.length > 0 ? form.tags : undefined,
       production_status: status,
     })
-    if (newId && scheduledDate) {
-      await scheduleIdea({ content_idea_id: newId, title: form.idea.trim(), scheduled_date: scheduledDate })
+    if (inserted?.id && scheduledDate) {
+      await scheduleIdea({ content_idea_id: inserted.id, title: form.idea.trim(), scheduled_date: scheduledDate })
     }
   }, [post, form, status, scheduledDate])
 

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import type { Platform, ProductionStatus } from '@/lib/types'
+import type { ContentIdea, Platform, ProductionStatus } from '@/lib/types'
 
 export async function deletePost(id: string) {
   const supabase = await createClient()
@@ -91,10 +91,10 @@ export async function addIdea(
     caption: extra?.caption || null,
     tags: extra?.tags || [],
     ...(extra?.production_status ? { production_status: extra.production_status } : {}),
-  }).select('id').single()
+  }).select('*').single()
   revalidatePath('/dashboard/ideas')
   revalidatePath('/dashboard/schedule')
-  return inserted?.id as string | undefined
+  return (inserted as ContentIdea | null) ?? undefined
 }
 
 export async function addSwipePost(fields: {
