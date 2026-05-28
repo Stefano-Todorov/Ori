@@ -5,7 +5,7 @@ import { updateProductionStatus } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
-import { GripVertical, ChevronDown } from 'lucide-react'
+import { GripVertical, ChevronDown, Plus } from 'lucide-react'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 
 interface Props {
@@ -37,6 +37,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   const [editingIdea, setEditingIdea] = useState<ContentIdea | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string; tags?: string[] }>({})
+  const [addStatus, setAddStatus] = useState<ProductionStatus | undefined>(undefined)
   const didDrag = useRef(false)
 
   function handleDragStart(e: React.DragEvent, ideaId: string) {
@@ -114,7 +115,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${col.color}`}>
                     {col.label}
                   </span>
-                  <span>
+                  <div className="flex items-center gap-1.5">
                     {isWipColumn ? (
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums border ${
                         overLimit
@@ -128,7 +129,19 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
                         {colIdeas.length}
                       </span>
                     )}
-                  </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddPrefill({})
+                        setAddStatus(col.status)
+                        setAddOpen(true)
+                      }}
+                      title={`Add a video to ${col.label}`}
+                      className={`flex items-center justify-center w-5 h-5 rounded-full border border-current/20 transition-all hover:bg-current/10 ${col.color}`}
+                    >
+                      <Plus size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -220,7 +233,8 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
       <AddIdeaDialog
         open={addOpen}
         prefill={addPrefill}
-        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
+        productionStatus={addStatus}
+        onClose={() => { setAddOpen(false); setAddPrefill({}); setAddStatus(undefined) }}
         onSaved={() => refreshKeepScroll(router)}
       />
     </>
