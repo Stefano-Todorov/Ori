@@ -90,12 +90,7 @@ export async function addIdea(
     cta: extra?.cta || null,
     caption: extra?.caption || null,
     tags: extra?.tags || [],
-    // A video added directly to a pipeline stage is "activated" — mark the
-    // idea-board status as in_progress so it clears the pipeline's backlog
-    // filter and appears in the column (incl. the New column).
-    ...(extra?.production_status
-      ? { production_status: extra.production_status, status: 'in_progress' }
-      : {}),
+    ...(extra?.production_status ? { production_status: extra.production_status } : {}),
   }).select('*').single()
   revalidatePath('/dashboard/ideas')
   revalidatePath('/dashboard/schedule')

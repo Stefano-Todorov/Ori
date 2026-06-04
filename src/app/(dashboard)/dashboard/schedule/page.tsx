@@ -34,7 +34,9 @@ export default async function SchedulePage() {
   const batchSize = profileData?.batch_size ?? profileData?.posting_target ?? 3
   const ideas = allIdeas ?? []
   const availableIdeas = ideas.filter(i => i.status === 'new' || i.status === 'in_progress')
-  const pipelineIdeas = ideas.filter(i => i.production_status !== 'new' || i.status !== 'new')
+  // All ideas across every pipeline stage (the New column holds the
+  // not-yet-started backlog), excluding archived ones.
+  const pipelineIdeas = ideas.filter(i => i.status !== 'archived')
 
   return (
     <div className="p-4 sm:p-6 md:p-8 space-y-8">

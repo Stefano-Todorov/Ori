@@ -33,10 +33,9 @@ export default async function DashboardPage() {
       .from('content_ideas')
       .select('*')
       .eq('user_id', user.id)
-      // Everything in a pipeline stage, plus 'new' ideas that have been
-      // activated (status != 'new') — keeps the untouched brainstorm
-      // backlog out of the board while populating the New column.
-      .or('production_status.neq.new,status.neq.new')
+      // All ideas across every pipeline stage (the New column holds the
+      // not-yet-started backlog), excluding archived ones.
+      .neq('status', 'archived')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase
