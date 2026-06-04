@@ -12,6 +12,8 @@ interface DatePickerProps {
   compact?: boolean
   /** Overrides the trigger's color styling when compact (e.g. a solid accent button). */
   triggerClassName?: string
+  /** When true, the calendar is open on first render (e.g. when entering edit mode). */
+  defaultOpen?: boolean
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -26,8 +28,8 @@ function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function DatePicker({ value, onChange, className = '', placeholder = 'Select date', compact = false, triggerClassName }: DatePickerProps) {
-  const [open, setOpen] = useState(false)
+export function DatePicker({ value, onChange, className = '', placeholder = 'Select date', compact = false, triggerClassName, defaultOpen = false }: DatePickerProps) {
+  const [open, setOpen] = useState(defaultOpen)
   const ref = useRef<HTMLDivElement>(null)
 
   const today = new Date()

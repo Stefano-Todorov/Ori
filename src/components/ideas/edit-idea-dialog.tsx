@@ -9,7 +9,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { ExternalLink, Plus, Copy, Check, Pencil, Trash2 } from 'lucide-react'
 import { TagPills, TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
-import { updateIdea, addIdea, scheduleIdea, deleteIdea } from '@/app/actions'
+import { updateIdea, addIdea, scheduleIdea, unscheduleIdea, deleteIdea } from '@/app/actions'
 import { AIScriptSection } from '@/components/ideas/ai-script-section'
 import { GeneratePartButton, HOOK_STYLES, CTA_STYLES } from '@/components/ideas/generate-part-button'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
@@ -204,15 +204,20 @@ export function EditIdeaDialog({
   }, [idea, confirmDelete, onDeleted, onClose])
 
   const handleSchedule = useCallback((date: string) => {
-    if (!idea || !date) return
-    setScheduledFor(date)
+    if (!idea) return
+    setScheduledFor(date || null)
     setRescheduling(false)
     startTransition(async () => {
-      await scheduleIdea({
-        content_idea_id: idea.id,
-        title: form.idea.trim() || idea.idea,
-        scheduled_date: date,
-      })
+      if (date) {
+        await scheduleIdea({
+          content_idea_id: idea.id,
+          title: form.idea.trim() || idea.idea,
+          scheduled_date: date,
+        })
+      } else {
+        // Empty date = "Clear" — remove the schedule entirely.
+        await unscheduleIdea(idea.id)
+      }
       onScheduled?.()
     })
   }, [idea, form.idea, onScheduled])
@@ -274,6 +279,7 @@ export function EditIdeaDialog({
                 value={scheduledFor ?? ''}
                 onChange={handleSchedule}
                 compact
+                defaultOpen={rescheduling}
                 placeholder="Schedule"
                 triggerClassName="bg-purple-600 text-white border-purple-600 shadow-sm shadow-purple-600/25 hover:bg-purple-700 hover:border-purple-700"
               />

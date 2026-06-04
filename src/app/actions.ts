@@ -400,6 +400,28 @@ export async function deleteScheduledPost(id: string) {
   revalidatePath('/dashboard')
 }
 
+/**
+ * Removes every scheduled post for a content idea — the inverse of
+ * scheduleIdea. Used by the edit dialog to clear a schedule.
+ */
+export async function unscheduleIdea(content_idea_id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('scheduled_posts')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('content_idea_id', content_idea_id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/dashboard/schedule')
+  revalidatePath('/dashboard/ideas')
+  revalidatePath('/dashboard')
+  return { error: null }
+}
+
 export async function addCompetitorPost(fields: {
   competitor_handle: string
   platform: Platform
