@@ -1,16 +1,36 @@
 'use client'
 
-import { useState, useTransition, useRef } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { updateProductionStatus } from '@/app/actions'
 import { useRouter } from 'next/navigation'
 import { refreshKeepScroll } from '@/lib/router-utils'
 import type { ContentIdea, ProductionStatus } from '@/lib/types'
-import { GripVertical, ChevronDown, Plus } from 'lucide-react'
+import { GripVertical, ChevronDown, Plus, SlidersHorizontal } from 'lucide-react'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from '@/components/ui/dropdown-menu'
 
 interface Props {
   ideas: ContentIdea[]
   batchSize: number
+}
+
+/** Columns the user can hide/show. */
+const TOGGLEABLE: ProductionStatus[] = ['new', 'posted']
+const HIDDEN_COLS_KEY = 'production-board-hidden-cols'
+
+const GRID_COLS: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+  5: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
 }
 
 const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
@@ -39,7 +59,28 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   const [addOpen, setAddOpen] = useState(false)
   const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string; tags?: string[] }>({})
   const [addStatus, setAddStatus] = useState<ProductionStatus | undefined>(undefined)
+  const [hiddenCols, setHiddenCols] = useState<Set<ProductionStatus>>(new Set())
   const didDrag = useRef(false)
+
+  // Load saved column visibility (client-only, avoids hydration mismatch)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(HIDDEN_COLS_KEY)
+      if (saved) setHiddenCols(new Set(JSON.parse(saved) as ProductionStatus[]))
+    } catch { /* ignore */ }
+  }, [])
+
+  function toggleColumn(status: ProductionStatus) {
+    setHiddenCols(prev => {
+      const next = new Set(prev)
+      if (next.has(status)) next.delete(status)
+      else next.add(status)
+      try { localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify([...next])) } catch { /* ignore */ }
+      return next
+    })
+  }
+
+  const visibleColumns = COLUMNS.filter(col => !hiddenCols.has(col.status))
 
   function handleDragStart(e: React.DragEvent, ideaId: string) {
     e.dataTransfer.setData('text/plain', ideaId)
@@ -89,13 +130,40 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   return (
     <>
       <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-bold text-foreground">Production Board</p>
-          <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
+          <div className="flex items-center gap-3">
+            <p className="hidden sm:block text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all shrink-0"
+                >
+                  <SlidersHorizontal size={12} />
+                  Columns
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuLabel>Show columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {TOGGLEABLE.map(status => (
+                  <DropdownMenuCheckboxItem
+                    key={status}
+                    checked={!hiddenCols.has(status)}
+                    onCheckedChange={() => toggleColumn(status)}
+                    onSelect={e => e.preventDefault()}
+                  >
+                    {COLUMNS.find(c => c.status === status)?.label ?? status}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
-          {COLUMNS.map(col => {
+        <div className={`grid ${GRID_COLS[visibleColumns.length] ?? GRID_COLS[5]} gap-3`}>
+          {visibleColumns.map(col => {
             const colIdeas = ideas.filter(i => i.production_status === col.status)
             const isExpanded = expandedCols.has(col.status)
             const isWipColumn = col.status === 'recording' || col.status === 'editing'
