@@ -88,7 +88,21 @@ const FOCUS_BLOCKED_PATTERNS = {
   threads:   [/^https?:\/\/(www\.)?threads\.net/],
 }
 
+// Direct-message pages across platforms. When the `messages` toggle is OFF
+// (allowed), these stay reachable even if the platform itself is blocked.
+const FOCUS_MESSAGE_PATTERNS = [
+  /^https?:\/\/(www\.)?tiktok\.com\/messages/,
+  /^https?:\/\/(www\.)?instagram\.com\/direct(\/|$)/,
+  /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/messages/,
+  /^https?:\/\/(www\.)?facebook\.com\/messages/,
+]
+
 function isUrlBlockedByFocusMode(url, blockedPlatforms) {
+  // DM override: if direct messages are allowed, never block a messaging page,
+  // even when the underlying platform (feed/explore/shorts) is blocked.
+  if (blockedPlatforms && blockedPlatforms.messages === false && FOCUS_MESSAGE_PATTERNS.some(re => re.test(url))) {
+    return false
+  }
   for (const [platform, patterns] of Object.entries(FOCUS_BLOCKED_PATTERNS)) {
     if (blockedPlatforms && !blockedPlatforms[platform]) continue
     if (patterns.some(re => re.test(url))) return true
@@ -97,7 +111,7 @@ function isUrlBlockedByFocusMode(url, blockedPlatforms) {
 }
 
 let focusModeEnabled = false
-let focusBlockedPlatforms = { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true }
+let focusBlockedPlatforms = { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true, messages: true }
 let focusOverlayEl = null
 
 // Expose for re-injection guard
