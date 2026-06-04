@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useDroppable } from '@dnd-kit/core'
 
 export const STAGES: { status: ProductionStatus; label: string; color: string; bg: string; border: string }[] = [
+  { status: 'new', label: 'New', color: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-500/10', border: 'border-slate-500/20' },
   { status: 'recording', label: 'Recording', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
   { status: 'editing', label: 'Editing', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
   { status: 'ready', label: 'Ready to Post', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
@@ -26,7 +27,7 @@ export const STAGES: { status: ProductionStatus; label: string; color: string; b
 ]
 
 const STATUS_BAR_COLOR: Record<ProductionStatus, string> = {
-  new: 'bg-amber-500',
+  new: 'bg-slate-400',
   recording: 'bg-amber-500',
   editing: 'bg-blue-500',
   ready: 'bg-purple-500',
@@ -34,7 +35,7 @@ const STATUS_BAR_COLOR: Record<ProductionStatus, string> = {
 }
 
 const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
-  new: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  new: 'text-slate-600 dark:text-slate-300 bg-slate-500/15 border-slate-500/30',
   recording: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
   editing: 'text-blue-600 dark:text-blue-400 bg-blue-500/15 border-blue-500/30',
   ready: 'text-purple-600 dark:text-purple-400 bg-purple-500/15 border-purple-500/30',
@@ -42,7 +43,7 @@ const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
 }
 
 const STATUS_PILL: Record<ProductionStatus, string> = {
-  new: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+  new: 'bg-slate-400/15 text-slate-500 dark:text-slate-300 border-slate-400/30',
   recording: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
   editing: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
   ready: 'bg-purple-400/15 text-purple-400 border-purple-400/30',
@@ -57,9 +58,9 @@ const STATUS_LABEL: Record<ProductionStatus, string> = {
   posted: 'Posted',
 }
 
-/** Ideas with status 'new' are shown in the Recording column. */
+/** The pipeline column an idea belongs to. */
 export function getDisplayStatus(idea: ContentIdea): ProductionStatus {
-  return idea.production_status === 'new' ? 'recording' : idea.production_status
+  return idea.production_status
 }
 
 type CountdownTone = 'overdue' | 'today' | 'tomorrow' | 'soon' | 'later'
@@ -420,7 +421,7 @@ function DroppableColumn({
 }
 
 /* ─── Custom collision detection: prefer sortable items over column droppables ─── */
-export const COLUMN_IDS = new Set(['recording', 'editing', 'ready', 'posted'])
+export const COLUMN_IDS = new Set(['new', 'recording', 'editing', 'ready', 'posted'])
 
 export const customCollisionDetection: CollisionDetection = (args) => {
   // First try pointer-within for precise card / calendar-day targeting
@@ -461,7 +462,7 @@ export function ProductionPipeline({ ideas, batchSize, scheduledDateByIdeaId, on
           <p className="hidden sm:block text-[10px] text-muted-foreground">Drag between columns to update status — or onto a calendar day to schedule</p>
           <button
             type="button"
-            onClick={() => onAdd('recording')}
+            onClick={() => onAdd('new')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition-all shrink-0"
           >
             <Plus size={14} strokeWidth={2.5} />
@@ -475,10 +476,10 @@ export function ProductionPipeline({ ideas, batchSize, scheduledDateByIdeaId, on
           icon={CalendarClock}
           title="No videos in the pipeline"
           description="Add a video or update an idea's production status to track progress from concept to posted."
-          action={{ label: 'Add a video', onClick: () => onAdd('recording') }}
+          action={{ label: 'Add a video', onClick: () => onAdd('new') }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {grouped.map(stage => (
             <DroppableColumn
               key={stage.status}
