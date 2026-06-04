@@ -33,7 +33,10 @@ export default async function DashboardPage() {
       .from('content_ideas')
       .select('*')
       .eq('user_id', user.id)
-      .in('production_status', ['recording', 'editing', 'ready', 'posted'])
+      // Everything in a pipeline stage, plus 'new' ideas that have been
+      // activated (status != 'new') — keeps the untouched brainstorm
+      // backlog out of the board while populating the New column.
+      .or('production_status.neq.new,status.neq.new')
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false }),
     supabase

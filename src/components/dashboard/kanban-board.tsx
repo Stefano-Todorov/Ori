@@ -14,7 +14,7 @@ interface Props {
 }
 
 const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
-  new: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
+  new: 'text-slate-600 dark:text-slate-300 bg-slate-500/15 border-slate-500/30',
   recording: 'text-amber-600 dark:text-amber-400 bg-amber-500/15 border-amber-500/30',
   editing: 'text-blue-600 dark:text-blue-400 bg-blue-500/15 border-blue-500/30',
   ready: 'text-purple-600 dark:text-purple-400 bg-purple-500/15 border-purple-500/30',
@@ -22,6 +22,7 @@ const STATUS_RANK_STYLE: Record<ProductionStatus, string> = {
 }
 
 const COLUMNS: { status: ProductionStatus; label: string; color: string; border: string }[] = [
+  { status: 'new', label: 'New', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-300', border: 'border-t-slate-400' },
   { status: 'recording', label: 'Recording', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', border: 'border-t-amber-500' },
   { status: 'editing', label: 'Editing', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', border: 'border-t-blue-500' },
   { status: 'ready', label: 'Ready to Post', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', border: 'border-t-purple-500' },
@@ -93,7 +94,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
           <p className="text-[10px] text-muted-foreground">Drag ideas between columns to update status</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {COLUMNS.map(col => {
             const colIdeas = ideas.filter(i => i.production_status === col.status)
             const isExpanded = expandedCols.has(col.status)
