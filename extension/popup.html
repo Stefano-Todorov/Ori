@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Orianna</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+    /* No remote @import — it blocks the popup's first paint on a network
+       round-trip. We use the native system font stack so the UI renders
+       instantly (Segoe UI on Windows, SF on macOS). */
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -161,7 +162,7 @@
       border-radius: 10px;
       color: #fafafa;
       font-size: 12px;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       outline: none;
       transition: border-color 0.15s;
       resize: none;
@@ -180,7 +181,7 @@
       border-radius: 10px;
       color: #fafafa;
       font-size: 12px;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       outline: none;
       transition: border-color 0.15s;
     }
@@ -194,7 +195,7 @@
       border-radius: 10px;
       font-size: 14px;
       font-weight: 700;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       cursor: pointer;
       border: none;
       transition: all 0.2s ease;
@@ -222,7 +223,7 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     .btn-outline .btn-help {
       background: rgba(168,85,247,0.18);
@@ -239,7 +240,7 @@
       font-size: 9px; font-weight: 700; line-height: 1;
       display: flex; align-items: center; justify-content: center;
       pointer-events: none;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     /* Save-row main button has no right radius — shift ? a bit inward to avoid the joint */
     .save-row .save-main-btn .btn-help { right: 10px; }
@@ -359,7 +360,7 @@
       border: none;
       font-size: 13px;
       font-weight: 700;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       cursor: pointer;
       box-shadow: 0 4px 16px rgba(124,58,237,0.35);
       transition: all 0.2s ease;
@@ -670,13 +671,13 @@
     .btn-text {
       background: none; border: none; color: #a78bfa; font-size: 11px;
       cursor: pointer; font-weight: 600; padding: 2px 4px;
-      transition: color 0.15s; font-family: 'Inter', sans-serif;
+      transition: color 0.15s; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     .btn-text:hover { color: #c4b5fd; }
     .btn-bookmark-action {
       background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.3);
       color: #a78bfa; font-size: 11px; cursor: pointer; font-weight: 600;
-      padding: 4px 10px; border-radius: 6px; font-family: 'Inter', sans-serif;
+      padding: 4px 10px; border-radius: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       transition: all 0.15s;
     }
     .btn-bookmark-action:hover { background: rgba(167, 139, 250, 0.2); border-color: rgba(167, 139, 250, 0.5); color: #c4b5fd; }
@@ -760,7 +761,7 @@
     .locked-teasers { padding: 6px 16px 4px; display: flex; flex-direction: column; gap: 6px; }
     .btn-locked {
       width: 100%; height: 42px; border-radius: 10px; font-size: 13px; font-weight: 700;
-      font-family: 'Inter', sans-serif; border: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; border: none;
       display: flex; align-items: center; justify-content: center; gap: 6px;
       cursor: default; opacity: 0.35; pointer-events: none;
     }
@@ -777,7 +778,7 @@
     .login-bar-btn {
       font-size: 11px; font-weight: 600; padding: 5px 14px; border-radius: 6px;
       cursor: pointer; border: none; transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     .login-bar-btn.primary {
       background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff;

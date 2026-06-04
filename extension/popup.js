@@ -25,7 +25,7 @@ let state = {
   dontAskCompetitor: false,
   focusModeEnabled: false,
   focusPlatformsOpen: false,
-  focusBlockedPlatforms: { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true },
+  focusBlockedPlatforms: { tiktok: true, instagram: true, youtube: true, youtubeShorts: true, twitter: true, reddit: true, facebook: true, snapchat: true, threads: true, messages: true },
   showCreateInspo: false,
   createInspoItems: [''],
   createInspoTags: [],
@@ -60,6 +60,7 @@ const FOCUS_PLATFORM_LABELS = {
   tiktok: 'TikTok', instagram: 'Instagram', youtube: 'YouTube',
   youtubeShorts: 'YouTube Shorts', twitter: 'Twitter / X', reddit: 'Reddit',
   facebook: 'Facebook', snapchat: 'Snapchat', threads: 'Threads',
+  messages: 'Direct messages',
 }
 
 function renderFocusToggle() {
@@ -639,7 +640,23 @@ function escHtml(str) {
 
 function render() {
   if (state.view === 'loading') {
-    app.innerHTML = `<div class="no-post">Loading...</div>`
+    // Paint a branded skeleton on the very first frame so the popup feels
+    // instant instead of showing a blank window while init() awaits.
+    app.innerHTML = `
+      <div class="header-wrap">
+        <div class="header">
+          <span class="logo">${LOGO_SVG}Orianna</span>
+        </div>
+      </div>
+      <div class="detected" style="margin-top:12px">
+        <div class="skeleton-box skeleton-line" style="width:55%"></div>
+        <div class="skeleton-box skeleton-line short"></div>
+        <div class="skeleton-box skeleton-line" style="width:70%"></div>
+      </div>
+      <div class="actions">
+        <div class="skeleton-box" style="height:48px;border-radius:10px"></div>
+        <div class="skeleton-box" style="height:46px;border-radius:10px"></div>
+      </div>`
     return
   }
 
@@ -1353,5 +1370,6 @@ function render() {
   }
 }
 
-// Start
+// Start — paint the loading skeleton on the first frame, then run init()
+render()
 init()
