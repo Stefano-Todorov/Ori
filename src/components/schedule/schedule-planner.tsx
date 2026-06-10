@@ -84,6 +84,12 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
   // Local mirrors of server data for optimistic drag/drop feedback
   const [localIdeas, setLocalIdeas] = useState(pipelineIdeas)
   const [localPosts, setLocalPosts] = useState(scheduledPosts)
+
+  // All tags currently in use — feeds tag suggestions in the dialogs.
+  const allTags = useMemo(
+    () => Array.from(new Set(allIdeas.flatMap(i => i.tags ?? []))).sort(),
+    [allIdeas],
+  )
   useEffect(() => { setLocalIdeas(pipelineIdeas) }, [pipelineIdeas])
   useEffect(() => { setLocalPosts(scheduledPosts) }, [scheduledPosts])
 
@@ -281,21 +287,22 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
       <EditIdeaDialog
         key={editingIdea?.id}
         idea={editingIdea}
+        allTags={allTags}
         scheduledDate={editingIdea ? (localPosts.find(p => p.content_idea_id === editingIdea.id)?.scheduled_date ?? null) : null}
         onClose={() => setEditingIdea(null)}
         onStatusChange={handleStatusChange}
         onSaved={() => refreshKeepScroll(router)}
         onScheduled={() => refreshKeepScroll(router)}
         onDeleted={() => refreshKeepScroll(router)}
-        onAddAnother={(url, source) => {
+        onAddAnother={(url, source, tags) => {
           setEditingIdea(null)
           setAddStatus(undefined)
-          setAddPrefill({ inspirationUrl: url, source })
+          setAddPrefill({ inspirationUrl: url, source, tags })
           setAddOpen(true)
         }}
-        onDuplicate={(form) => {
+        onDuplicate={(form, status) => {
           setEditingIdea(null)
-          setAddStatus(undefined)
+          setAddStatus(status)
           setAddPrefill(form)
           setAddOpen(true)
         }}
@@ -304,6 +311,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
       <AddIdeaDialog
         open={addOpen}
         prefill={addPrefill}
+        allTags={allTags}
         productionStatus={addStatus}
         onClose={() => { setAddOpen(false); setAddPrefill({}); setAddStatus(undefined) }}
         onSaved={() => refreshKeepScroll(router)}

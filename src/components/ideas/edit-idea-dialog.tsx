@@ -48,8 +48,8 @@ interface EditIdeaDialogProps {
   onSaved?: (id: string, fields: Record<string, unknown>) => void
   /** Called when user wants to add another idea from same inspiration */
   onAddAnother?: (inspirationUrl: string, source: string, tags: string[]) => void
-  /** Called when user wants to duplicate & edit */
-  onDuplicate?: (form: IdeaFormState) => void
+  /** Called when user wants to duplicate & edit. Passes the form and the current status pill. */
+  onDuplicate?: (form: IdeaFormState, status: ProductionStatus) => void
   /** Called after the idea is added to the posting calendar */
   onScheduled?: () => void
   /** Called after the idea is deleted. If omitted, the delete button is hidden. */
@@ -186,7 +186,7 @@ export function EditIdeaDialog({
       await updateIdea(idea.id, fields)
       onSaved?.(idea.id, fields)
       onClose()
-      onDuplicate?.(form)
+      onDuplicate?.(form, idea.production_status)
     })
   }, [idea, form, onSaved, onClose, onDuplicate])
 
@@ -444,17 +444,15 @@ export function EditIdeaDialog({
           )}
 
           {/* ─── Tags ─── */}
-          {allTags.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Tags
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <TagPills tags={form.tags} />
-                <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+              Tags
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <TagPills tags={form.tags} />
+              <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
             </div>
-          )}
+          </div>
 
           {/* ─── Actions ─── */}
           <div className="pt-2 space-y-2">
@@ -830,17 +828,15 @@ export function AddIdeaDialog({
           )}
 
           {/* ─── Tags ─── */}
-          {allTags.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
-                Tags
-              </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                <TagPills tags={form.tags} />
-                <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-              </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
+              Tags
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              <TagPills tags={form.tags} />
+              <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
             </div>
-          )}
+          </div>
 
           {/* ─── Actions ─── */}
           <div className="pt-2 space-y-2">

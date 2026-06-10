@@ -533,6 +533,7 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
 
   // Add dialog
   const [addOpen, setAddOpen] = useState(false)
+  const [addStatus, setAddStatus] = useState<ProductionStatus | undefined>(undefined)
   const [addPrefill, setAddPrefill] = useState<{ inspirationUrl?: string; source?: string; tags?: string[]; idea?: string; hookIdea?: string; scriptSnippet?: string; cta?: string; caption?: string }>({})
 
   // Edit dialog
@@ -887,7 +888,8 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
         prefill={addPrefill}
         allTags={allTags}
         platform={platform}
-        onClose={() => { setAddOpen(false); setAddPrefill({}) }}
+        productionStatus={addStatus}
+        onClose={() => { setAddOpen(false); setAddPrefill({}); setAddStatus(undefined) }}
         onSaved={(newIdea) => {
           if (newIdea) setIdeas(prev => [newIdea, ...prev])
         }}
@@ -918,8 +920,9 @@ export function IdeasBoard({ ideas: initialIdeas, allTags: initialAllTags, sched
           setAddPrefill({ inspirationUrl: url, source, tags })
           setAddOpen(true)
         }}
-        onDuplicate={(form) => {
+        onDuplicate={(form, status) => {
           setAddPrefill(form)
+          setAddStatus(status)
           setAddOpen(true)
         }}
       />

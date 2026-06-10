@@ -62,6 +62,9 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   const [hiddenCols, setHiddenCols] = useState<Set<ProductionStatus>>(new Set())
   const didDrag = useRef(false)
 
+  // All tags currently in use across ideas — feeds tag suggestions in the dialogs.
+  const allTags = Array.from(new Set(ideas.flatMap(i => i.tags ?? []))).sort()
+
   // Load saved column visibility (client-only, avoids hydration mismatch)
   useEffect(() => {
     try {
@@ -283,18 +286,20 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
       <EditIdeaDialog
         key={editingIdea?.id}
         idea={editingIdea}
+        allTags={allTags}
         onClose={() => setEditingIdea(null)}
         onStatusChange={handleStatusChange}
         onSaved={() => refreshKeepScroll(router)}
         onDeleted={() => refreshKeepScroll(router)}
-        onAddAnother={(url, source) => {
+        onAddAnother={(url, source, tags) => {
           setEditingIdea(null)
-          setAddPrefill({ inspirationUrl: url, source })
+          setAddPrefill({ inspirationUrl: url, source, tags })
           setAddOpen(true)
         }}
-        onDuplicate={(form) => {
+        onDuplicate={(form, status) => {
           setEditingIdea(null)
           setAddPrefill(form)
+          setAddStatus(status)
           setAddOpen(true)
         }}
       />
@@ -302,6 +307,7 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
       <AddIdeaDialog
         open={addOpen}
         prefill={addPrefill}
+        allTags={allTags}
         productionStatus={addStatus}
         onClose={() => { setAddOpen(false); setAddPrefill({}); setAddStatus(undefined) }}
         onSaved={() => refreshKeepScroll(router)}
