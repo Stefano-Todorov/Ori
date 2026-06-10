@@ -448,9 +448,7 @@ export function EditIdeaDialog({
             <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
               Tags
             </label>
-            <div className="flex items-center gap-2 flex-wrap">
-              <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-            </div>
+            <TagEditor variant="field" tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
           </div>
 
           {/* ─── Actions ─── */}
@@ -831,9 +829,7 @@ export function AddIdeaDialog({
             <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-foreground/70">
               Tags
             </label>
-            <div className="flex items-center gap-2 flex-wrap">
-              <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
-            </div>
+            <TagEditor variant="field" tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
           </div>
 
           {/* ─── Actions ─── */}

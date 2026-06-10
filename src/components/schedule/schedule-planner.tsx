@@ -134,6 +134,7 @@ export function SchedulePlanner({ scheduledPosts, pipelineIdeas, availableIdeas,
 
   function handleStatusChange(ideaId: string, status: ProductionStatus) {
     setLocalIdeas(prev => prev.map(i => (i.id === ideaId ? { ...i, production_status: status } : i)))
+    setEditingIdea(prev => prev && prev.id === ideaId ? { ...prev, production_status: status } : prev)
     startTransition(async () => {
       await updateProductionStatus(ideaId, status)
       refreshKeepScroll(router)

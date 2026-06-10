@@ -116,6 +116,8 @@ export function KanbanBoard({ ideas, batchSize }: Props) {
   }
 
   function handleStatusChange(ideaId: string, newStatus: ProductionStatus) {
+    // Keep the open dialog's status pill in sync immediately.
+    setEditingIdea(prev => prev && prev.id === ideaId ? { ...prev, production_status: newStatus } : prev)
     startTransition(async () => {
       await updateProductionStatus(ideaId, newStatus)
       refreshKeepScroll(router)

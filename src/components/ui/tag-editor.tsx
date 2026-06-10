@@ -58,9 +58,14 @@ interface TagEditorProps {
   tags: string[]
   allTags: string[]
   onChange: (tags: string[]) => void
+  /**
+   * 'inline' (default) — compact, for cards/lists.
+   * 'field' — framed like a form input, for dialogs.
+   */
+  variant?: 'inline' | 'field'
 }
 
-export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
+export function TagEditor({ tags, allTags, onChange, variant = 'inline' }: TagEditorProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
@@ -94,17 +99,24 @@ export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
   const suggestions = allTags.filter((t) => !tags.includes(t) && (!q || t.includes(q)))
   const canCreate = q.length > 0 && !tags.includes(q) && !allTags.includes(q)
 
+  const isField = variant === 'field'
+  const pillText = isField ? 'text-[11px]' : 'text-[10px]'
+
   return (
     <div
-      className="relative inline-flex items-center gap-1 flex-wrap"
+      className={
+        isField
+          ? 'relative flex items-center gap-1.5 flex-wrap w-full min-h-10 bg-muted dark:bg-[#1e1e2e] border border-border rounded-lg px-2.5 py-2 transition-colors focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20'
+          : 'relative inline-flex items-center gap-1 flex-wrap'
+      }
       ref={ref}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); if (isField && !open) setOpen(true) }}
     >
       {/* Selected tags — removable pills, update instantly */}
       {tags.map((t) => (
         <span
           key={t}
-          className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full border text-[10px] font-medium ${tagColor(t)}`}
+          className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full border font-medium ${pillText} ${tagColor(t)}`}
         >
           {t}
           <button
@@ -113,7 +125,7 @@ export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
             className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
             aria-label={`Remove ${t}`}
           >
-            <X size={9} />
+            <X size={isField ? 10 : 9} />
           </button>
         </span>
       ))}
@@ -122,14 +134,14 @@ export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-[10px] font-medium transition-colors ${
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed font-medium transition-colors ${pillText} ${
           open
             ? 'border-purple-500/50 text-purple-600 dark:text-purple-400 bg-purple-500/10'
             : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted'
         }`}
       >
-        <Plus size={10} />
-        {tags.length === 0 && 'Tag'}
+        <Plus size={isField ? 12 : 10} />
+        {tags.length === 0 && (isField ? 'Add a tag' : 'Tag')}
       </button>
 
       {/* Dropdown */}
