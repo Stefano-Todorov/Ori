@@ -12,7 +12,7 @@ import { deleteSwipePost, updatePostNotes, updatePostTitle, updatePostTags, sync
 import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Post } from '@/lib/types'
-import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
+import { TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
 import { downloadVideo } from '@/lib/instagram-download'
 
@@ -659,8 +659,7 @@ function InspoCard({ post, allTags, onDelete, onTagsChange, onNotesChange, selec
             </div>
 
             {/* Tags */}
-            <div className="flex items-center gap-1.5">
-              <TagPills tags={post.tags ?? []} />
+            <div className="flex items-center gap-1.5 flex-wrap">
               <TagEditor tags={post.tags ?? []} allTags={allTags} onChange={(tags) => onTagsChange(post.id, tags)} />
             </div>
 

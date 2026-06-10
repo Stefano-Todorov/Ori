@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
-import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+import { TagEditor } from '@/components/ui/tag-editor'
 
 // ─── Production status ────────────────────────────────
 
@@ -468,7 +468,6 @@ export function CreateIdeaPanel({ post, allTags, onClose }: CreateIdeaPanelProps
               Tags
             </label>
             <div className="flex items-center gap-2 flex-wrap">
-              <TagPills tags={form.tags} />
               <TagEditor tags={form.tags} allTags={combinedTags} onChange={(tags) => set('tags', tags)} />
             </div>
           </div>

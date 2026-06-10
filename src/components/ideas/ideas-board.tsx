@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Pencil, ExternalLink, Trash2, RotateCcw, ChevronDown, Search, Link as LinkIcon, Tag, CalendarPlus, Check, Download, Loader2, X, SlidersHorizontal, Lightbulb } from 'lucide-react'
 import { deleteIdea, updateProductionStatus, bulkDeleteIdeas, bulkUpdateProductionStatus, restoreIdea, updateIdeaTags, scheduleIdea } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
-import { TagPills, TagEditor, TagFilter } from '@/components/ui/tag-editor'
+import { TagEditor, TagFilter } from '@/components/ui/tag-editor'
 import { EditIdeaDialog, AddIdeaDialog } from '@/components/ideas/edit-idea-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
@@ -247,10 +247,7 @@ function IdeaCard({
 
           {/* Tags row */}
           <div className="flex items-center gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>
-            <TagPills tags={item.tags ?? []} />
-            <span onClick={(e) => e.stopPropagation()}>
-              <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
-            </span>
+            <TagEditor tags={item.tags ?? []} allTags={allTags} onChange={onTagsChange} />
           </div>
 
           {/* View original + Download buttons */}

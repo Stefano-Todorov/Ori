@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Competitor, Post, Platform } from '@/lib/types'
 import { CreateIdeaPanel } from '@/components/shared/create-idea-panel'
-import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+import { TagEditor } from '@/components/ui/tag-editor'
 import { updatePostTags } from '@/app/actions'
 import { downloadVideo } from '@/lib/instagram-download'
 
@@ -881,8 +881,7 @@ function PostCard({ post, handle, allTags }: { post: Post; handle: string; allTa
             </div>
 
             {/* Tags */}
-            <div className="flex items-center gap-1.5">
-              <TagPills tags={tags} />
+            <div className="flex items-center gap-1.5 flex-wrap">
               <TagEditor tags={tags} allTags={allTags} onChange={(newTags) => { setTags(newTags); updatePostTags(post.id, newTags) }} />
             </div>
           </div>

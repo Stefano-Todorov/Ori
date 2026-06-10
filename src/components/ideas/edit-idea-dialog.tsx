@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/ui/date-picker'
 import { ExternalLink, Plus, Copy, Check, Pencil, Trash2 } from 'lucide-react'
-import { TagPills, TagEditor } from '@/components/ui/tag-editor'
+import { TagEditor } from '@/components/ui/tag-editor'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 import { updateIdea, addIdea, scheduleIdea, unscheduleIdea, deleteIdea } from '@/app/actions'
 import { AIScriptSection } from '@/components/ideas/ai-script-section'
@@ -449,7 +449,6 @@ export function EditIdeaDialog({
               Tags
             </label>
             <div className="flex items-center gap-2 flex-wrap">
-              <TagPills tags={form.tags} />
               <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
             </div>
           </div>
@@ -833,7 +832,6 @@ export function AddIdeaDialog({
               Tags
             </label>
             <div className="flex items-center gap-2 flex-wrap">
-              <TagPills tags={form.tags} />
               <TagEditor tags={form.tags} allTags={allTags} onChange={(tags) => set('tags', tags)} />
             </div>
           </div>

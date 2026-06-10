@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Tag, X, Plus, Check } from 'lucide-react'
+import { Tag, X, Plus } from 'lucide-react'
 
 const TAG_COLORS = [
   'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30',
@@ -62,14 +62,14 @@ interface TagEditorProps {
 
 export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
   const [open, setOpen] = useState(false)
-  const [newTag, setNewTag] = useState('')
+  const [query, setQuery] = useState('')
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setQuery('') }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -79,90 +79,117 @@ export function TagEditor({ tags, allTags, onChange }: TagEditorProps) {
     if (open && inputRef.current) inputRef.current.focus()
   }, [open])
 
-  function toggle(tag: string) {
-    if (tags.includes(tag)) {
-      onChange(tags.filter((t) => t !== tag))
-    } else {
-      onChange([...tags, tag])
-    }
+  function add(tag: string) {
+    const t = tag.trim().toLowerCase()
+    if (!t || tags.includes(t)) { setQuery(''); return }
+    onChange([...tags, t])
+    setQuery('')
   }
 
-  function addNew() {
-    const trimmed = newTag.trim().toLowerCase()
-    if (!trimmed) return
-    if (!tags.includes(trimmed)) {
-      onChange([...tags, trimmed])
-    }
-    setNewTag('')
+  function remove(tag: string) {
+    onChange(tags.filter((t) => t !== tag))
   }
 
-  const suggestions = allTags.filter((t) => !tags.includes(t))
+  const q = query.trim().toLowerCase()
+  const suggestions = allTags.filter((t) => !tags.includes(t) && (!q || t.includes(q)))
+  const canCreate = q.length > 0 && !tags.includes(q) && !allTags.includes(q)
 
   return (
-    <div className="relative" ref={ref}>
+    <div
+      className="relative inline-flex items-center gap-1 flex-wrap"
+      ref={ref}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Selected tags — removable pills, update instantly */}
+      {tags.map((t) => (
+        <span
+          key={t}
+          className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full border text-[10px] font-medium ${tagColor(t)}`}
+        >
+          {t}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); remove(t) }}
+            className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+            aria-label={`Remove ${t}`}
+          >
+            <X size={9} />
+          </button>
+        </span>
+      ))}
+
+      {/* Add trigger */}
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-dashed text-[10px] font-medium transition-colors ${
+          open
+            ? 'border-purple-500/50 text-purple-600 dark:text-purple-400 bg-purple-500/10'
+            : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted'
+        }`}
       >
-        <Tag size={10} />
-        {tags.length > 0 ? tags.length : <Plus size={8} />}
+        <Plus size={10} />
+        {tags.length === 0 && 'Tag'}
       </button>
 
+      {/* Dropdown */}
       {open && (
         <div
-          className="absolute z-50 top-full left-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-lg p-2 space-y-2"
+          className="absolute z-50 top-full left-0 mt-1.5 w-60 bg-card border border-border rounded-xl shadow-xl shadow-black/20 p-2 space-y-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Current tags */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {tags.map((t) => (
-                <TagPill key={t} name={t} onRemove={() => toggle(t)} />
-              ))}
-            </div>
-          )}
-
-          {/* Existing tags to pick from */}
-          {suggestions.length > 0 && (
-            <div className="space-y-0.5">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-semibold">Add tag</p>
-              <div className="max-h-28 overflow-y-auto space-y-0.5">
-                {suggestions.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => toggle(t)}
-                    className="flex items-center gap-1.5 w-full text-left px-2 py-1 rounded text-xs text-foreground hover:bg-muted transition-colors"
-                  >
-                    <span className={`w-2 h-2 rounded-full border ${tagColor(t)}`} />
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Create new */}
-          <div className="flex gap-1">
+          <div className="relative">
+            <Tag size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
-              placeholder="New tag..."
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addNew() } }}
-              className="flex-1 text-xs bg-muted border border-border rounded px-2 py-1 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500"
+              placeholder="Search or create…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (canCreate) add(query)
+                  else if (suggestions.length > 0) add(suggestions[0])
+                } else if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setOpen(false)
+                  setQuery('')
+                }
+              }}
+              className="w-full text-xs bg-muted border border-border rounded-lg pl-7 pr-2 py-1.5 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
             />
-            <button
-              type="button"
-              onClick={addNew}
-              disabled={!newTag.trim()}
-              className="px-1.5 py-1 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25 disabled:opacity-30 transition-colors"
-            >
-              <Check size={12} />
-            </button>
           </div>
+
+          {(suggestions.length > 0 || canCreate) ? (
+            <div className="max-h-44 overflow-y-auto space-y-0.5">
+              {canCreate && (
+                <button
+                  type="button"
+                  onClick={() => add(query)}
+                  className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
+                >
+                  <Plus size={12} className="text-purple-500 shrink-0" />
+                  Create <span className="font-semibold">{q}</span>
+                </button>
+              )}
+              {suggestions.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => add(t)}
+                  className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
+                >
+                  <span className={`w-2 h-2 rounded-full border shrink-0 ${tagColor(t)}`} />
+                  {t}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground/60 text-center py-1.5">
+              {allTags.length === 0 ? 'Type to create your first tag' : 'No matching tags'}
+            </p>
+          )}
         </div>
       )}
     </div>
