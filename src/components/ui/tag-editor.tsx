@@ -147,7 +147,7 @@ export function TagEditor({ tags, allTags, onChange, variant = 'inline' }: TagEd
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute z-50 top-full left-0 mt-1.5 w-60 bg-card border border-border rounded-xl shadow-xl shadow-black/20 p-2 space-y-2"
+          className="absolute z-50 top-full left-0 mt-1.5 w-68 bg-card border border-border rounded-xl shadow-xl shadow-black/25 p-2.5 space-y-2"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="relative">
@@ -174,28 +174,31 @@ export function TagEditor({ tags, allTags, onChange, variant = 'inline' }: TagEd
           </div>
 
           {(suggestions.length > 0 || canCreate) ? (
-            <div className="max-h-44 overflow-y-auto space-y-0.5">
+            <div className="max-h-48 overflow-y-auto">
               {canCreate && (
                 <button
                   type="button"
                   onClick={() => add(query)}
-                  className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
+                  className="flex items-center gap-2 w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 transition-colors mb-1.5"
                 >
-                  <Plus size={12} className="text-purple-500 shrink-0" />
-                  Create <span className="font-semibold">{q}</span>
+                  <Plus size={13} className="shrink-0" />
+                  Create <span className="font-bold">&ldquo;{q}&rdquo;</span>
                 </button>
               )}
-              {suggestions.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => add(t)}
-                  className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-xs text-foreground hover:bg-muted transition-colors"
-                >
-                  <span className={`w-2 h-2 rounded-full border shrink-0 ${tagColor(t)}`} />
-                  {t}
-                </button>
-              ))}
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-1 pb-1">
+                  {suggestions.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => add(t)}
+                      className={`inline-flex items-center gap-1 pl-2.5 pr-2.5 py-1 rounded-full border text-[12px] font-semibold transition-all hover:scale-105 hover:shadow-sm active:scale-95 ${tagColor(t)}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-[11px] text-muted-foreground/60 text-center py-1.5">
